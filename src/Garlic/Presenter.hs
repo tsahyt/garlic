@@ -14,7 +14,7 @@ presenter :: Application -> Garlic ()
 presenter app' = do
     app <- application app'
 
-    app ^. appHeader . addRecipeToggle 
-        `consume` app ^. appHeader . addRecipeClick
+    app ^. appRevealerToggle
+        `consume` app ^. appHeader . searchToggled
 
     return ()

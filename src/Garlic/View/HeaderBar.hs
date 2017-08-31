@@ -5,6 +5,7 @@ module Garlic.View.HeaderBar
 (
     GarlicHeader,
     addRecipeClick,
+    searchToggled,
     addRecipeToggle,
     headerBar,
 )
@@ -23,6 +24,7 @@ uiHeaderBar = decodeUtf8 $(embedFile "res/headerbar.ui")
 
 data GarlicHeader = GarlicHeader
     { _addRecipeClick  :: Event ()
+    , _searchToggled   :: Event ()
     , _addRecipeToggle :: Consumer ()
     }
 
@@ -35,9 +37,11 @@ headerBar win = do
     windowSetTitlebar win (Just hb)
 
     addButton <- castB b "addButton" Button
+    searchButton <- castB b "searchButton" ToggleButton
 
     lift $ GarlicHeader
        <$> signalE0 addButton #clicked
+       <*> signalE0 searchButton #toggled
        <*> pure (toggle addButton)
 
 toggle :: Button -> Consumer a
