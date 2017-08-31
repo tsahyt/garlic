@@ -1,7 +1,16 @@
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE OverloadedLabels #-}
 {-# LANGUAGE TemplateHaskell #-}
-module Garlic.View where
+module Garlic.View
+(
+    -- * Application Framework
+    GarlicApp,
+    appActivate,
+    appShutdown,
+    appStartup,
+    application
+)
+where
 
 import Garlic.Types
 import Control.Monad
@@ -10,7 +19,6 @@ import Control.Lens
 import Reactive.Banana
 import Reactive.Banana.GI.Gtk
 import GI.Gtk
-import GI.Gio (applicationRun)
 
 data GarlicApp = GarlicApp
     { _appActivate :: Event ()
