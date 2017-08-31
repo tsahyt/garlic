@@ -32,17 +32,7 @@
           </packing>
         </child>
         <child>
-          <object class="GtkCalendar">
-            <property name="visible">True</property>
-            <property name="can_focus">True</property>
-            <property name="year">2017</property>
-            <property name="month">7</property>
-            <property name="day">31</property>
-          </object>
-          <packing>
-            <property name="resize">True</property>
-            <property name="shrink">True</property>
-          </packing>
+          <placeholder/>
         </child>
       </object>
     </child>

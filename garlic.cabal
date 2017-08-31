@@ -11,6 +11,8 @@ copyright:           2017 Paul Ogris
 category:            Desktop
 build-type:          Simple
 extra-source-files:  README.rst
+                     res/headerbar.ui
+                     res/main-window.ui
 cabal-version:       >=1.10
 
 library
