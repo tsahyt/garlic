@@ -13,6 +13,9 @@ presenter :: Application -> Garlic ()
 presenter app' = do
     app <- application app'
 
-    consume stdout $ pure "activated!" <@ app ^. appActivate
-    consume stdout $ pure "shutdown!" <@ app ^. appShutdown
-    consume stdout $ pure "startup!" <@ app ^. appStartup
+    {-
+     -consume stdout $ pure "activated!" <@ app ^. appActivate
+     -consume stdout $ pure "shutdown!" <@ app ^. appShutdown
+     -consume stdout $ pure "startup!" <@ app ^. appStartup
+     -}
+    return ()

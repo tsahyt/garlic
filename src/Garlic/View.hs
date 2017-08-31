@@ -1,13 +1,12 @@
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE OverloadedLabels #-}
 {-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE GADTs #-}
+{-# LANGUAGE FlexibleContexts #-}
 module Garlic.View
 (
     -- * Application Framework
     GarlicApp,
-    appActivate,
-    appShutdown,
-    appStartup,
     application
 )
 where
@@ -15,22 +14,22 @@ where
 import Garlic.Types
 import Control.Monad
 import Control.Monad.Trans
-import Control.Lens
-import Reactive.Banana
+import Control.Lens.Getter
+import Reactive.Banana (Event)
 import Reactive.Banana.GI.Gtk
 import GI.Gtk
 
 data GarlicApp = GarlicApp
-    { _appActivate :: Event ()
-    , _appShutdown :: Event ()
-    , _appStartup  :: Event ()
-    }
-
-makeGetters ''GarlicApp
 
 application :: Application -> Garlic GarlicApp
-application app =
-    lift $ GarlicApp
-       <$> signalE0 app #activate
-       <*> signalE0 app #shutdown
-       <*> signalE0 app #startup
+application app = do
+    win <- new ApplicationWindow []
+
+    on app #activate $ do
+        set win [ #application := app ]
+        widgetShowAll win
+
+    return GarlicApp
+
+-- LENSES --
+makeGetters ''GarlicApp
