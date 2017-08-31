@@ -2,6 +2,7 @@
 module Garlic.Types
 (
     Garlic,
+    Event,
     Consumer,
     consume,
     ioConsumer,
@@ -34,6 +35,7 @@ instance MonadMoment m => MonadMoment (ReaderT r m) where
 -- | A consumer can eat an event, performing some specified action on each
 -- occurrence.  Mostly used by views offering up ways to change themselves.
 newtype Consumer a = Consumer { consume :: Event a -> Garlic () }
+infixr 1 `consume`
 
 -- | Produce a consumer from an IO action. For GUI operations.
 ioConsumer :: (a -> IO ()) -> Consumer a
