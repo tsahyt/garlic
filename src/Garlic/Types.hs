@@ -1,4 +1,6 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# OPTIONS_GHC -fno-warn-orphans #-}
+{-# OPTIONS_GHC -fno-warn-missing-signatures #-}
 module Garlic.Types
 (
     Garlic,
@@ -21,7 +23,6 @@ where
 
 import Control.Lens
 import Control.Monad.Reader
-import Control.Monad.Trans
 import Reactive.Banana
 import Reactive.Banana.Frameworks
 import Database.Persist.Sql

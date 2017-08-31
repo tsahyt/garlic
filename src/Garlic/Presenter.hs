@@ -1,7 +1,6 @@
 module Garlic.Presenter where
 
 import Control.Lens
-import Control.Monad.IO.Class
 import Garlic.Model
 import Garlic.Types
 import Reactive.Banana

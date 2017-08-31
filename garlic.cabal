@@ -13,6 +13,7 @@ build-type:          Simple
 extra-source-files:  README.rst
                      res/headerbar.ui
                      res/main-window.ui
+                     res/recipe-display.ui
 cabal-version:       >=1.10
 
 library
@@ -22,7 +23,9 @@ library
                        Garlic.Types
                        Garlic.View
                        Garlic.View.HeaderBar
+                       Garlic.View.RecipeDisplay
                        Garlic.Presenter
+  ghc-options:         -Wall
   build-depends:       base >= 4.7 && < 5
                      , mtl
                      , text
@@ -31,6 +34,7 @@ library
                      , persistent-sqlite
                      , gi-gtk
                      , gi-gio
+                     , gi-webkit2
                      , reactive-banana
                      , reactive-banana-gi-gtk
                      , lens

@@ -3,6 +3,8 @@
 <interface>
   <requires lib="gtk+" version="3.20"/>
   <object class="GtkApplicationWindow" id="applicationWindow">
+    <property name="width_request">800</property>
+    <property name="height_request">600</property>
     <property name="can_focus">False</property>
     <child>
       <object class="GtkBox">
@@ -57,12 +59,12 @@
               </packing>
             </child>
             <child>
-              <object class="GtkCalendar">
+              <object class="GtkStack" id="recipeStack">
                 <property name="visible">True</property>
-                <property name="can_focus">True</property>
-                <property name="year">2017</property>
-                <property name="month">7</property>
-                <property name="day">31</property>
+                <property name="can_focus">False</property>
+                <child>
+                  <placeholder/>
+                </child>
               </object>
               <packing>
                 <property name="resize">True</property>
