@@ -4,9 +4,12 @@
 module Garlic.View.HeaderBar
 (
     GarlicHeader,
-    addRecipeClick,
+    addClick,
+    editClick,
     searchToggled,
     addRecipeToggle,
+    yieldChanged,
+    yieldToggle,
     headerBar,
 )
 where
@@ -23,9 +26,12 @@ uiHeaderBar :: Text
 uiHeaderBar = decodeUtf8 $(embedFile "res/headerbar.ui")
 
 data GarlicHeader = GarlicHeader
-    { _addRecipeClick  :: Event ()
+    { _addClick        :: Event ()
+    , _editClick       :: Event ()
     , _searchToggled   :: Event ()
+    , _yieldChanged    :: Event Double
     , _addRecipeToggle :: Consumer ()
+    , _yieldToggle     :: Consumer ()
     }
 
 headerBar :: ApplicationWindow -> Garlic GarlicHeader
@@ -38,15 +44,21 @@ headerBar win = do
 
     addButton <- castB b "addButton" Button
     searchButton <- castB b "searchButton" ToggleButton
+    editButton <- castB b "editButton" Button
+    yieldSpinner <- castB b "yieldSpinner" SpinButton
+    yieldAdjustment <- castB b "yieldAdjustment" Adjustment
 
     lift $ GarlicHeader
        <$> signalE0 addButton #clicked
+       <*> signalE0 editButton #clicked
        <*> signalE0 searchButton #toggled
+       <*> attrE yieldAdjustment #value
+       <*> pure (toggle yieldSpinner)
        <*> pure (toggle addButton)
 
-toggle :: Button -> Consumer a
-toggle button = ioConsumer $ \_ -> do
-    vis <- get button #visible
-    set button [ #visible := not vis ]
+toggle :: IsWidget w => w -> Consumer a
+toggle w = ioConsumer $ \_ -> do
+    vis <- widgetGetVisible w
+    widgetSetVisible w (not vis)
 
 makeGetters ''GarlicHeader
