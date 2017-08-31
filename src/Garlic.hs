@@ -11,7 +11,8 @@ import Control.Monad.Reader
 import Data.Text (unpack)
 import Database.Persist.Sqlite hiding (Connection)
 import Database.Sqlite
-import GI.Gtk (GError, gerrorMessage, init)
+import GI.Gtk
+import GI.Gio (applicationRun)
 import Prelude hiding (init)
 import Reactive.Banana.Frameworks
 
@@ -24,8 +25,13 @@ runGtk :: Connection -> IO ()
 runGtk connection = do
     _ <- init Nothing
 
+    app <- applicationNew Nothing []
+
     backend <- wrapConnection connection noLog
-    compile (runReaderT presenter backend) >>= actuate
+    compile (runReaderT (presenter app) backend) >>= actuate
+    _ <- applicationRun app Nothing
+
+    return ()
 
 garlic :: IO ()
 garlic = do

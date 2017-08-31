@@ -12,9 +12,13 @@ module Garlic.Types
     Fetcher,
     fetch,
     dbFetcher,
+    
+    -- * Misc
+    makeGetters,
 )
 where
 
+import Control.Lens
 import Control.Monad.Reader
 import Control.Monad.Trans
 import Reactive.Banana
@@ -53,3 +57,6 @@ dbFetcher :: (a -> SqlPersistT IO b) -> Fetcher a b
 dbFetcher k = Fetcher $ \e -> do
     backend <- ask
     lift $ mapEventIO (\x -> runReaderT (k x) backend) e
+
+-- | Read only lens generation for GUI records
+makeGetters = makeLensesWith (set generateUpdateableOptics False lensRules)
