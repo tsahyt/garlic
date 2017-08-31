@@ -19,6 +19,7 @@ library
                        Garlic.Model
                        Garlic.Types
                        Garlic.View
+                       Garlic.View.HeaderBar
                        Garlic.Presenter
   build-depends:       base >= 4.7 && < 5
                      , mtl
@@ -31,6 +32,7 @@ library
                      , reactive-banana
                      , reactive-banana-gi-gtk
                      , lens
+                     , file-embed
   default-language:    Haskell2010
 
 executable garlic-exe

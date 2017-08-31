@@ -19,11 +19,16 @@ import Reactive.Banana (Event)
 import Reactive.Banana.GI.Gtk
 import GI.Gtk
 
+import Garlic.View.HeaderBar
+
 data GarlicApp = GarlicApp
 
 application :: Application -> Garlic GarlicApp
 application app = do
     win <- new ApplicationWindow []
+
+    hb <- headerBar
+    windowSetTitlebar win (Just hb)
 
     on app #activate $ do
         set win [ #application := app ]
