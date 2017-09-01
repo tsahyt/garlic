@@ -52,23 +52,6 @@ recipeDisplay stack = do
     webview <- new WebView []
     setContainerChild vp webview
 
-    --- DUMMY VALUES
-    let attach x = flowBoxInsert ingredients x (-1)
-     in mapM_ (attach =<<)
-            [ groupSeparator "Sauce"
-            , ingredientEntry "2 cups" "Chicken Stock"
-            , ingredientEntry "3 tbsp" "Light Soy Sauce"
-            , ingredientEntry "3 tbsp" "Dark Soy Sauce"
-            , ingredientEntry "1 tbsp" "White Sugar"
-            , ingredientEntry "½ tbsp" "Fish Sauce"
-            , groupSeparator "Stir Fry"
-            , ingredientEntry "350 g" "Beef"
-            , ingredientEntry "1 large" "Bell Pepper"
-            ]
-    setInstructions webview
-        "1. thing\n2. another thing"
-    --- /DUMMY VALUES
-    
     stackAddNamed stack rdis "recipeDisplay"
 
     pure $ GarlicRecipeDisplay

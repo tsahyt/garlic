@@ -7,6 +7,7 @@ module Garlic.Types
     Event,
     Consumer,
     consume,
+    consumeMaybe,
     ioConsumer,
     dbConsumer,
 
@@ -49,9 +50,22 @@ instance Divisible Consumer where
 
     conquer = Consumer (const (return ()))
 
+instance Decidable Consumer where
+    choose f x y = Consumer $ \e ->
+        let (ls, rs) = split $ f <$> e
+         in consume x ls >> consume y rs
+
+    lose _ = mempty
+
 instance Monoid (Consumer a) where
     mempty = conquer
     mappend = divide (\x -> (x,x))
+
+consumeMaybe :: Consumer a -> Event (Maybe a) -> Garlic ()
+consumeMaybe x = consume (choose go conquer x)
+    where go Nothing  = Left ()
+          go (Just a) = Right a
+infixr 1 `consumeMaybe`
 
 -- | Produce a consumer from an IO action. For GUI operations.
 ioConsumer :: (a -> IO ()) -> Consumer a

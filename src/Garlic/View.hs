@@ -14,6 +14,7 @@ module Garlic.View
     appEnableSearch,
     appActivate,
     appShutdown,
+    appStartup,
     application,
 
     -- * Recipe List
@@ -79,20 +80,6 @@ application app = do
     _ <- on app #activate $ do
         set win [ #application := app ]
         widgetShowAll win
-
-    -- DUMMY VALUES
-    {-
-     -let attach x = listBoxInsert rlist x (-1)
-     - in mapM_ (attach =<<)
-     -        [ recipeEntry 3 (secondsToDiffTime 6000) 120
-     -              "Excellent Chicken" "Asian"
-     -        , recipeEntry 2 (secondsToDiffTime 1500) 50
-     -              "Not-so-excellent Chicken" "Jamaican"
-     -        , recipeEntry 4 (secondsToDiffTime 15000) 250
-     -              "Long Chicken" "Jamaican"
-     -        ]
-     -}
-    -- /DUMMY VALUES
 
     lift $ GarlicApp 
        <$> pure hb 

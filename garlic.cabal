@@ -20,6 +20,7 @@ library
   hs-source-dirs:      src
   exposed-modules:     Garlic
                        Garlic.Model
+                       Garlic.Model.Queries
                        Garlic.Types
                        Garlic.View
                        Garlic.View.HeaderBar
@@ -45,6 +46,7 @@ library
                      , blaze-html
                      , containers
                      , contravariant
+                     , esqueleto
   default-language:    Haskell2010
 
 executable garlic-exe
