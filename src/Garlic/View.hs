@@ -12,6 +12,8 @@ module Garlic.View
     appRecipeDisplay,
     appRecipeList,
     appEnableSearch,
+    appActivate,
+    appShutdown,
     application,
 
     -- * Recipe List
@@ -57,6 +59,9 @@ data GarlicApp = GarlicApp
     , _appRecipeDisplay :: GarlicRecipeDisplay
     , _appRecipeList    :: GarlicRecipes
     , _appEnableSearch  :: Consumer ()
+    , _appActivate      :: Event ()
+    , _appStartup       :: Event ()
+    , _appShutdown      :: Event ()
     }
 
 application :: Application -> Garlic GarlicApp
@@ -88,7 +93,14 @@ application app = do
             ]
     -- /DUMMY VALUES
 
-    return $ GarlicApp hb rdis recs (searchToggle searchBar)
+    lift $ GarlicApp 
+       <$> pure hb 
+       <*> pure rdis 
+       <*> pure recs 
+       <*> pure (searchToggle searchBar)
+       <*> signalE0 app #activate
+       <*> signalE0 app #startup
+       <*> signalE0 app #shutdown
 
 searchToggle :: SearchBar -> Consumer ()
 searchToggle s = ioConsumer $ \_ -> do
