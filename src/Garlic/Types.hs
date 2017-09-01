@@ -24,6 +24,7 @@ where
 import Control.Lens
 import Control.Monad.Reader
 import Reactive.Banana
+import Data.Functor.Contravariant.Divisible
 import Reactive.Banana.Frameworks
 import Database.Persist.Sql
 
@@ -37,6 +38,20 @@ instance MonadMoment m => MonadMoment (ReaderT r m) where
 -- occurrence.  Mostly used by views offering up ways to change themselves.
 newtype Consumer a = Consumer { consume :: Event a -> Garlic () }
 infixr 1 `consume`
+
+instance Contravariant Consumer where
+    contramap f x = Consumer $ \e -> consume x (fmap f e)
+
+instance Divisible Consumer where
+    divide f b c = Consumer $ \e ->
+        let (eb, ec) = (fmap (fst . f) e, fmap (snd . f) e)
+         in consume b eb >> consume c ec
+
+    conquer = Consumer (const (return ()))
+
+instance Monoid (Consumer a) where
+    mempty = conquer
+    mappend = divide (\x -> (x,x))
 
 -- | Produce a consumer from an IO action. For GUI operations.
 ioConsumer :: (a -> IO ()) -> Consumer a
