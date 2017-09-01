@@ -10,19 +10,37 @@ module Garlic.View
     GarlicApp,
     appHeader,
     appRecipeDisplay,
+    appRecipeList,
     appEnableSearch,
-    application
+    application,
+
+    -- * Recipe List
+    GarlicRecipes,
+    addRecipes,
+    clearRecipes,
+    recipeSelected,
+
+    ListRecipe (..),
+    lrRating,
+    lrDuration,
+    lrKcal,
+    lrName,
+    lrCuisine,
 )
 where
 
+import Control.Lens.TH
+import Control.Monad.Trans
 import Control.Monad.IO.Class
 import Garlic.Types
+import Reactive.Banana.Frameworks (mapEventIO)
 import Reactive.Banana.GI.Gtk
 import Data.FileEmbed
 import Data.Text (Text, pack)
 import Text.Printf
 import Data.Text.Encoding (decodeUtf8)
 import Data.Time.Clock
+import Data.IntMap (IntMap)
 import GI.Gtk
 
 import Garlic.View.HeaderBar
@@ -37,6 +55,7 @@ uiRecipeEntry = decodeUtf8 $(embedFile "res/recipe-entry.ui")
 data GarlicApp = GarlicApp
     { _appHeader        :: GarlicHeader
     , _appRecipeDisplay :: GarlicRecipeDisplay
+    , _appRecipeList    :: GarlicRecipes
     , _appEnableSearch  :: Consumer ()
     }
 
@@ -51,6 +70,7 @@ application app = do
     rstack <- castB b "recipeStack" Stack
     rlist <- castB b "recipeList" ListBox
     rdis <- recipeDisplay rstack
+    recs <- recipes rlist
 
     _ <- on app #activate $ do
         set win [ #application := app ]
@@ -68,13 +88,39 @@ application app = do
             ]
     -- /DUMMY VALUES
 
-    return $ GarlicApp hb rdis (searchToggle searchBar)
+    return $ GarlicApp hb rdis recs (searchToggle searchBar)
 
 searchToggle :: SearchBar -> Consumer ()
 searchToggle s = ioConsumer $ \_ -> do
     x <- get s #searchModeEnabled
     set s [ #searchModeEnabled := not x ]
 
+data ListRecipe = ListRecipe 
+    { _lrRating   :: Int
+    , _lrDuration :: DiffTime
+    , _lrKcal     :: Int
+    , _lrName     :: Text
+    , _lrCuisine  :: Text
+    }
+
+data GarlicRecipes = GarlicRecipes
+    { _clearRecipes   :: Consumer ()
+    , _addRecipes     :: Consumer (IntMap ListRecipe)
+    , _recipeSelected :: Event Int
+    }
+
+recipes :: ListBox -> Garlic GarlicRecipes
+recipes rlist = 
+    lift $ GarlicRecipes
+       <$> pure (ioConsumer $ \_ -> clearList rlist)
+       <*> pure (ioConsumer $ mapM_ append)
+       <*> (mapEventIO (fmap fromIntegral . listBoxRowGetIndex) 
+                =<< signalE1 rlist #rowActivated)
+    
+    where clearList l = 
+              containerGetChildren l >>= mapM_ (containerRemove l)
+          append (ListRecipe a b c d e) = 
+              recipeEntry a b c d e >>= \x -> listBoxInsert rlist x (-1)
 recipeEntry 
     :: MonadIO m 
     => Int          -- ^ Rating
@@ -110,4 +156,6 @@ recipeEntry rate time kcal name cuisine = do
                       else printf "%d min" (truncate x :: Int)
 
 -- LENSES --
+makeLenses ''ListRecipe
 makeGetters ''GarlicApp
+makeGetters ''GarlicRecipes

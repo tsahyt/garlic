@@ -48,6 +48,9 @@
                     <property name="visible">True</property>
                     <property name="can_focus">False</property>
                     <property name="label" translatable="yes">★★★★☆ —  Asian/Korean — 55 min</property>
+                    <attributes>
+                      <attribute name="scale" value="0.90000000000000002"/>
+                    </attributes>
                   </object>
                   <packing>
                     <property name="expand">False</property>
@@ -62,6 +65,7 @@
                     <property name="label" translatable="yes">768kcal</property>
                     <attributes>
                       <attribute name="weight" value="semilight"/>
+                      <attribute name="scale" value="0.90000000000000002"/>
                     </attributes>
                   </object>
                   <packing>

@@ -14,5 +14,6 @@ presenter app' = do
     app <- application app'
 
     app ^. appEnableSearch `consume` app ^. appHeader . searchToggled
+    stdout `consume` show <$> app ^. appRecipeList . recipeSelected
 
     return ()
