@@ -39,6 +39,7 @@ library
                      , reactive-banana-gi-gtk
                      , lens
                      , file-embed
+                     , time
   default-language:    Haskell2010
 
 executable garlic-exe
