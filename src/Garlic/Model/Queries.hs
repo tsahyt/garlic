@@ -15,6 +15,7 @@ import Data.IntMap (IntMap)
 import qualified Data.IntMap as M
 
 type DB a = SqlPersistT IO a
+
 data WeighedIngredient = WeighedIngredient
     { wingrAmount :: Double
     , wingrUnit   :: Text

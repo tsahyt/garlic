@@ -13,20 +13,19 @@ module Garlic.View.RecipeDisplay
 )
 where
 
-import Garlic.Types
 import Control.Monad.IO.Class
-import Control.Monad.Trans
-import Data.Monoid
 import Data.FileEmbed
+import Data.Monoid
 import Data.Text (Text)
-import Data.Text.Lazy (toStrict)
 import Data.Text.Encoding (decodeUtf8)
-import Reactive.Banana.GI.Gtk
-import Text.Markdown (Markdown)
-import Text.Blaze.Html
-import Text.Blaze.Html.Renderer.Text
+import Data.Text.Lazy (toStrict)
 import GI.Gtk
 import GI.WebKit2
+import Garlic.Types
+import Reactive.Banana.GI.Gtk
+import Text.Blaze.Html
+import Text.Blaze.Html.Renderer.Text
+import Text.Markdown (Markdown)
 
 uiRecipeDisplay :: Text
 uiRecipeDisplay = decodeUtf8 $(embedFile "res/recipe-display.ui")

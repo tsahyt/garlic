@@ -5,6 +5,7 @@ module Garlic.Types
 (
     Garlic,
     Event,
+    Behavior,
     Consumer,
     consume,
     consumeMaybe,
@@ -19,6 +20,7 @@ module Garlic.Types
     
     -- * Misc
     makeGetters,
+    (<:>)
 )
 where
 
@@ -92,3 +94,7 @@ dbFetcher k = Fetcher $ \e -> do
 
 -- | Read only lens generation for GUI records
 makeGetters = makeLensesWith (set generateUpdateableOptics False lensRules)
+
+(<:>) :: Event () -> Event () -> Event ()
+a <:> b = unionWith (\_ _ -> ()) a b
+infixr 2 <:>

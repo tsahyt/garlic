@@ -3,16 +3,16 @@
 module Garlic.Presenter where
 
 import Control.Lens
-import Data.IntMap (IntMap)
-import Garlic.Types
-import Reactive.Banana
 import Data.Functor.Contravariant
-import GI.Gtk (Application)
+import Data.IntMap (IntMap)
+import Data.Text (Text, pack)
 import Database.Persist.Sql
+import GI.Gtk (Application)
+import Garlic.Types
 import Text.Printf
-import Data.Text (pack)
 
 import qualified Data.IntMap as M
+import qualified Data.Text as T
 
 import Garlic.View
 import Garlic.View.HeaderBar
@@ -26,21 +26,19 @@ presenter app' = do
     runMigration migrateAll
     app <- application app'
 
+    -- Toggle Search Bar
     app ^. appEnableSearch `consume` app ^. appHeader . searchToggled
-
-    rs <- stepper M.empty =<< fetch recipes (app ^. appStartup)
-    selectedIndex <- stepper 0 (app ^. appRecipeList . recipeSelected)
-
-    let rsList  = fmap fst <$> rs
-        current = M.lookup <$> selectedIndex <*> rs
-        display = app ^. appActivate
-
-    displayRecipe (app ^. appRecipeDisplay) `consumeMaybe` current <@ display
-    listRecipes app `consume` rsList <@ display
-    stdout `consume` show <$> rs <@ display
 
     return ()
 
+-- | Convenience function to specify search semantics on the underlying IntMap
+-- type.
+filterRecipes :: Text -> IntMap (Recipe, a) -> IntMap (Recipe, a)
+filterRecipes search
+    | T.null search = id
+    | otherwise     = M.filter (\(r,_) -> T.isInfixOf search (recipeName r))
+
+-- | Consumer to populate the recipe list.
 listRecipes :: GarlicApp -> Consumer (IntMap Recipe)
 listRecipes app = mconcat
     [ app ^. appRecipeList ^. clearRecipes $< ()
@@ -49,6 +47,7 @@ listRecipes app = mconcat
           mklr Recipe{..} = 
               ListRecipe recipeRating recipeDuration 0 recipeName recipeCuisine
 
+-- | Consumer to display a selected recipe.
 displayRecipe :: GarlicRecipeDisplay -> Consumer (Recipe, [WeighedIngredient])
 displayRecipe rdisp = mconcat
     [ rdisp ^. clearIngredients $< ()
@@ -57,5 +56,5 @@ displayRecipe rdisp = mconcat
     ]
     where mkig :: WeighedIngredient -> ViewIngredient
           mkig WeighedIngredient{..} = 
-              let m = pack $ printf "%.2f %s" wingrAmount wingrUnit
+              let m = pack $ printf "%G %s" wingrAmount wingrUnit
                in ViewIngredient m (ingredientName wingrIngr)

@@ -12,6 +12,7 @@ module Garlic.View
     appRecipeDisplay,
     appRecipeList,
     appEnableSearch,
+    appSearchString,
     appActivate,
     appShutdown,
     appStartup,
@@ -34,7 +35,6 @@ where
 
 import Control.Lens.TH
 import Control.Monad.Trans
-import Control.Monad.IO.Class
 import Garlic.Types
 import Reactive.Banana.Frameworks (mapEventIO)
 import Reactive.Banana.GI.Gtk
@@ -59,6 +59,7 @@ data GarlicApp = GarlicApp
     , _appRecipeDisplay :: GarlicRecipeDisplay
     , _appRecipeList    :: GarlicRecipes
     , _appEnableSearch  :: Consumer ()
+    , _appSearchString  :: Behavior Text
     , _appActivate      :: Event ()
     , _appStartup       :: Event ()
     , _appShutdown      :: Event ()
@@ -72,6 +73,7 @@ application app = do
 
     hb <- headerBar win
     searchBar <- castB b "searchBar" SearchBar
+    searchEntry <- castB b "searchEntry" SearchEntry
     rstack <- castB b "recipeStack" Stack
     rlist <- castB b "recipeList" ListBox
     rdis <- recipeDisplay rstack
@@ -86,6 +88,7 @@ application app = do
        <*> pure rdis 
        <*> pure recs 
        <*> pure (searchToggle searchBar)
+       <*> attrB searchEntry #text
        <*> signalE0 app #activate
        <*> signalE0 app #startup
        <*> signalE0 app #shutdown
