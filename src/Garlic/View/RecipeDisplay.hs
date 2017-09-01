@@ -4,17 +4,23 @@
 module Garlic.View.RecipeDisplay
 (
     GarlicRecipeDisplay,
+    loadInstructions,
     recipeDisplay
 )
 where
 
 import Garlic.Types
 import Control.Monad.IO.Class
+import Control.Monad.Trans
 import Data.Monoid
 import Data.FileEmbed
 import Data.Text (Text)
+import Data.Text.Lazy (toStrict)
 import Data.Text.Encoding (decodeUtf8)
 import Reactive.Banana.GI.Gtk
+import Text.Markdown (Markdown)
+import Text.Blaze.Html
+import Text.Blaze.Html.Renderer.Text
 import GI.Gtk
 import GI.WebKit2
 
@@ -25,6 +31,8 @@ uiIngredientEntry :: Text
 uiIngredientEntry = decodeUtf8 $(embedFile "res/ingredient-entry.ui")
 
 data GarlicRecipeDisplay = GarlicRecipeDisplay
+    { _loadInstructions :: Consumer Markdown
+    }
 
 recipeDisplay :: Stack -> Garlic GarlicRecipeDisplay
 recipeDisplay stack = do
@@ -51,11 +59,14 @@ recipeDisplay stack = do
             , ingredientEntry "350 g" "Beef"
             , ingredientEntry "1 large" "Bell Pepper"
             ]
+    setInstructions webview
+        "1. thing\n2. another thing"
     --- /DUMMY VALUES
     
     stackAddNamed stack rdis "recipeDisplay"
 
-    pure GarlicRecipeDisplay
+    lift $ GarlicRecipeDisplay
+       <$> pure (ioConsumer (setInstructions webview))
 
 ingredientEntry :: MonadIO m => Text -> Text -> m ListBoxRow
 ingredientEntry amount name = do
@@ -83,3 +94,10 @@ groupSeparator name = do
               , #useMarkup := True ]
 
     castB b "ingredientEntry" ListBoxRow
+
+setInstructions :: MonadIO m => WebView -> Markdown -> m ()
+setInstructions view md = do
+    let x = toStrict . renderHtml . toHtml $ md
+    webViewLoadHtml view x Nothing
+
+makeGetters ''GarlicRecipeDisplay
