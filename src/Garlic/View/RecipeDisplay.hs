@@ -5,7 +5,11 @@ module Garlic.View.RecipeDisplay
 (
     GarlicRecipeDisplay,
     loadInstructions,
-    recipeDisplay
+    addIngredients,
+    clearIngredients,
+    recipeDisplay,
+
+    ViewIngredient (..)
 )
 where
 
@@ -32,6 +36,8 @@ uiIngredientEntry = decodeUtf8 $(embedFile "res/ingredient-entry.ui")
 
 data GarlicRecipeDisplay = GarlicRecipeDisplay
     { _loadInstructions :: Consumer Markdown
+    , _addIngredients   :: Consumer [ViewIngredient]
+    , _clearIngredients :: Consumer ()
     }
 
 recipeDisplay :: Stack -> Garlic GarlicRecipeDisplay
@@ -65,8 +71,23 @@ recipeDisplay stack = do
     
     stackAddNamed stack rdis "recipeDisplay"
 
-    lift $ GarlicRecipeDisplay
-       <$> pure (ioConsumer (setInstructions webview))
+    pure $ GarlicRecipeDisplay
+           (ioConsumer (setInstructions webview))
+           (ioConsumer (mapM_ (addViewIngredient ingredients)))
+           (ioConsumer $ \_ -> do
+                xs <- containerGetChildren ingredients 
+                mapM_ (containerRemove ingredients) xs)
+
+data ViewIngredient
+    = ViewIngredient Text Text
+    | ViewIngredientSep Text
+
+addViewIngredient :: MonadIO m => FlowBox -> ViewIngredient -> m ()
+addViewIngredient box ingr = do
+    row <- case ingr of
+               ViewIngredient amount name -> ingredientEntry amount name
+               ViewIngredientSep title -> groupSeparator title
+    flowBoxInsert box row (-1)
 
 ingredientEntry :: MonadIO m => Text -> Text -> m ListBoxRow
 ingredientEntry amount name = do
