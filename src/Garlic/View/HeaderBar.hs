@@ -15,13 +15,13 @@ module Garlic.View.HeaderBar
 )
 where
 
-import Garlic.Types
 import Control.Monad.Trans
 import Data.FileEmbed
 import Data.Text (Text)
 import Data.Text.Encoding (decodeUtf8)
-import Reactive.Banana.GI.Gtk
 import GI.Gtk
+import Garlic.Types
+import Reactive.Banana.GI.Gtk
 
 uiHeaderBar :: Text
 uiHeaderBar = decodeUtf8 $(embedFile "res/headerbar.ui")
@@ -36,19 +36,23 @@ data GarlicHeader = GarlicHeader
     , _yieldToggle     :: Consumer ()
     }
 
+-- | Creates a new 'GarlicHeader' and sets the HeaderBar of the supplied
+-- application window.
 headerBar :: ApplicationWindow -> Garlic GarlicHeader
 headerBar win = do
     b <- builderNew
     _ <- builderAddFromString b uiHeaderBar (-1)
 
-    hb <- castB b "headerBar" HeaderBar
-    windowSetTitlebar win (Just hb)
-
-    addButton <- castB b "addButton" Button
-    searchButton <- castB b "searchButton" ToggleButton
-    editButton <- castB b "editButton" Button
-    yieldSpinner <- castB b "yieldSpinner" SpinButton
+    -- Widgets
+    hb              <- castB b "headerBar" HeaderBar
+    addButton       <- castB b "addButton" Button
+    searchButton    <- castB b "searchButton" ToggleButton
+    editButton      <- castB b "editButton" Button
+    yieldSpinner    <- castB b "yieldSpinner" SpinButton
     yieldAdjustment <- castB b "yieldAdjustment" Adjustment
+
+    -- Set the window title to the 'HeaderBar'
+    windowSetTitlebar win (Just hb)
 
     lift $ GarlicHeader
        <$> signalE0 addButton #clicked
@@ -59,6 +63,9 @@ headerBar win = do
        <*> pure (toggle yieldSpinner)
        <*> pure (toggle addButton)
 
+-- | Toggle visibility of any widget.
+--
+-- TODO: Refactor into better place if useful.
 toggle :: IsWidget w => w -> Consumer a
 toggle w = ioConsumer $ \_ -> do
     vis <- widgetGetVisible w

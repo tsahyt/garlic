@@ -69,35 +69,41 @@ application :: Application -> Garlic GarlicApp
 application app = do
     b <- builderNew
     _ <- builderAddFromString b uiMainWindow (-1)
-    win <- castB b "applicationWindow" ApplicationWindow
 
-    hb <- headerBar win
-    searchBar <- castB b "searchBar" SearchBar
+    -- Widgets
+    win         <- castB b "applicationWindow" ApplicationWindow
+    rlist       <- castB b "recipeList" ListBox
+    rstack      <- castB b "recipeStack" Stack
+    searchBar   <- castB b "searchBar" SearchBar
     searchEntry <- castB b "searchEntry" SearchEntry
-    rstack <- castB b "recipeStack" Stack
-    rlist <- castB b "recipeList" ListBox
+
+    -- Sub elements
+    hb   <- headerBar win
     rdis <- recipeDisplay rstack
     recs <- recipes rlist
 
+    -- Hardcoded window setting on activation
     _ <- on app #activate $ do
         set win [ #application := app ]
         widgetShowAll win
 
     lift $ GarlicApp 
-       <$> pure hb 
-       <*> pure rdis 
-       <*> pure recs 
-       <*> pure (searchToggle searchBar)
-       <*> attrB searchEntry #text
+       <$> pure hb                          -- HeaderBar
+       <*> pure rdis                        -- Display Stack
+       <*> pure recs                        -- Recipe List
+       <*> pure (searchToggle searchBar)    -- Search Toggle
+       <*> attrB searchEntry #text          -- Search Content
        <*> signalE0 app #activate
        <*> signalE0 app #startup
        <*> signalE0 app #shutdown
 
+-- | Toggle a 'SearchBar'
 searchToggle :: SearchBar -> Consumer ()
 searchToggle s = ioConsumer $ \_ -> do
     x <- get s #searchModeEnabled
     set s [ #searchModeEnabled := not x ]
 
+-- | Used by 'addRecipes' in 'GarlicRecipes' to add new recipes to the list
 data ListRecipe = ListRecipe 
     { _lrRating   :: Int
     , _lrDuration :: Int
@@ -124,6 +130,8 @@ recipes rlist =
               containerGetChildren l >>= mapM_ (containerRemove l)
           append (ListRecipe a b c d e) = 
               recipeEntry a b c d e >>= \x -> listBoxInsert rlist x (-1)
+
+-- | Build a new ListBoxRow for a recipe entry in the recipe sidebar/list.
 recipeEntry 
     :: MonadIO m 
     => Int          -- ^ Rating

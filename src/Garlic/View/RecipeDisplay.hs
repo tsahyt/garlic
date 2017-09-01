@@ -44,13 +44,16 @@ recipeDisplay stack = do
     b <- builderNew
     _ <- builderAddFromString b uiRecipeDisplay (-1)
 
-    rdis <- castB b "recipeDisplayBox" Box
-    vp <- castB b "instructionViewport" Viewport
+    -- Widgets
+    rdis        <- castB b "recipeDisplayBox" Box
+    vp          <- castB b "instructionViewport" Viewport
     ingredients <- castB b "displayIngredients" FlowBox
 
+    -- WebView gets created in code
     webview <- new WebView []
     setContainerChild vp webview
 
+    -- Add to provided stack
     stackAddNamed stack rdis "recipeDisplay"
 
     pure $ GarlicRecipeDisplay
@@ -103,4 +106,5 @@ setInstructions view md = do
     let x = toStrict . renderHtml . toHtml $ md
     webViewLoadHtml view x Nothing
 
+-- LENSES
 makeGetters ''GarlicRecipeDisplay
