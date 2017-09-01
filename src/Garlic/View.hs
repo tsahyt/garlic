@@ -41,7 +41,6 @@ import Data.FileEmbed
 import Data.Text (Text, pack)
 import Text.Printf
 import Data.Text.Encoding (decodeUtf8)
-import Data.Time.Clock
 import Data.IntMap (IntMap)
 import GI.Gtk
 
@@ -82,15 +81,17 @@ application app = do
         widgetShowAll win
 
     -- DUMMY VALUES
-    let attach x = listBoxInsert rlist x (-1)
-     in mapM_ (attach =<<)
-            [ recipeEntry 3 (secondsToDiffTime 6000) 120
-                  "Excellent Chicken" "Asian"
-            , recipeEntry 2 (secondsToDiffTime 1500) 50
-                  "Not-so-excellent Chicken" "Jamaican"
-            , recipeEntry 4 (secondsToDiffTime 15000) 250
-                  "Long Chicken" "Jamaican"
-            ]
+    {-
+     -let attach x = listBoxInsert rlist x (-1)
+     - in mapM_ (attach =<<)
+     -        [ recipeEntry 3 (secondsToDiffTime 6000) 120
+     -              "Excellent Chicken" "Asian"
+     -        , recipeEntry 2 (secondsToDiffTime 1500) 50
+     -              "Not-so-excellent Chicken" "Jamaican"
+     -        , recipeEntry 4 (secondsToDiffTime 15000) 250
+     -              "Long Chicken" "Jamaican"
+     -        ]
+     -}
     -- /DUMMY VALUES
 
     lift $ GarlicApp 
@@ -109,7 +110,7 @@ searchToggle s = ioConsumer $ \_ -> do
 
 data ListRecipe = ListRecipe 
     { _lrRating   :: Int
-    , _lrDuration :: DiffTime
+    , _lrDuration :: Int
     , _lrKcal     :: Int
     , _lrName     :: Text
     , _lrCuisine  :: Text
@@ -136,7 +137,7 @@ recipes rlist =
 recipeEntry 
     :: MonadIO m 
     => Int          -- ^ Rating
-    -> DiffTime     -- ^ Time Required
+    -> Int          -- ^ Time Required
     -> Int          -- ^ Kcal
     -> Text         -- ^ Name
     -> Text         -- ^ Cuisine
@@ -162,7 +163,7 @@ recipeEntry rate time kcal name cuisine = do
                     in replicate x '★' ++ replicate (5 - x) '☆'
           time' :: String
           time' = let x :: Double
-                      x = fromIntegral (diffTimeToPicoseconds time) / (6.0e13)
+                      x = fromIntegral time / (6.0e13)
                    in if x >= 120
                       then printf "%.1f h" (x / 60)
                       else printf "%d min" (truncate x :: Int)
