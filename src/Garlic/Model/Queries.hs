@@ -1,11 +1,16 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE TemplateHaskell #-}
 module Garlic.Model.Queries
 (
     WeighedIngredient (..),
+    wingrAmount,
+    wingrUnit,
+    wingrIngr,
     recipes
 )
 where
 
+import Control.Lens.TH
 import Control.Monad
 import Garlic.Model
 import Garlic.Types
@@ -18,11 +23,13 @@ type DB a = SqlPersistT IO a
 
 -- | Weighted ingredients are ingredients with an amount and a unit.
 data WeighedIngredient = WeighedIngredient
-    { wingrAmount :: Double
-    , wingrUnit   :: Text
-    , wingrIngr   :: Ingredient
+    { _wingrAmount :: Double
+    , _wingrUnit   :: Text
+    , _wingrIngr   :: Ingredient
     }
     deriving Show
+
+makeLenses ''WeighedIngredient
 
 -- | Fetcher to obtain all recipes with their associated weighted ingredients
 -- from the database. The query is done in two steps, once for all recipes, then

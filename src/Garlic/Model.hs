@@ -20,6 +20,7 @@ share [mkPersist sqlSettings, mkMigrate "migrateAll"] [persistLowerCase|
         rating Int
         instructions Markdown
         duration Int
+        yield Double
         deriving Show
 
     Ingredient
