@@ -26,6 +26,7 @@ library
                        Garlic.View.HeaderBar
                        Garlic.View.RecipeDisplay
                        Garlic.Presenter
+                       Garlic.Presenter.RecipeDisplay
                        Text.Markdown.Persist
   ghc-options:         -Wall
   build-depends:       base >= 4.7 && < 5
