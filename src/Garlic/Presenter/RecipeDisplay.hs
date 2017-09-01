@@ -2,10 +2,12 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Garlic.Presenter.RecipeDisplay
 (
+    recipeDisplayP
 )
 where
 
 import Control.Lens
+import Reactive.Banana
 import Data.Functor.Contravariant
 import Data.IntMap (IntMap)
 import Data.Text (Text, pack)
@@ -20,21 +22,17 @@ import Garlic.View.RecipeDisplay
 import qualified Data.IntMap as M
 import qualified Data.Text as T
 
--- | Convenience function to specify search semantics on the underlying IntMap
--- type.
-filterRecipes :: Text -> IntMap (Recipe, a) -> IntMap (Recipe, a)
-filterRecipes search
-    | T.null search = id
-    | otherwise     = M.filter (\(r,_) -> T.isInfixOf search (recipeName r))
+recipeDisplayP 
+    :: GarlicApp 
+    -> Behavior (IntMap (Recipe, [WeighedIngredient])) 
+    -> Garlic ()
+recipeDisplayP app rcps = do
+    -- Selection Event holding current recipe
+    let selected = filterJust 
+              $ (flip M.lookup <$> rcps) 
+            <@> app ^. appRecipeList . recipeSelected
 
--- | Consumer to populate the recipe list.
-listRecipes :: GarlicApp -> Consumer (IntMap Recipe)
-listRecipes app = mconcat
-    [ app ^. appRecipeList ^. clearRecipes $< ()
-    , fmap mklr >$< app ^. appRecipeList ^. addRecipes ]
-    where mklr :: Recipe -> ListRecipe
-          mklr Recipe{..} = 
-              ListRecipe recipeRating recipeDuration 0 recipeName recipeCuisine
+    displayRecipe (app ^. appRecipeDisplay) `consume` selected
 
 -- | Consumer to display a selected recipe.
 displayRecipe :: GarlicRecipeDisplay -> Consumer (Recipe, [WeighedIngredient])
