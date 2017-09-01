@@ -23,26 +23,42 @@ presenter app' = do
     runMigration migrateAll
     app <- application app'
 
-    -- Toggle Search Bar
-    app ^. appEnableSearch `consume` app ^. appHeader . searchToggled
-
     let refetch = app ^. appStartup
     rcps <- stepper mempty =<< fetch recipes refetch
 
     -- Subsystems
-    recipeDisplayP app rcps
+    (rcps', searching) <- search app rcps
+    recipeDisplayP app rcps'
 
     -- Recipe List (TODO!)
-    listRecipes app `consume` fmap fst <$> rcps <@ app ^. appActivate
+    let update = app ^. appActivate 
+             <:> whenE searching (app ^. appSearchChange)
+    listRecipes app `consume` fmap fst <$> rcps' <@ update
 
     return ()
 
--- | Convenience function to specify search semantics on the underlying IntMap
--- type.
-filterRecipes :: T.Text -> M.IntMap (Recipe, a) -> M.IntMap (Recipe, a)
-filterRecipes search
-    | T.null search = id
-    | otherwise     = M.filter (\(r,_) -> T.isInfixOf search (recipeName r))
+-- | Description of behaviour for the search system.
+search
+    :: GarlicApp
+    -> Behavior (M.IntMap (Recipe, a))
+    -> Garlic (Behavior (M.IntMap (Recipe, a)), Behavior Bool)
+search app rcps = do
+    -- Toggle Search Bar
+    let toggle = app ^. appHeader . searchToggled
+    app ^. appEnableSearch `consume` toggle
+
+    let searchString = app ^. appSearchString
+        rcps' = filterRecipes <$> searchString <*> rcps
+    active <- accumB False (not <$ toggle)
+
+    -- TODO: Does not always seem to work as intended. Also selection of search
+    -- results seems off
+
+    pure (rcps', active)
+
+    where filterRecipes str
+              | T.null str = id
+              | otherwise  = M.filter (T.isInfixOf str . recipeName . fst)
 
 -- | Consumer to populate the recipe list.
 listRecipes :: GarlicApp -> Consumer (M.IntMap Recipe)
