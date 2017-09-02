@@ -10,7 +10,7 @@ import Control.Lens
 import Reactive.Banana
 import Data.Functor.Contravariant
 import Data.Sequence (Seq)
-import Data.Text (Text, pack)
+import Data.Text (pack)
 import Database.Persist.Sql
 import Text.Printf
 
@@ -22,7 +22,6 @@ import Garlic.View.RecipeDisplay
 import Garlic.View.HeaderBar
 
 import qualified Data.Sequence as S
-import qualified Data.Text as T
 
 recipeDisplayP 
     :: GarlicApp 

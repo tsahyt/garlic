@@ -17,49 +17,35 @@ import Garlic.View
 import Garlic.View.HeaderBar
 
 import qualified Data.Text as T
-import qualified Data.Sequence as S
 
 presenter :: Application -> Garlic ()
 presenter app' = do
     runMigration migrateAll
     app <- application app'
 
-    let refetch = app ^. appStartup
-    rcps <- stepper mempty =<< fetch recipes refetch
-
     -- Subsystems
-    (rcps', searching) <- search app rcps
-    recipeDisplayP app rcps'
+    search <- searchBar app
+    rcps   <- 
+        let refetch = unionWith (\_ _ -> "") search ("" <$ app ^. appStartup)
+         in stepper mempty =<< fetch recipes refetch
 
-    -- Recipe List (TODO!)
-    let update = app ^. appActivate 
-             <:> whenE searching (app ^. appSearchChange)
-    listRecipes app `consume` fmap entityVal <$> rcps' <@ update
+    recipeDisplayP app rcps
+    recipeList app rcps
 
     return ()
 
--- | Description of behaviour for the search system.
-search
-    :: GarlicApp
-    -> Behavior (Seq (Entity Recipe))
-    -> Garlic (Behavior (Seq (Entity Recipe)), Behavior Bool)
-search app rcps = do
+-- | Search bar handling, returning events declaring the current search string
+searchBar :: GarlicApp -> Garlic (Event T.Text)
+searchBar app = do
     -- Toggle Search Bar
     let toggle = app ^. appHeader . searchToggled
     app ^. appEnableSearch `consume` toggle
+    pure $ app ^. appSearchChange
 
-    let searchString = app ^. appSearchString
-        rcps' = filterRecipes <$> searchString <*> rcps
-    active <- accumB False (not <$ toggle)
-
-    -- TODO: Does not always seem to work as intended. Also selection of search
-    -- results seems off
-
-    pure (rcps', active)
-
-    where filterRecipes str
-              | T.null str = id
-              | otherwise  = S.filter (T.isInfixOf str . recipeName . entityVal)
+recipeList :: GarlicApp -> Behavior (Seq (Entity Recipe)) -> Garlic ()
+recipeList app rcps = do
+    update' <- plainChanges rcps
+    listRecipes app `consume` fmap entityVal <$> update'
 
 -- | Consumer to populate the recipe list.
 listRecipes :: GarlicApp -> Consumer (Seq Recipe)

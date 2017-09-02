@@ -18,6 +18,7 @@ import Database.Esqueleto
 import Data.Text (Text)
 import Data.Sequence (Seq)
 import qualified Data.Sequence as S
+import qualified Data.Text as T
 
 -- | Weighted ingredients are ingredients with an amount and a unit.
 data WeighedIngredient = WeighedIngredient
@@ -33,9 +34,13 @@ makeLenses ''WeighedIngredient
 -- from the database. The query is done in two steps, once for all recipes, then
 -- as a loop over those recipes, rather than joining and then collapsing by
 -- recipe.
-recipes :: Fetcher a (Seq (Entity Recipe))
-recipes = dbFetcher $ \_ -> do
-    rs <- select $ from $ \r -> return r
+recipes :: Fetcher (Text) (Seq (Entity Recipe))
+recipes = dbFetcher $ \str -> do
+    let str' = flip T.snoc '%' . T.cons '%' $ str
+    rs <- select $ 
+          from $ \r -> do
+              where_ (r ^. RecipeName `like` val str')
+              return r
     pure . S.fromList $ rs
 
 -- | Select all weighted ingredients for some recipe

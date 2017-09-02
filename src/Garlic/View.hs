@@ -12,7 +12,6 @@ module Garlic.View
     appRecipeDisplay,
     appRecipeList,
     appEnableSearch,
-    appSearchString,
     appSearchChange,
     appActivate,
     appShutdown,
@@ -60,8 +59,7 @@ data GarlicApp = GarlicApp
     , _appRecipeDisplay :: GarlicRecipeDisplay
     , _appRecipeList    :: GarlicRecipes
     , _appEnableSearch  :: Consumer ()
-    , _appSearchString  :: Behavior Text
-    , _appSearchChange  :: Event ()
+    , _appSearchChange  :: Event Text
     , _appActivate      :: Event ()
     , _appStartup       :: Event ()
     , _appShutdown      :: Event ()
@@ -94,8 +92,8 @@ application app = do
        <*> pure rdis                        -- Display Stack
        <*> pure recs                        -- Recipe List
        <*> pure (searchToggle searchBar)    -- Search Toggle
-       <*> attrB searchEntry #text          -- Search Content
-       <*> signalE0 searchEntry #searchChanged
+       <*> (mapEventIO (\_ -> get searchEntry #text) 
+                =<< signalE0 searchEntry #searchChanged)
        <*> signalE0 app #activate
        <*> signalE0 app #startup
        <*> signalE0 app #shutdown

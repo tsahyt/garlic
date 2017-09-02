@@ -17,6 +17,7 @@
             <property name="can_focus">False</property>
             <child>
               <object class="GtkSearchEntry" id="searchEntry">
+                <property name="width_request">288</property>
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
                 <property name="primary_icon_name">edit-find-symbolic</property>
