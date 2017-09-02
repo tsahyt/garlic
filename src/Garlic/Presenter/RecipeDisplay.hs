@@ -9,8 +9,9 @@ where
 import Control.Lens
 import Reactive.Banana
 import Data.Functor.Contravariant
-import Data.IntMap (IntMap)
+import Data.Sequence (Seq)
 import Data.Text (Text, pack)
+import Database.Persist.Sql
 import Text.Printf
 
 import Garlic.Model
@@ -20,35 +21,37 @@ import Garlic.View
 import Garlic.View.RecipeDisplay
 import Garlic.View.HeaderBar
 
-import qualified Data.IntMap as M
+import qualified Data.Sequence as S
 import qualified Data.Text as T
 
 recipeDisplayP 
     :: GarlicApp 
-    -> Behavior (IntMap (Recipe, [WeighedIngredient])) 
+    -> Behavior (Seq (Entity Recipe)) 
     -> Garlic ()
 recipeDisplayP app rcps = do
     let disp = app ^. appRecipeDisplay
 
-    yield <- stepper 1 $ app ^. appHeader . yieldChanged
+    -- Selection Event holding current recipe entity
+    let selected = (S.index <$> rcps)
+               <@> app ^. appRecipeList . recipeSelected
 
-    -- Selection Event holding current recipe
-    let selected = filterJust 
-              $ (flip M.lookup <$> rcps) 
-            <@> app ^. appRecipeList . recipeSelected
-        ryield       = recipeYield . fst <$> selected
+    -- Load instructions and reset spinner only on new selection
+    disp ^. loadInstructions `consume` 
+        recipeInstructions . entityVal <$> selected
+    app  ^. appHeader . changeYield `consume` 
+        recipeYield . entityVal <$> selected
 
-    ryield' <- stepper 1 ryield
+    -- Ingredients
+    ingredients <- stepper [] =<< fetch ingredientsFor (entityKey <$> selected)
+    weighed <- do
+        ryield <- stepper 1 $ recipeYield . entityVal <$> selected
+        syield <- stepper 1 $ app ^. appHeader . yieldChanged
+        let factor = liftA2 (/) syield ryield
+        pure $ scaleIngredients <$> factor <*> ingredients
 
-    let factor       = liftA2 (/) yield ryield'
-        ingredients  = (scaleIngredients <$> factor) <@> (snd <$> selected)
-        instructions = recipeInstructions . fst <$> selected
-
-    disp ^. loadInstructions `consume` instructions
-    replaceIngredients disp `consume` ingredients
-
-    -- First yield to spinner
-    app ^. appHeader . changeYield `consume` ryield
+    -- Display ingredient changes
+    consume (replaceIngredients (app ^. appRecipeDisplay)) =<< 
+        plainChanges weighed
 
 replaceIngredients :: GarlicRecipeDisplay -> Consumer [WeighedIngredient]
 replaceIngredients disp = mconcat

@@ -20,7 +20,8 @@ module Garlic.Types
     
     -- * Misc
     makeGetters,
-    (<:>)
+    (<:>),
+    plainChanges,
 )
 where
 
@@ -98,3 +99,10 @@ makeGetters = makeLensesWith (set generateUpdateableOptics False lensRules)
 (<:>) :: Event () -> Event () -> Event ()
 a <:> b = unionWith (\_ _ -> ()) a b
 infixr 2 <:>
+
+plainChanges :: Behavior a -> Garlic (Event a)
+plainChanges b = lift $ do
+    (e, handle) <- newEvent
+    eb <- changes b
+    reactimate' $ (fmap handle) <$> eb
+    return e

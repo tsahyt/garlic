@@ -43,7 +43,7 @@ import Data.FileEmbed
 import Data.Text (Text, pack)
 import Text.Printf
 import Data.Text.Encoding (decodeUtf8)
-import Data.IntMap (IntMap)
+import Data.Sequence (Seq)
 import GI.Gtk
 
 import Garlic.View.HeaderBar
@@ -117,7 +117,7 @@ data ListRecipe = ListRecipe
 
 data GarlicRecipes = GarlicRecipes
     { _clearRecipes   :: Consumer ()
-    , _addRecipes     :: Consumer (IntMap ListRecipe)
+    , _addRecipes     :: Consumer (Seq ListRecipe)
     , _recipeSelected :: Event Int
     }
 

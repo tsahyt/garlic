@@ -4,10 +4,11 @@ module Garlic.Presenter where
 
 import Control.Lens
 import Data.Functor.Contravariant
+import Data.Sequence (Seq)
 import Database.Persist.Sql
-import Reactive.Banana
 import GI.Gtk (Application)
 import Garlic.Types
+import Reactive.Banana
 
 import Garlic.Model
 import Garlic.Model.Queries
@@ -16,7 +17,7 @@ import Garlic.View
 import Garlic.View.HeaderBar
 
 import qualified Data.Text as T
-import qualified Data.IntMap as M
+import qualified Data.Sequence as S
 
 presenter :: Application -> Garlic ()
 presenter app' = do
@@ -33,15 +34,15 @@ presenter app' = do
     -- Recipe List (TODO!)
     let update = app ^. appActivate 
              <:> whenE searching (app ^. appSearchChange)
-    listRecipes app `consume` fmap fst <$> rcps' <@ update
+    listRecipes app `consume` fmap entityVal <$> rcps' <@ update
 
     return ()
 
 -- | Description of behaviour for the search system.
 search
     :: GarlicApp
-    -> Behavior (M.IntMap (Recipe, a))
-    -> Garlic (Behavior (M.IntMap (Recipe, a)), Behavior Bool)
+    -> Behavior (Seq (Entity Recipe))
+    -> Garlic (Behavior (Seq (Entity Recipe)), Behavior Bool)
 search app rcps = do
     -- Toggle Search Bar
     let toggle = app ^. appHeader . searchToggled
@@ -58,10 +59,10 @@ search app rcps = do
 
     where filterRecipes str
               | T.null str = id
-              | otherwise  = M.filter (T.isInfixOf str . recipeName . fst)
+              | otherwise  = S.filter (T.isInfixOf str . recipeName . entityVal)
 
 -- | Consumer to populate the recipe list.
-listRecipes :: GarlicApp -> Consumer (M.IntMap Recipe)
+listRecipes :: GarlicApp -> Consumer (Seq Recipe)
 listRecipes app = mconcat
     [ app ^. appRecipeList ^. clearRecipes $< ()
     , fmap mklr >$< app ^. appRecipeList ^. addRecipes ]
