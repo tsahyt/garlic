@@ -1,5 +1,6 @@
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE TemplateHaskell #-}
 module Garlic.Presenter.RecipeDisplay
 (
     recipeDisplayP
@@ -10,7 +11,9 @@ import Control.Lens
 import Reactive.Banana
 import Data.Functor.Contravariant
 import Data.Sequence (Seq)
-import Data.Text (pack)
+import Data.Text (Text, pack)
+import Data.Text.Encoding (decodeUtf8)
+import Data.FileEmbed
 import Database.Persist.Sql
 import Text.Printf
 
@@ -20,10 +23,15 @@ import Garlic.Types
 import Garlic.View
 import Garlic.View.RecipeDisplay
 import Garlic.View.HeaderBar
+import Garlic.Util
 import Text.Blaze.Html
 
 import qualified Text.Blaze.Html5 as H
+import qualified Text.Blaze.Html5.Attributes as A
 import qualified Data.Sequence as S
+
+recipeStyle :: Text
+recipeStyle = decodeUtf8 $(embedFile "res/style.css")
 
 recipeDisplayP 
     :: GarlicApp 
@@ -68,10 +76,18 @@ scaleIngredients factor = over (traverse . wingrAmount) (* factor)
 
 fullInstructions :: Recipe -> Html
 fullInstructions r = do
-    H.h1 (text $ recipeName r)
-    recipeHead r
-    H.h2 "Instructions"
-    toHtml (recipeInstructions r)
+    H.style (text $ recipeStyle)
+    H.div ! A.class_ "main" $ do
+        H.h1 (text $ recipeName r)
+        recipeHead r
+        H.h2 "Instructions"
+        toHtml (recipeInstructions r)
 
 recipeHead :: Recipe -> Html
-recipeHead Recipe{..} = return ()
+recipeHead Recipe{..} = H.dl $ do
+    H.dt "Cuisine"
+    H.dd (text recipeCuisine)
+    H.dt "Rating"
+    H.dd (string . ratingString $ recipeRating) 
+    H.dt "Duration"
+    H.dd (string . durationString $ recipeDuration)

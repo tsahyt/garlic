@@ -1,0 +1,35 @@
+body {
+    background-color: white;
+}
+
+h1 {
+    font-size: 16pt;
+}
+
+h2 {
+    font-size: 14pt;
+}
+
+.main {
+    margin-left: auto;
+    margin-right: auto;
+    width: 75%;
+    margin-top: 2em;
+    border: 1px;
+}
+
+dt  {
+    clear: left;
+    float: left;
+    font-size: 11pt;
+    font-weight: 600;
+    line-height: 26px;
+    width: 100px;
+}
+
+dd {
+    clear: right;
+    font-size: 11pt;
+    line-height: 18px;
+    padding: 4px 0 4px 40px;
+}

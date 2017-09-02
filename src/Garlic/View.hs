@@ -47,6 +47,7 @@ import GI.Gtk
 
 import Garlic.View.HeaderBar
 import Garlic.View.RecipeDisplay
+import Garlic.Util
 
 uiMainWindow :: Text
 uiMainWindow = decodeUtf8 $(embedFile "res/main-window.ui")
@@ -158,14 +159,8 @@ recipeEntry rate time kcal name cuisine = do
 
     castB b "recipeEntry" ListBoxRow
 
-    where rating = let x = min 5 (max 0 rate)
-                    in replicate x '★' ++ replicate (5 - x) '☆'
-          time' :: String
-          time' = let x :: Double
-                      x = fromIntegral time / (6.0e13)
-                   in if x >= 120
-                      then printf "%.1f h" (x / 60)
-                      else printf "%d min" (truncate x :: Int)
+    where rating = ratingString rate
+          time'  = durationString time 
 
 -- LENSES --
 makeLenses ''ListRecipe
