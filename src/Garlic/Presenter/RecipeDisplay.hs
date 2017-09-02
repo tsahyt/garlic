@@ -28,7 +28,6 @@ import Text.Blaze.Html
 
 import qualified Text.Blaze.Html5 as H
 import qualified Text.Blaze.Html5.Attributes as A
-import qualified Data.Sequence as S
 
 -- TODO: Load dynamically from config location
 recipeStyle :: Text
@@ -36,14 +35,10 @@ recipeStyle = decodeUtf8 $(embedFile "res/style.css")
 
 recipeDisplayP 
     :: GarlicApp 
-    -> Behavior (Seq (Entity Recipe)) 
+    -> Event (Entity Recipe)
     -> Garlic ()
-recipeDisplayP app rcps = do
+recipeDisplayP app selected = do
     let disp = app ^. appRecipeDisplay
-
-    -- Selection Event holding current recipe entity
-    let selected = (S.index <$> rcps)
-               <@> app ^. appRecipeList . recipeSelected
 
     -- Load instructions and reset spinner only on new selection
     disp ^. loadInstructions `consume` 

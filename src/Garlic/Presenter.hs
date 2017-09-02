@@ -13,27 +13,33 @@ import Reactive.Banana
 import Garlic.Model
 import Garlic.Model.Queries
 import Garlic.Presenter.RecipeDisplay
+import Garlic.Presenter.RecipeEdit
 import Garlic.View
 import Garlic.View.HeaderBar
 import Garlic.View.RecipeEdit
 
 import qualified Data.Text as T
+import qualified Data.Sequence as S
 
 presenter :: Application -> Garlic ()
 presenter app' = do
     runMigration migrateAll
     app <- application app'
 
-    -- Subsystems
+    -- Search
     search <- searchBar app
     rcps   <- 
         let refetch = unionWith (\_ _ -> "") search ("" <$ app ^. appStartup)
          in stepper mempty =<< fetch recipes refetch
+    
+    -- Selection Event holding current recipe entity
+    let selected = (S.index <$> rcps)
+               <@> app ^. appRecipeList . recipeSelected
 
-    recipeDisplayP app rcps
+    -- Subsystems
+    recipeDisplayP app selected
+    recipeEditP app selected
     recipeList app rcps
-
-    app ^. appRecipeEdit . showEditor `consume` app ^. appHeader . editClick
 
     return ()
 

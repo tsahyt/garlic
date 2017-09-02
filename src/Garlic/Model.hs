@@ -21,6 +21,7 @@ share [mkPersist sqlSettings, mkMigrate "migrateAll"] [persistLowerCase|
         instructions Markdown
         duration Int
         yield Double
+        yieldUnit Text
         source Text Maybe
         url Text Maybe
         deriving Show

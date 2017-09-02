@@ -1,19 +1,40 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE OverloadedLabels #-}
 {-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE RecordWildCards #-}
 module Garlic.View.RecipeEdit
 (
     GarlicRecipeEdit,
     showEditor,
+    editSetInstructions,
     editInstructions,
+    editMasks,
     recipeEdit,
+
+    GarlicRecipeEditMask,
+    editSetName,
+    editSetCuisine,
+    editSetDuration,
+    editSetYield,
+    editSetYieldUnit,
+    editSetSource,
+    editSetURL,
+    editSetRating,
+    editName,
+    editCuisine,
+    editDuration,
+    editYield,
+    editYieldUnit,
+    editSource,
+    editURL,
+    editRating,
 )
 where
 
 import Control.Monad.Trans
 import Data.FileEmbed
 import Data.Text (Text)
-import Data.Text.Lazy (fromStrict)
+import Data.Text.Lazy (fromStrict, toStrict)
 import Data.Text.Encoding (decodeUtf8)
 import Data.Maybe
 import GI.Gtk
@@ -26,8 +47,10 @@ uiRecipeEdit :: Text
 uiRecipeEdit = decodeUtf8 $(embedFile "res/recipe-edit.ui")
 
 data GarlicRecipeEdit = GarlicRecipeEdit
-    { _showEditor       :: Consumer ()
-    , _editInstructions :: Behavior (Maybe Markdown)
+    { _showEditor          :: Consumer ()
+    , _editSetInstructions :: Consumer Markdown
+    , _editInstructions    :: Behavior (Maybe Markdown)
+    , _editMasks           :: GarlicRecipeEditMask
     }
 
 recipeEdit :: Stack -> Garlic GarlicRecipeEdit
@@ -43,9 +66,13 @@ recipeEdit stack = do
     sourcevp <- castB b "instructionVP" Viewport
     setContainerChild sourcevp sourceview
 
+    masks <- getEditMasks b
+
     lift $ GarlicRecipeEdit
        <$> pure (ioConsumer (\_ -> stackSetVisibleChild stack redt))
+       <*> pure (ioConsumer (\(Markdown t) -> set sbuf [ #text := toStrict t ]))
        <*> (fmap (fmap (Markdown . fromStrict)) <$> attrB sbuf #text)
+       <*> pure masks
 
 buildSourceView :: MonadIO m => m (View, Buffer)
 buildSourceView = do
@@ -61,5 +88,54 @@ buildSourceView = do
 
     pure (sourceview, sbuf)
 
+data GarlicRecipeEditMask = GarlicRecipeEditMask
+    { _editSetName      :: Consumer Text
+    , _editSetCuisine   :: Consumer Text
+    , _editSetDuration  :: Consumer Text
+    , _editSetYield     :: Consumer Double
+    , _editSetYieldUnit :: Consumer Text
+    , _editSetSource    :: Consumer Text
+    , _editSetURL       :: Consumer Text
+    , _editSetRating    :: Consumer Int
+    , _editName         :: Behavior Text
+    , _editCuisine      :: Behavior Text
+    , _editDuration     :: Behavior Text
+    , _editYield        :: Behavior Double
+    , _editYieldUnit    :: Behavior Text
+    , _editSource       :: Behavior Text
+    , _editURL          :: Behavior Text
+    , _editRating       :: Behavior Int
+    }
+
+getEditMasks :: Builder -> Garlic GarlicRecipeEditMask
+getEditMasks b = do
+    recipeName      <- castB b "recipeName" Entry
+    recipeCuisine   <- castB b "recipeCuisine" Entry
+    recipeDuration  <- castB b "recipeDuration" Entry
+    recipeYieldUnit <- castB b "recipeYieldUnit" Entry
+    recipeSource    <- castB b "recipeSource" Entry
+    recipeURL       <- castB b "recipeURL" Entry
+    yieldAdjust     <- castB b "yieldAdjustment" Adjustment
+    ratingAdjust    <- castB b "ratingAdjustment" Adjustment
+
+    lift $ GarlicRecipeEditMask
+       <$> pure (ioConsumer $ entrySetText recipeName)
+       <*> pure (ioConsumer $ entrySetText recipeCuisine)
+       <*> pure (ioConsumer $ entrySetText recipeDuration)
+       <*> pure (ioConsumer $ adjustmentSetValue yieldAdjust)
+       <*> pure (ioConsumer $ entrySetText recipeYieldUnit)
+       <*> pure (ioConsumer $ entrySetText recipeSource)
+       <*> pure (ioConsumer $ entrySetText recipeURL)
+       <*> pure (ioConsumer $ adjustmentSetValue ratingAdjust . fromIntegral)
+       <*> attrB recipeName #text
+       <*> attrB recipeCuisine #text
+       <*> attrB recipeDuration #text
+       <*> attrB yieldAdjust #value 
+       <*> attrB recipeYieldUnit #text
+       <*> attrB recipeSource #text
+       <*> attrB recipeURL #text
+       <*> (fmap truncate <$> attrB ratingAdjust #value)
+
 -- LENSES
 makeGetters ''GarlicRecipeEdit
+makeGetters ''GarlicRecipeEditMask

@@ -2,6 +2,16 @@
 <!-- Generated with glade 3.20.0 -->
 <interface>
   <requires lib="gtk+" version="3.20"/>
+  <object class="GtkAdjustment" id="ratingAdjustment">
+    <property name="upper">5</property>
+    <property name="step_increment">1</property>
+    <property name="page_increment">2</property>
+  </object>
+  <object class="GtkAdjustment" id="yieldAdjustment">
+    <property name="upper">100</property>
+    <property name="step_increment">0.25</property>
+    <property name="page_increment">10</property>
+  </object>
   <object class="GtkBox" id="recipeEditBox">
     <property name="visible">True</property>
     <property name="can_focus">False</property>
@@ -121,16 +131,6 @@
               </packing>
             </child>
             <child>
-              <object class="GtkSpinButton" id="recipeDuration">
-                <property name="visible">True</property>
-                <property name="can_focus">True</property>
-              </object>
-              <packing>
-                <property name="left_attach">1</property>
-                <property name="top_attach">2</property>
-              </packing>
-            </child>
-            <child>
               <object class="GtkBox">
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
@@ -138,6 +138,7 @@
                   <object class="GtkSpinButton" id="recipeYield">
                     <property name="visible">True</property>
                     <property name="can_focus">True</property>
+                    <property name="adjustment">yieldAdjustment</property>
                   </object>
                   <packing>
                     <property name="expand">False</property>
@@ -186,10 +187,21 @@
               <object class="GtkSpinButton" id="recipeRating">
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
+                <property name="adjustment">ratingAdjustment</property>
               </object>
               <packing>
                 <property name="left_attach">1</property>
                 <property name="top_attach">4</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkEntry" id="recipeDuration">
+                <property name="visible">True</property>
+                <property name="can_focus">True</property>
+              </object>
+              <packing>
+                <property name="left_attach">1</property>
+                <property name="top_attach">2</property>
               </packing>
             </child>
           </object>
