@@ -25,7 +25,6 @@ import Garlic.Types
 import Reactive.Banana.GI.Gtk
 import Text.Blaze.Html
 import Text.Blaze.Html.Renderer.Text
-import Text.Markdown (Markdown)
 
 uiRecipeDisplay :: Text
 uiRecipeDisplay = decodeUtf8 $(embedFile "res/recipe-display.ui")
@@ -34,7 +33,7 @@ uiIngredientEntry :: Text
 uiIngredientEntry = decodeUtf8 $(embedFile "res/ingredient-entry.ui")
 
 data GarlicRecipeDisplay = GarlicRecipeDisplay
-    { _loadInstructions :: Consumer Markdown
+    { _loadInstructions :: Consumer Html
     , _addIngredients   :: Consumer [ViewIngredient]
     , _clearIngredients :: Consumer ()
     }
@@ -101,9 +100,9 @@ groupSeparator name = do
 
     castB b "ingredientEntry" ListBoxRow
 
-setInstructions :: MonadIO m => WebView -> Markdown -> m ()
-setInstructions view md = do
-    let x = toStrict . renderHtml . toHtml $ md
+setInstructions :: MonadIO m => WebView -> Html -> m ()
+setInstructions view html = do
+    let x = toStrict . renderHtml $ html
     webViewLoadHtml view x Nothing
 
 -- LENSES

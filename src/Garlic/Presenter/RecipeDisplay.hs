@@ -20,7 +20,9 @@ import Garlic.Types
 import Garlic.View
 import Garlic.View.RecipeDisplay
 import Garlic.View.HeaderBar
+import Text.Blaze.Html
 
+import qualified Text.Blaze.Html5 as H
 import qualified Data.Sequence as S
 
 recipeDisplayP 
@@ -36,7 +38,7 @@ recipeDisplayP app rcps = do
 
     -- Load instructions and reset spinner only on new selection
     disp ^. loadInstructions `consume` 
-        recipeInstructions . entityVal <$> selected
+        fullInstructions . entityVal <$> selected
     app  ^. appHeader . changeYield `consume` 
         recipeYield . entityVal <$> selected
 
@@ -63,3 +65,12 @@ replaceIngredients disp = mconcat
 
 scaleIngredients :: Double -> [WeighedIngredient] -> [WeighedIngredient]
 scaleIngredients factor = over (traverse . wingrAmount) (* factor)
+
+fullInstructions :: Recipe -> Html
+fullInstructions r = do
+    recipeHead r
+    toHtml (recipeInstructions r)
+
+recipeHead :: Recipe -> Html
+recipeHead Recipe{..} = do
+    H.h1 (text recipeName)
