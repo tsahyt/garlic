@@ -87,7 +87,17 @@ recipeHead :: Recipe -> Html
 recipeHead Recipe{..} = H.dl $ do
     H.dt "Cuisine"
     H.dd (text recipeCuisine)
+
     H.dt "Rating"
     H.dd (string . ratingString $ recipeRating) 
+
     H.dt "Duration"
     H.dd (string . durationString $ recipeDuration)
+
+    case recipeSource of
+        Nothing -> return ()
+        Just s  -> H.dt "Source" >> H.dd (text s)
+
+    case recipeUrl of
+        Nothing -> return ()
+        Just s  -> H.dt "Website" >> H.dd (H.a ! A.href (textValue s) $ text s)
