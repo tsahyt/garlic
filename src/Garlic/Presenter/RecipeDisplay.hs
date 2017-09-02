@@ -30,6 +30,7 @@ import qualified Text.Blaze.Html5 as H
 import qualified Text.Blaze.Html5.Attributes as A
 import qualified Data.Sequence as S
 
+-- TODO: Load dynamically from config location
 recipeStyle :: Text
 recipeStyle = decodeUtf8 $(embedFile "res/style.css")
 
@@ -74,6 +75,7 @@ replaceIngredients disp = mconcat
 scaleIngredients :: Double -> [WeighedIngredient] -> [WeighedIngredient]
 scaleIngredients factor = over (traverse . wingrAmount) (* factor)
 
+-- | Render a recipe to HTML.
 fullInstructions :: Recipe -> Html
 fullInstructions r = do
     H.style (text $ recipeStyle)
@@ -83,6 +85,7 @@ fullInstructions r = do
         H.h2 "Instructions"
         toHtml (recipeInstructions r)
 
+-- | Rendering of Recipe Head
 recipeHead :: Recipe -> Html
 recipeHead Recipe{..} = H.dl $ do
     H.dt "Cuisine"

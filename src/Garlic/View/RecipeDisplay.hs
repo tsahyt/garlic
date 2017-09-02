@@ -4,6 +4,7 @@
 module Garlic.View.RecipeDisplay
 (
     GarlicRecipeDisplay,
+    showDisplay,
     loadInstructions,
     addIngredients,
     clearIngredients,
@@ -33,7 +34,8 @@ uiIngredientEntry :: Text
 uiIngredientEntry = decodeUtf8 $(embedFile "res/ingredient-entry.ui")
 
 data GarlicRecipeDisplay = GarlicRecipeDisplay
-    { _loadInstructions :: Consumer Html
+    { _showDisplay      :: Consumer ()
+    , _loadInstructions :: Consumer Html
     , _addIngredients   :: Consumer [ViewIngredient]
     , _clearIngredients :: Consumer ()
     }
@@ -56,6 +58,7 @@ recipeDisplay stack = do
     stackAddNamed stack rdis "recipeDisplay"
 
     pure $ GarlicRecipeDisplay
+           (ioConsumer (\_ -> stackSetVisibleChild stack rdis))
            (ioConsumer (setInstructions webview))
            (ioConsumer (mapM_ (addViewIngredient ingredients)))
            (ioConsumer $ \_ -> do

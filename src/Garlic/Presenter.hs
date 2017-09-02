@@ -15,6 +15,7 @@ import Garlic.Model.Queries
 import Garlic.Presenter.RecipeDisplay
 import Garlic.View
 import Garlic.View.HeaderBar
+import Garlic.View.RecipeEdit
 
 import qualified Data.Text as T
 
@@ -31,6 +32,8 @@ presenter app' = do
 
     recipeDisplayP app rcps
     recipeList app rcps
+
+    app ^. appRecipeEdit . showEditor `consume` app ^. appHeader . editClick
 
     return ()
 

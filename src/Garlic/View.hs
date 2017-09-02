@@ -9,6 +9,7 @@ module Garlic.View
     -- * Application Window
     GarlicApp,
     appHeader,
+    appRecipeEdit,
     appRecipeDisplay,
     appRecipeList,
     appEnableSearch,
@@ -47,6 +48,7 @@ import GI.Gtk
 
 import Garlic.View.HeaderBar
 import Garlic.View.RecipeDisplay
+import Garlic.View.RecipeEdit
 import Garlic.Util
 
 uiMainWindow :: Text
@@ -58,6 +60,7 @@ uiRecipeEntry = decodeUtf8 $(embedFile "res/recipe-entry.ui")
 data GarlicApp = GarlicApp
     { _appHeader        :: GarlicHeader
     , _appRecipeDisplay :: GarlicRecipeDisplay
+    , _appRecipeEdit    :: GarlicRecipeEdit
     , _appRecipeList    :: GarlicRecipes
     , _appEnableSearch  :: Consumer ()
     , _appSearchChange  :: Event Text
@@ -81,6 +84,7 @@ application app = do
     -- Sub elements
     hb   <- headerBar win
     rdis <- recipeDisplay rstack
+    redt <- recipeEdit rstack
     recs <- recipes rlist
 
     -- Hardcoded window setting on activation
@@ -90,7 +94,8 @@ application app = do
 
     lift $ GarlicApp 
        <$> pure hb                          -- HeaderBar
-       <*> pure rdis                        -- Display Stack
+       <*> pure rdis                        -- Recipe Display
+       <*> pure redt                        -- Recipe Editor
        <*> pure recs                        -- Recipe List
        <*> pure (searchToggle searchBar)    -- Search Toggle
        <*> (mapEventIO (\_ -> get searchEntry #text) 

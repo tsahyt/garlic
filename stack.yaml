@@ -5,5 +5,6 @@ packages:
 extra-deps:
 - reactive-banana-gi-gtk-0.2.0.0
 - gi-webkit2-4.0.14
+- gi-gtksource-3.0.15
 - gi-javascriptcore-4.0.11
 resolver: lts-9.2
