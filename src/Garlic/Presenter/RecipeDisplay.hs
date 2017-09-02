@@ -68,9 +68,10 @@ scaleIngredients factor = over (traverse . wingrAmount) (* factor)
 
 fullInstructions :: Recipe -> Html
 fullInstructions r = do
+    H.h1 (text $ recipeName r)
     recipeHead r
+    H.h2 "Instructions"
     toHtml (recipeInstructions r)
 
 recipeHead :: Recipe -> Html
-recipeHead Recipe{..} = do
-    H.h1 (text recipeName)
+recipeHead Recipe{..} = return ()
