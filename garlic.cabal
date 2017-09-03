@@ -28,6 +28,7 @@ library
                        Garlic.View.RecipeEdit
                        Garlic.Presenter
                        Garlic.Presenter.RecipeDisplay
+                       Garlic.Presenter.RecipeEdit
                        Garlic.Util
                        Text.Markdown.Persist
   ghc-options:         -Wall

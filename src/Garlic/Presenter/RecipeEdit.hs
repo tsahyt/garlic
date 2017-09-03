@@ -66,6 +66,7 @@ loadRecipe app rcp = do
     masks ^. editSetYieldUnit `consume` recipeYieldUnit <$> rcp
     masks ^. editSetSource `consume` fromMaybe "" . recipeSource <$> rcp
     masks ^. editSetURL `consume` fromMaybe "" . recipeUrl <$> rcp
+    masks ^. editSetRating `consume` recipeRating <$> rcp
 
     app ^. appRecipeEdit . editSetInstructions 
         `consume` recipeInstructions <$> rcp

@@ -10,7 +10,6 @@ where
 import Control.Lens
 import Reactive.Banana
 import Data.Functor.Contravariant
-import Data.Sequence (Seq)
 import Data.Text (Text, pack)
 import Data.Text.Encoding (decodeUtf8)
 import Data.FileEmbed

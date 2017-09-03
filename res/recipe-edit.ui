@@ -134,11 +134,16 @@
               <object class="GtkBox">
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
+                <property name="spacing">4</property>
                 <child>
                   <object class="GtkSpinButton" id="recipeYield">
                     <property name="visible">True</property>
                     <property name="can_focus">True</property>
+                    <property name="input_purpose">number</property>
                     <property name="adjustment">yieldAdjustment</property>
+                    <property name="digits">2</property>
+                    <property name="snap_to_ticks">True</property>
+                    <property name="numeric">True</property>
                   </object>
                   <packing>
                     <property name="expand">False</property>
@@ -187,7 +192,10 @@
               <object class="GtkSpinButton" id="recipeRating">
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
+                <property name="input_purpose">number</property>
                 <property name="adjustment">ratingAdjustment</property>
+                <property name="snap_to_ticks">True</property>
+                <property name="numeric">True</property>
               </object>
               <packing>
                 <property name="left_attach">1</property>

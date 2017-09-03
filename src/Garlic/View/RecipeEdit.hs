@@ -144,26 +144,26 @@ getEditMasks b = do
     recipeYieldUnit <- castB b "recipeYieldUnit" Entry
     recipeSource    <- castB b "recipeSource" Entry
     recipeURL       <- castB b "recipeURL" Entry
-    yieldAdjust     <- castB b "yieldAdjustment" Adjustment
-    ratingAdjust    <- castB b "ratingAdjustment" Adjustment
+    recipeYield     <- castB b "recipeYield" SpinButton
+    recipeRating    <- castB b "recipeRating" SpinButton
 
     lift $ GarlicRecipeEditMask
        <$> pure (ioConsumer $ entrySetText recipeName)
        <*> pure (ioConsumer $ entrySetText recipeCuisine)
        <*> pure (ioConsumer $ entrySetText recipeDuration)
-       <*> pure (ioConsumer $ adjustmentSetValue yieldAdjust)
+       <*> pure (ioConsumer $ spinButtonSetValue recipeYield)
        <*> pure (ioConsumer $ entrySetText recipeYieldUnit)
        <*> pure (ioConsumer $ entrySetText recipeSource)
        <*> pure (ioConsumer $ entrySetText recipeURL)
-       <*> pure (ioConsumer $ adjustmentSetValue ratingAdjust . fromIntegral)
+       <*> pure (ioConsumer $ spinButtonSetValue recipeRating . fromIntegral)
        <*> attrB recipeName #text
        <*> attrB recipeCuisine #text
        <*> attrB recipeDuration #text
-       <*> attrB yieldAdjust #value 
+       <*> attrB recipeYield #value 
        <*> attrB recipeYieldUnit #text
        <*> attrB recipeSource #text
        <*> attrB recipeURL #text
-       <*> (fmap truncate <$> attrB ratingAdjust #value)
+       <*> (fmap truncate <$> attrB recipeRating #value)
 
 -- LENSES
 makeGetters ''GarlicRecipeEdit

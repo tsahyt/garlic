@@ -26,16 +26,17 @@ presenter app' = do
     runMigration migrateAll
     app <- application app'
 
+    -- New Recipe
+    newKey <- fetch newRecipe $ app ^. appHeader . addClick
+
     -- Search
     search <- searchBar app
     rcps   <- 
         let refetch = search 
                   <:> ("" <$ app ^. appStartup)
                   <:> ("" <$ app ^. appRecipeEdit . editStore)
+                  <:> ("" <$ newKey)
          in stepper mempty =<< fetch recipes refetch
-
-    -- New Recipe
-    newKey <- fetch newRecipe $ app ^. appHeader . addClick
     
     -- Selection Event holding current recipe entity
     let selected = (S.index <$> rcps) <@> app ^. appRecipeList . recipeSelected
