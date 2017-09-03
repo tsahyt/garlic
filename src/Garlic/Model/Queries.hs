@@ -12,6 +12,7 @@ module Garlic.Model.Queries
     -- * Updates
     newRecipe,
     updateRecipe,
+    deleteRecipe
 )
 where
 
@@ -69,3 +70,6 @@ updateRecipe = dbConsumer $ \(Entity k r) -> P.repsert k r
 newRecipe :: Fetcher () (Entity Recipe)
 newRecipe = dbFetcher $ \_ ->
     P.insertEntity (Recipe "New Recipe" "" 0 "" 0 0 "" Nothing Nothing)
+
+deleteRecipe :: Consumer (Key Recipe)
+deleteRecipe = dbConsumer $ \k -> P.delete k

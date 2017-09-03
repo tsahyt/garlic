@@ -55,6 +55,9 @@ recipeEditP app selected = do
            app ^. appHeader . yieldToggle `consume` click
            app ^. appHeader . editToggle `consume` click
 
+    -- Delete Selected Recipe on Delete
+    deleteRecipe `consume` filterJust (key <@ app ^. appRecipeEdit . editDelete)
+
 -- | Load recipe into mask on selection event
 loadRecipe :: GarlicApp -> Event Recipe -> Garlic ()
 loadRecipe app rcp = do
