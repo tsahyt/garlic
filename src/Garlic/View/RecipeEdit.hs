@@ -9,6 +9,9 @@ module Garlic.View.RecipeEdit
     editSetInstructions,
     editInstructions,
     editMasks,
+    editDelete,
+    editStore,
+    editAbort,
     recipeEdit,
 
     GarlicRecipeEditMask,
@@ -36,7 +39,6 @@ import Data.FileEmbed
 import Data.Text (Text)
 import Data.Text.Lazy (fromStrict, toStrict)
 import Data.Text.Encoding (decodeUtf8)
-import Data.Maybe
 import GI.Gtk
 import GI.GtkSource
 import Garlic.Types
@@ -51,6 +53,9 @@ data GarlicRecipeEdit = GarlicRecipeEdit
     , _editSetInstructions :: Consumer Markdown
     , _editInstructions    :: Behavior (Maybe Markdown)
     , _editMasks           :: GarlicRecipeEditMask
+    , _editDelete          :: Event ()
+    , _editAbort           :: Event ()
+    , _editStore           :: Event ()
     }
 
 recipeEdit :: Stack -> Garlic GarlicRecipeEdit
@@ -67,19 +72,43 @@ recipeEdit stack = do
     setContainerChild sourcevp sourceview
 
     masks <- getEditMasks b
+    (deleteButton, abortButton, storeButton) <- actionButtons b
 
     lift $ GarlicRecipeEdit
        <$> pure (ioConsumer (\_ -> stackSetVisibleChild stack redt))
        <*> pure (ioConsumer (\(Markdown t) -> set sbuf [ #text := toStrict t ]))
        <*> (fmap (fmap (Markdown . fromStrict)) <$> attrB sbuf #text)
        <*> pure masks
+       <*> signalE0 deleteButton #clicked
+       <*> signalE0 abortButton #clicked
+       <*> signalE0 storeButton #clicked
+
+actionButtons :: MonadIO m => Builder -> m (Button, Button, Button)
+actionButtons b = do
+    actionBar    <- castB b "actionBar" ActionBar
+    deleteButton <- new Button [ #label := "Delete" ]
+    abortButton  <- new Button [ #label := "Abort" ]
+    storeButton  <- new Button [ #label := "Store" ]
+
+    deleteContext <- widgetGetStyleContext deleteButton
+    styleContextAddClass deleteContext STYLE_CLASS_DESTRUCTIVE_ACTION
+
+    storeContext <- widgetGetStyleContext storeButton
+    styleContextAddClass storeContext STYLE_CLASS_SUGGESTED_ACTION
+
+    actionBarPackStart actionBar deleteButton
+    actionBarPackStart actionBar abortButton
+    actionBarPackEnd actionBar storeButton
+
+    pure (deleteButton, abortButton, storeButton)
 
 buildSourceView :: MonadIO m => m (View, Buffer)
 buildSourceView = do
     lm <- languageManagerGetDefault
-    markdown <- fromMaybe (error "Markdown Definition not found!") 
-            <$> languageManagerGetLanguage lm "markdown"
-    sbuf <- new Buffer [ #language := markdown ]
+    markdown <- languageManagerGetLanguage lm "markdown"
+    sbuf <- new Buffer $ case markdown of
+                Just md -> [ #language := md ]
+                Nothing -> []
     sourceview <- viewNewWithBuffer sbuf
     set sourceview [ #showLineNumbers := True
                    , #smartBackspace := True

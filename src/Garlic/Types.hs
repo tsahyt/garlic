@@ -96,8 +96,9 @@ dbFetcher k = Fetcher $ \e -> do
 -- | Read only lens generation for GUI records
 makeGetters = makeLensesWith (set generateUpdateableOptics False lensRules)
 
-(<:>) :: Event () -> Event () -> Event ()
-a <:> b = unionWith (\_ _ -> ()) a b
+-- | Left-biased union
+(<:>) :: Event a -> Event a -> Event a
+a <:> b = unionWith (\x _ -> x) a b
 infixr 2 <:>
 
 plainChanges :: Behavior a -> Garlic (Event a)

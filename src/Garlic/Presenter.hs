@@ -31,10 +31,13 @@ presenter app' = do
     rcps   <- 
         let refetch = unionWith (\_ _ -> "") search ("" <$ app ^. appStartup)
          in stepper mempty =<< fetch recipes refetch
+
+    -- New Recipe
+    newKey <- fetch newRecipe $ app ^. appHeader . addClick
     
     -- Selection Event holding current recipe entity
-    let selected = (S.index <$> rcps)
-               <@> app ^. appRecipeList . recipeSelected
+    let selected = (S.index <$> rcps) <@> app ^. appRecipeList . recipeSelected
+               <:> newKey
 
     -- Subsystems
     recipeDisplayP app selected

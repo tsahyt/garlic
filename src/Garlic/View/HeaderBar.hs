@@ -7,7 +7,7 @@ module Garlic.View.HeaderBar
     addClick,
     editClick,
     searchToggled,
-    addRecipeToggle,
+    editToggle,
     yieldChanged,
     changeYield,
     yieldToggle,
@@ -32,7 +32,7 @@ data GarlicHeader = GarlicHeader
     , _searchToggled   :: Event ()
     , _yieldChanged    :: Event Double
     , _changeYield     :: Consumer Double
-    , _addRecipeToggle :: Consumer ()
+    , _editToggle      :: Consumer ()
     , _yieldToggle     :: Consumer ()
     }
 
@@ -60,8 +60,8 @@ headerBar win = do
        <*> signalE0 searchButton #toggled
        <*> attrE yieldAdjustment #value
        <*> pure (ioConsumer $ \x -> set yieldAdjustment [ #value := x ])
+       <*> pure (toggle editButton)
        <*> pure (toggle yieldSpinner)
-       <*> pure (toggle addButton)
 
 -- | Toggle visibility of any widget.
 --

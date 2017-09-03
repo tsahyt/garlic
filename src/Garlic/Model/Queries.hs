@@ -8,6 +8,10 @@ module Garlic.Model.Queries
     wingrAmount,
     wingrUnit,
     wingrIngr,
+
+    -- * Updates
+    newRecipe,
+    updateRecipe,
 )
 where
 
@@ -19,6 +23,8 @@ import Data.Text (Text)
 import Data.Sequence (Seq)
 import qualified Data.Sequence as S
 import qualified Data.Text as T
+
+import qualified Database.Persist as P
 
 -- | Weighted ingredients are ingredients with an amount and a unit.
 data WeighedIngredient = WeighedIngredient
@@ -56,3 +62,10 @@ ingredientsFor = dbFetcher $ \recipe -> do
     pure $ map 
         (\(a,b,c) -> WeighedIngredient (unValue a) (unValue b) (entityVal c)) 
         xs
+
+updateRecipe :: Consumer (Entity Recipe)
+updateRecipe = dbConsumer $ \(Entity k r) -> P.repsert k r
+
+newRecipe :: Fetcher () (Entity Recipe)
+newRecipe = dbFetcher $ \_ ->
+    P.insertEntity (Recipe "New Recipe" "" 0 "" 0 0 "" Nothing Nothing)
