@@ -31,8 +31,9 @@ recipeEditP
 recipeEditP app selected = do
     key <- stepper Nothing (Just . entityKey <$> selected)
 
-    -- Show Editor on Edit Click, hide Edit Button and yield
+    -- Show Editor on Edit or Add Click, hide Edit Button and yield
     let click = app ^. appHeader . editClick
+            <:> app ^. appHeader . addClick
      in do app ^. appRecipeEdit . showEditor `consume` click
            app ^. appHeader . yieldToggle `consume` click
            app ^. appHeader . editToggle `consume` click

@@ -35,6 +35,7 @@ presenter app' = do
         let refetch = search 
                   <:> ("" <$ app ^. appStartup)
                   <:> ("" <$ app ^. appRecipeEdit . editStore)
+                  <:> ("" <$ app ^. appRecipeEdit . editDelete)
                   <:> ("" <$ newKey)
          in stepper mempty =<< fetch recipes refetch
     
