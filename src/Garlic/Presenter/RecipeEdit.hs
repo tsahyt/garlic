@@ -16,6 +16,7 @@ import Reactive.Banana
 
 import Garlic.Model
 import Garlic.Model.Queries
+import Garlic.Model.Units
 import Garlic.Types
 import Garlic.View
 import Garlic.View.HeaderBar
@@ -32,6 +33,9 @@ recipeEditP
     -> Garlic (Event (Seq (Entity Recipe) -> Seq (Entity Recipe)))
 recipeEditP app selected = do
     key <- stepper Nothing (Just . entityKey <$> selected)
+
+    -- Set up ingredient editor
+    ingredientEditor app
 
     -- Show Editor on Edit or Add Click, hide Edit Button and yield
     let click = app ^. appHeader . editClick
@@ -95,12 +99,41 @@ currentRecipe app = do
             <*> masks ^. editCuisine
             <*> masks ^. editRating
             <*> fmap (fromMaybe "") (app ^. appRecipeEdit . editInstructions)
-            <*> fmap parseInt (masks ^. editDuration)
+            <*> fmap parseNum (masks ^. editDuration)
             <*> masks ^. editYield
             <*> masks ^. editYieldUnit
             <*> fmap mtext (masks ^. editSource)
             <*> fmap mtext (masks ^. editURL)
     pure rec
 
-    where mtext x  = if T.null x then Nothing else Just x
-          parseInt = fromMaybe 0 . readMaybe . T.unpack
+ingredientEditor :: GarlicApp -> Garlic ()
+ingredientEditor app = do
+    let ni = app ^. appRecipeEdit . editNewIngredient
+
+    -- Load units on startup
+    ni ^. niSetUnits `consume` (map prettyUnit allUnits) <$ app ^. appStartup
+
+    -- Clear on click
+    ni ^. niClearAll `consume` ni ^. niClearClick
+
+currentIngredient :: GarlicNewIngredient -> Behavior Ingredient
+currentIngredient editor = Ingredient
+    <$> editor ^. niName
+    <*> editor ^. niComment
+    <*> (parseUnit <$> editor ^. niUnit)
+    <*> (parseNum <$> editor ^. niAmount)
+    <*> (parseNum <$> editor ^. niProtein)
+    <*> (parseNum <$> editor ^. niCarbs)
+    <*> (fmap parseNum . mtext <$> editor ^. niSugar)
+    <*> (fmap parseNum . mtext <$> editor ^. niFibre)
+    <*> (parseNum <$> editor ^. niFat)
+    <*> (fmap parseNum . mtext <$> editor ^. niSatFat)
+    <*> (fmap parseNum . mtext <$> editor ^. niPolyFat)
+    <*> (fmap parseNum . mtext <$> editor ^. niMonoFat)
+    <*> (fmap parseNum . mtext <$> editor ^. niTransFat)
+
+mtext :: T.Text -> Maybe (T.Text)
+mtext x  = if T.null x then Nothing else Just x
+
+parseNum :: (Num a, Read a) => T.Text -> a
+parseNum = fromMaybe 0 . readMaybe . T.unpack

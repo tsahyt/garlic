@@ -12,6 +12,7 @@ module Garlic.View.RecipeEdit
     editDelete,
     editStore,
     editAbort,
+    editNewIngredient,
     recipeEdit,
 
     GarlicRecipeEditMask,
@@ -31,6 +32,25 @@ module Garlic.View.RecipeEdit
     editSource,
     editURL,
     editRating,
+
+    GarlicNewIngredient,
+    niClearAll,
+    niSetUnits,
+    niClearClick,
+    niOkClick,
+    niName,
+    niComment,
+    niAmount,
+    niUnit,
+    niProtein,
+    niCarbs,
+    niSugar,
+    niFibre,
+    niFat,
+    niSatFat,
+    niPolyFat,
+    niMonoFat,
+    niTransFat,
 )
 where
 
@@ -43,16 +63,22 @@ import GI.Gtk
 import GI.GtkSource
 import Garlic.Types
 import Reactive.Banana.GI.Gtk
+import Reactive.Banana (stepper)
+import Reactive.Banana.Frameworks (mapEventIO)
 import Text.Markdown (Markdown (..))
 
 uiRecipeEdit :: Text
 uiRecipeEdit = decodeUtf8 $(embedFile "res/recipe-edit.ui")
+
+uiIngredientNew :: Text
+uiIngredientNew = decodeUtf8 $(embedFile "res/ingredient-new.ui")
 
 data GarlicRecipeEdit = GarlicRecipeEdit
     { _showEditor          :: Consumer ()
     , _editSetInstructions :: Consumer Markdown
     , _editInstructions    :: Behavior (Maybe Markdown)
     , _editMasks           :: GarlicRecipeEditMask
+    , _editNewIngredient   :: GarlicNewIngredient
     , _editDelete          :: Event ()
     , _editAbort           :: Event ()
     , _editStore           :: Event ()
@@ -74,11 +100,16 @@ recipeEdit stack = do
     masks <- getEditMasks b
     (deleteButton, abortButton, storeButton) <- actionButtons b
 
+    -- New Ingredient Popover
+    newButton <- castB b "ingredientNew" MenuButton
+    popover <- newIngredient newButton
+
     lift $ GarlicRecipeEdit
        <$> pure (ioConsumer (\_ -> stackSetVisibleChild stack redt))
        <*> pure (ioConsumer (\(Markdown t) -> set sbuf [ #text := toStrict t ]))
        <*> (fmap (fmap (Markdown . fromStrict)) <$> attrB sbuf #text)
        <*> pure masks
+       <*> pure popover
        <*> signalE0 deleteButton #clicked
        <*> signalE0 abortButton #clicked
        <*> signalE0 storeButton #clicked
@@ -165,6 +196,80 @@ getEditMasks b = do
        <*> attrB recipeURL #text
        <*> (fmap truncate <$> attrB recipeRating #value)
 
+data GarlicNewIngredient = GarlicNewIngredient
+    { _niClearAll   :: Consumer ()
+    , _niSetUnits   :: Consumer [Text]
+    , _niClearClick :: Event ()
+    , _niOkClick    :: Event ()
+    , _niName       :: Behavior Text
+    , _niComment    :: Behavior Text
+    , _niAmount     :: Behavior Text
+    , _niUnit       :: Behavior Text
+    , _niProtein    :: Behavior Text
+    , _niCarbs      :: Behavior Text
+    , _niSugar      :: Behavior Text
+    , _niFibre      :: Behavior Text
+    , _niFat        :: Behavior Text
+    , _niSatFat     :: Behavior Text
+    , _niPolyFat    :: Behavior Text
+    , _niMonoFat    :: Behavior Text
+    , _niTransFat   :: Behavior Text
+    }
+
+newIngredient :: MenuButton -> Garlic GarlicNewIngredient
+newIngredient button = do
+    b <- builderNew
+    _ <- builderAddFromString b uiIngredientNew (-1)
+
+    popover <- castB b "ingredientNew" Popover
+    set button [ #popover := popover ]
+
+    name     <- castB b "niName" Entry
+    comment  <- castB b "niComment" Entry
+    unit     <- castB b "niUnit" ComboBoxText
+    amount   <- castB b "niAmount" Entry
+    protein  <- castB b "niProtein" Entry
+    carbs    <- castB b "niCarbs" Entry
+    sugar    <- castB b "niSugar" Entry
+    fibre    <- castB b "niFibre" Entry
+    fat      <- castB b "niFat" Entry
+    satFat   <- castB b "niSatFat" Entry
+    polyFat  <- castB b "niPolyFat" Entry
+    monoFat  <- castB b "niMonoFat" Entry
+    transFat <- castB b "niTransFat" Entry
+
+    let clearAll = mapM_ (flip setEntryText "")
+            [ name, comment, amount, protein, carbs, sugar, fibre
+            , fat, satFat, polyFat, monoFat, transFat ]
+
+    okButton    <- castB b "okButton" Button
+    clearButton <- castB b "clearButton" Button
+
+    unitB <- lift $ do
+        c  <- signalE0 unit #changed
+        c' <- mapEventIO (\_ -> comboBoxTextGetActiveText unit) c
+        stepper "g" c'
+
+    lift $ GarlicNewIngredient
+       <$> pure (ioConsumer $ \_ -> clearAll)
+       <*> pure (ioConsumer $ mapM_ (comboBoxTextAppendText unit))
+       <*> signalE0 clearButton #clicked
+       <*> signalE0 okButton #clicked
+       <*> attrB name #text
+       <*> attrB comment #text
+       <*> attrB amount #text
+       <*> pure unitB
+       <*> attrB protein #text
+       <*> attrB carbs #text
+       <*> attrB sugar #text
+       <*> attrB fibre #text
+       <*> attrB fat #text
+       <*> attrB satFat #text
+       <*> attrB polyFat #text
+       <*> attrB monoFat #text
+       <*> attrB transFat #text
+
 -- LENSES
 makeGetters ''GarlicRecipeEdit
 makeGetters ''GarlicRecipeEditMask
+makeGetters ''GarlicNewIngredient

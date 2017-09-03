@@ -5,8 +5,10 @@
 module Garlic.Model.Units
 (
     Unit (..),
+    allUnits,
     convert,
-    prettyUnit
+    prettyUnit,
+    parseUnit
 )
 where
 
@@ -45,6 +47,9 @@ data Unit
     deriving (Show, Eq, Read, Ord, Enum, Bounded)
 
 derivePersistField "Unit"
+
+allUnits :: [Unit]
+allUnits = enumFrom (toEnum 0)
 
 instance PrintfArg Unit where
     formatArg x = formatArg (prettyUnit x :: String)
@@ -119,3 +124,25 @@ prettyUnit Kilogram   = "kg"
 prettyUnit Small      = "small"
 prettyUnit Medium     = "medium"
 prettyUnit Large      = "large"
+
+parseUnit :: (Eq t, IsString t) => t -> Unit
+parseUnit "tsp"        = Tsp
+parseUnit "tbsp"       = Tbsp
+parseUnit "fl oz"      = FlOz
+parseUnit "cup"        = Cup
+parseUnit "pint"       = Pint
+parseUnit "quart"      = Quart
+parseUnit "gallon"     = Gallon
+parseUnit "ml"         = Milliliter
+parseUnit "l"          = Liter
+parseUnit "dl"         = Deciliter
+parseUnit "metric cup" = MetricCup
+parseUnit "lb"         = Pound
+parseUnit "oz"         = Ounce
+parseUnit "mg"         = Milligram
+parseUnit "g"          = Gram
+parseUnit "kg"         = Kilogram
+parseUnit "small"      = Small
+parseUnit "medium"     = Medium
+parseUnit "large"      = Large
+parseUnit _            = error "Invalid Unit!"
