@@ -12,6 +12,7 @@ import Data.Text (Text)
 import Database.Persist.TH
 import Text.Markdown
 import Text.Markdown.Persist ()
+import Garlic.Model.Units
 
 share [mkPersist sqlSettings, mkMigrate "migrateAll"] [persistLowerCase|
     Recipe
@@ -28,12 +29,24 @@ share [mkPersist sqlSettings, mkMigrate "migrateAll"] [persistLowerCase|
 
     Ingredient
         name Text
+        comment Text
+        basicUnit Unit
+        basicAmount Double
+        protein Double
+        carbs Double
+        sugar Double Maybe
+        fibre Double Maybe
+        fat Double
+        satFat Double Maybe
+        polyFat Double Maybe
+        monoFat Double Maybe
+        transFat Double Maybe
         deriving Show
 
     RecipeHas
         recipe RecipeId
         ingredient IngredientId
         amount Double
-        unit Text
+        unit Unit
         deriving Show
  |]

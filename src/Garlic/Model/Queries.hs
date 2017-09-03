@@ -17,6 +17,7 @@ module Garlic.Model.Queries
 where
 
 import Control.Lens.TH
+import Garlic.Model.Units
 import Garlic.Model
 import Garlic.Types
 import Database.Esqueleto
@@ -30,7 +31,7 @@ import qualified Database.Persist as P
 -- | Weighted ingredients are ingredients with an amount and a unit.
 data WeighedIngredient = WeighedIngredient
     { _wingrAmount :: Double
-    , _wingrUnit   :: Text
+    , _wingrUnit   :: Unit
     , _wingrIngr   :: Ingredient
     }
     deriving Show
@@ -69,7 +70,8 @@ updateRecipe = dbConsumer $ \(Entity k r) -> P.repsert k r
 
 newRecipe :: Fetcher () (Entity Recipe)
 newRecipe = dbFetcher $ \_ ->
-    P.insertEntity (Recipe "New Recipe" "" 0 "" 0 0 "" Nothing Nothing)
+    P.insertEntity $ 
+        Recipe "New Recipe" "Cuisine" 0 "" 0 1 "Serving" Nothing Nothing
 
 deleteRecipe :: Consumer (Key Recipe)
 deleteRecipe = dbConsumer $ \k -> P.delete k
