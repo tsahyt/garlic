@@ -10,6 +10,7 @@ import Control.Lens
 import Data.Maybe
 import Data.Functor.Compose
 import Data.Text (pack)
+import Data.Sequence (Seq)
 import Database.Persist.Sql
 import Reactive.Banana
 
@@ -23,11 +24,12 @@ import Garlic.View.RecipeDisplay
 import Text.Read
 
 import qualified Data.Text as T
+import qualified Data.Sequence as S
 
 recipeEditP
     :: GarlicApp
     -> Event (Entity Recipe)
-    -> Garlic ()
+    -> Garlic (Event (Seq (Entity Recipe) -> Seq (Entity Recipe)))
 recipeEditP app selected = do
     key <- stepper Nothing (Just . entityKey <$> selected)
 
@@ -47,17 +49,27 @@ recipeEditP app selected = do
                    <*> Compose (Just <$> recipe)
     
     -- Save on Store Click, or do nothing when there was no selection
-    updateRecipe `consume` 
-        filterJust (recipeEntity <@ app ^. appRecipeEdit . editStore)
+    let storeE = filterJust (recipeEntity <@ app ^. appRecipeEdit . editStore)
+    updateRecipe `consume` storeE
 
     -- Show Display on Abort Click
-    let click = app ^. appRecipeEdit . editAbort
-     in do app ^. appRecipeDisplay . showDisplay `consume` click
-           app ^. appHeader . yieldToggle `consume` click
-           app ^. appHeader . editToggle `consume` click
+    revertDisplay app $ app ^. appRecipeEdit . editAbort
 
-    -- Delete Selected Recipe on Delete
-    deleteRecipe `consume` filterJust (key <@ app ^. appRecipeEdit . editDelete)
+    -- Delete Selected Recipe on Delete, revert to display view
+    let deleteE = filterJust (key <@ app ^. appRecipeEdit . editDelete)
+    deleteRecipe `consume` deleteE
+    revertDisplay app deleteE
+
+    pure $ unions
+        [ (\x -> S.filter ((/= x) . entityKey)) <$> deleteE 
+        , (\x -> fmap (\e -> if entityKey e == entityKey x then x else e)) 
+          <$> storeE ]
+
+revertDisplay :: GarlicApp -> Event a -> Garlic ()
+revertDisplay app e = do
+    app ^. appRecipeDisplay . showDisplay `consume` () <$ e
+    app ^. appHeader . yieldToggle `consume` () <$ e
+    app ^. appHeader . editToggle `consume` () <$ e
 
 -- | Load recipe into mask on selection event
 loadRecipe :: GarlicApp -> Event Recipe -> Garlic ()

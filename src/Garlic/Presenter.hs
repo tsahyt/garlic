@@ -1,5 +1,6 @@
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RecursiveDo #-}
 module Garlic.Presenter where
 
 import Control.Lens
@@ -16,13 +17,12 @@ import Garlic.Presenter.RecipeDisplay
 import Garlic.Presenter.RecipeEdit
 import Garlic.View
 import Garlic.View.HeaderBar
-import Garlic.View.RecipeEdit
 
 import qualified Data.Text as T
 import qualified Data.Sequence as S
 
 presenter :: Application -> Garlic ()
-presenter app' = do
+presenter app' = mdo
     runMigration migrateAll
     app <- application app'
 
@@ -31,21 +31,18 @@ presenter app' = do
 
     -- Search
     search <- searchBar app
-    rcps   <- 
-        let refetch = search 
-                  <:> ("" <$ app ^. appStartup)
-                  <:> ("" <$ app ^. appRecipeEdit . editStore)
-                  <:> ("" <$ app ^. appRecipeEdit . editDelete)
-                  <:> ("" <$ newKey)
-         in stepper mempty =<< fetch recipes refetch
+    rcps   <- do
+        let refetch = search <:> ("" <$ app ^. appStartup) <:> ("" <$ newKey)
+        refetched <- fmap const <$> fetch recipes refetch
+        accumB mempty $ unions [ refetched , editChange ]
     
     -- Selection Event holding current recipe entity
     let selected = (S.index <$> rcps) <@> app ^. appRecipeList . recipeSelected
                <:> newKey
 
     -- Subsystems
+    editChange <- recipeEditP app selected
     recipeDisplayP app selected
-    recipeEditP app selected
     recipeList app rcps
 
     return ()

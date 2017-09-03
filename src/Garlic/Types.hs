@@ -22,11 +22,13 @@ module Garlic.Types
     makeGetters,
     (<:>),
     plainChanges,
+    (<$$>)
 )
 where
 
 import Control.Lens
 import Control.Monad.Reader
+import Data.Functor.Compose
 import Reactive.Banana
 import Data.Functor.Contravariant.Divisible
 import Reactive.Banana.Frameworks
@@ -107,3 +109,6 @@ plainChanges b = lift $ do
     eb <- changes b
     reactimate' $ (fmap handle) <$> eb
     return e
+
+(<$$>) :: (Functor f, Functor g) => (a -> b) -> f (g a) -> f (g b)
+f <$$> x = getCompose . fmap f . Compose $ x
