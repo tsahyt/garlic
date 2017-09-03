@@ -29,7 +29,9 @@ presenter app' = do
     -- Search
     search <- searchBar app
     rcps   <- 
-        let refetch = unionWith (\_ _ -> "") search ("" <$ app ^. appStartup)
+        let refetch = search 
+                  <:> ("" <$ app ^. appStartup)
+                  <:> ("" <$ app ^. appRecipeEdit . editStore)
          in stepper mempty =<< fetch recipes refetch
 
     -- New Recipe
