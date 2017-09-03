@@ -35,7 +35,7 @@ recipeEditP app selected = do
     key <- stepper Nothing (Just . entityKey <$> selected)
 
     -- Set up ingredient editor
-    ingredientEditor app
+    ingredientCreated <- ingredientEditor app
 
     -- Show Editor on Edit or Add Click, hide Edit Button and yield
     let click = app ^. appHeader . editClick
@@ -106,15 +106,15 @@ currentRecipe app = do
             <*> fmap mtext (masks ^. editURL)
     pure rec
 
-ingredientEditor :: GarlicApp -> Garlic ()
+ingredientEditor :: GarlicApp -> Garlic (Event (Key Ingredient))
 ingredientEditor app = do
     let ni = app ^. appRecipeEdit . editNewIngredient
 
-    -- Load units on startup
     ni ^. niSetUnits `consume` (map prettyUnit allUnits) <$ app ^. appStartup
-
-    -- Clear on click
     ni ^. niClearAll `consume` ni ^. niClearClick
+    ni ^. niClearAll `consume` ni ^. niOkClick
+
+    fetch newIngredient $ currentIngredient ni <@ ni ^. niOkClick
 
 currentIngredient :: GarlicNewIngredient -> Behavior Ingredient
 currentIngredient editor = Ingredient

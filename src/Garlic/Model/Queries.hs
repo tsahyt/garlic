@@ -12,7 +12,8 @@ module Garlic.Model.Queries
     -- * Updates
     newRecipe,
     updateRecipe,
-    deleteRecipe
+    deleteRecipe,
+    newIngredient,
 )
 where
 
@@ -75,3 +76,6 @@ newRecipe = dbFetcher $ \_ ->
 
 deleteRecipe :: Consumer (Key Recipe)
 deleteRecipe = dbConsumer $ \k -> P.delete k
+
+newIngredient :: Fetcher Ingredient (Key Ingredient)
+newIngredient = dbFetcher P.insert 

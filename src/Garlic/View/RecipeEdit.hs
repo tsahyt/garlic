@@ -54,6 +54,7 @@ module Garlic.View.RecipeEdit
 )
 where
 
+import Control.Monad
 import Control.Monad.Trans
 import Data.FileEmbed
 import Data.Text (Text)
@@ -72,6 +73,9 @@ uiRecipeEdit = decodeUtf8 $(embedFile "res/recipe-edit.ui")
 
 uiIngredientNew :: Text
 uiIngredientNew = decodeUtf8 $(embedFile "res/ingredient-new.ui")
+
+uiIngredientEntryEdit :: Text
+uiIngredientEntryEdit = decodeUtf8 $(embedFile "res/ingredient-entry-edit.ui")
 
 data GarlicRecipeEdit = GarlicRecipeEdit
     { _showEditor          :: Consumer ()
@@ -103,6 +107,12 @@ recipeEdit stack = do
     -- New Ingredient Popover
     newButton <- castB b "ingredientNew" MenuButton
     popover <- newIngredient newButton
+
+    ingredientList <- castB b "ingredientList" ListBox
+    -- DUMMY VALUES
+    let attach x = listBoxInsert ingredientList x (-1)
+     in do replicateM_ 30 $ ingredientEntry >>= attach
+    -- /DUMMY VALUES
 
     lift $ GarlicRecipeEdit
        <$> pure (ioConsumer (\_ -> stackSetVisibleChild stack redt))
@@ -268,6 +278,13 @@ newIngredient button = do
        <*> attrB polyFat #text
        <*> attrB monoFat #text
        <*> attrB transFat #text
+
+ingredientEntry :: MonadIO m => m ListBoxRow
+ingredientEntry = do
+    b <- builderNew
+    _ <- builderAddFromString b uiIngredientEntryEdit (-1)
+
+    castB b "ingredientEntry" ListBoxRow
 
 -- LENSES
 makeGetters ''GarlicRecipeEdit

@@ -48,5 +48,6 @@ share [mkPersist sqlSettings, mkMigrate "migrateAll"] [persistLowerCase|
         ingredient IngredientId
         amount Double
         unit Unit
+        optional Bool
         deriving Show
  |]
