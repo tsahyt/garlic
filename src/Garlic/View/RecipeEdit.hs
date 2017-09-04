@@ -13,6 +13,7 @@ module Garlic.View.RecipeEdit
     editStore,
     editAbort,
     editNewIngredient,
+    editRegIngredient,
     editAddIngredient,
     recipeEdit,
 
@@ -90,8 +91,9 @@ data GarlicRecipeEdit = GarlicRecipeEdit
     , _editInstructions    :: Behavior (Maybe Markdown)
     , _editMasks           :: GarlicRecipeEditMask
     , _editNewIngredient   :: GarlicNewIngredient
-    , _editAddIngredient   :: Fetcher (Double, Unit, Text) 
+    , _editRegIngredient   :: Fetcher (Double, Unit, Text) 
                                   GarlicRecipeIngredient
+    , _editAddIngredient   :: Consumer GarlicRecipeIngredient
     , _editDelete          :: Event ()
     , _editAbort           :: Event ()
     , _editStore           :: Event ()
@@ -127,6 +129,7 @@ recipeEdit stack = do
        <*> pure popover
        <*> pure (dynamicFetcher $ \(amount,name,unit) -> 
                     ingredientEntry ingredientList amount name unit)
+       <*> pure (ioConsumer (\r -> listBoxInsert ingredientList (irRow r) (-1)))
        <*> signalE0 deleteButton #clicked
        <*> signalE0 abortButton #clicked
        <*> signalE0 storeButton #clicked
@@ -293,6 +296,7 @@ data GarlicRecipeIngredient = GarlicRecipeIngredient
     , _irUnit        :: Behavior Unit
     , _irDeleteClick :: Event ()
     , _irRemove      :: Consumer ()
+    , irRow          :: ListBoxRow
     }
 
 ingredientEntry 
@@ -317,7 +321,6 @@ ingredientEntry lbox amount unit name = do
     comboBoxSetActive ingredientUnit (fromIntegral $ fromEnum unit)
 
     row <- castB b "ingredientEntry" ListBoxRow
-    listBoxInsert lbox row (-1)
 
     GarlicRecipeIngredient
        <$> attrB ingredientOptional #active
@@ -325,6 +328,7 @@ ingredientEntry lbox amount unit name = do
        <*> comboBoxUnitB ingredientUnit
        <*> signalE0 ingredientDelete #clicked
        <*> pure (ioConsumer $ \_ -> containerRemove lbox row)
+       <*> pure row
 
 -- LENSES
 makeGetters ''GarlicRecipeEdit

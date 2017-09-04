@@ -108,7 +108,7 @@ currentRecipe app = do
 ingredientList :: GarlicApp -> Garlic (Behavior [WeighedIngredient])
 ingredientList app = mdo
     -- Shorthands
-    let add = app ^. appRecipeEdit . editAddIngredient
+    let reg = app ^. appRecipeEdit . editRegIngredient
         fromWI WeighedIngredient{..} = 
             (_wingrAmount, _wingrUnit, ingredientName . entityVal $ _wingrIngr)
 
@@ -116,8 +116,8 @@ ingredientList app = mdo
     ingredientCreated <- fromIngredient <$$> ingredientEditor app
     let adding = fromWI <$> ingredientCreated
 
-    stdout `consume` show <$> adding
-    evs <- add `fetch` adding
+    regE <- reg `fetch` adding
+    app ^. appRecipeEdit ^. editAddIngredient `consume` regE
 
     return $ pure []
 
