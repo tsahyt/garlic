@@ -12,7 +12,7 @@ import Data.Text (Text)
 import Database.Persist.TH
 import Text.Markdown
 import Text.Markdown.Persist ()
-import Garlic.Model.Units
+import Garlic.Data.Units
 
 share [mkPersist sqlSettings, mkMigrate "migrateAll"] [persistLowerCase|
     Recipe

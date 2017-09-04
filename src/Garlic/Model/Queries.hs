@@ -5,6 +5,7 @@ module Garlic.Model.Queries
     recipes,
     ingredientsFor,
     WeighedIngredient (..),
+    fromIngredient,
     wingrAmount,
     wingrUnit,
     wingrIngr,
@@ -18,7 +19,7 @@ module Garlic.Model.Queries
 where
 
 import Control.Lens.TH
-import Garlic.Model.Units
+import Garlic.Data.Units
 import Garlic.Model
 import Garlic.Types
 import Database.Esqueleto
@@ -33,9 +34,16 @@ import qualified Database.Persist as P
 data WeighedIngredient = WeighedIngredient
     { _wingrAmount :: Double
     , _wingrUnit   :: Unit
-    , _wingrIngr   :: Ingredient
+    , _wingrIngr   :: Entity Ingredient
     }
     deriving Show
+
+fromIngredient :: Entity Ingredient -> WeighedIngredient
+fromIngredient e@(Entity _ v) = 
+    WeighedIngredient 
+        (ingredientBasicAmount v)
+        (ingredientBasicUnit v)
+        e
 
 makeLenses ''WeighedIngredient
 
@@ -63,7 +71,7 @@ ingredientsFor = dbFetcher $ \recipe -> do
                 return (h ^. RecipeHasAmount, h ^. RecipeHasUnit, i)
 
     pure $ map 
-        (\(a,b,c) -> WeighedIngredient (unValue a) (unValue b) (entityVal c)) 
+        (\(a,b,c) -> WeighedIngredient (unValue a) (unValue b) c) 
         xs
 
 updateRecipe :: Consumer (Entity Recipe)
@@ -77,5 +85,5 @@ newRecipe = dbFetcher $ \_ ->
 deleteRecipe :: Consumer (Key Recipe)
 deleteRecipe = dbConsumer $ \k -> P.delete k
 
-newIngredient :: Fetcher Ingredient (Key Ingredient)
-newIngredient = dbFetcher P.insert 
+newIngredient :: Fetcher Ingredient (Entity Ingredient)
+newIngredient = dbFetcher P.insertEntity

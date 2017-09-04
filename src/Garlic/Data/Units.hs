@@ -2,7 +2,7 @@
 -- utility functions
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE OverloadedStrings #-}
-module Garlic.Model.Units
+module Garlic.Data.Units
 (
     Unit (..),
     allUnits,

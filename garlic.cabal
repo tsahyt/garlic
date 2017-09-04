@@ -21,7 +21,7 @@ library
   exposed-modules:     Garlic
                        Garlic.Model
                        Garlic.Model.Queries
-                       Garlic.Model.Units
+                       Garlic.Data.Units
                        Garlic.Types
                        Garlic.View
                        Garlic.View.HeaderBar

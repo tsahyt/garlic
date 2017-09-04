@@ -36,7 +36,6 @@ module Garlic.View.RecipeEdit
 
     GarlicNewIngredient,
     niClearAll,
-    niSetUnits,
     niClearClick,
     niOkClick,
     niName,
@@ -67,9 +66,10 @@ import Data.FileEmbed
 import Data.Text (Text, pack)
 import Data.Text.Lazy (fromStrict, toStrict)
 import Data.Text.Encoding (decodeUtf8)
-import GI.Gtk
+import GI.Gtk hiding (Unit)
 import GI.GtkSource
 import Garlic.Types
+import Garlic.Data.Units
 import Reactive.Banana.GI.Gtk
 import Reactive.Banana (stepper)
 import Reactive.Banana.Frameworks (mapEventIO, MomentIO)
@@ -90,7 +90,8 @@ data GarlicRecipeEdit = GarlicRecipeEdit
     , _editInstructions    :: Behavior (Maybe Markdown)
     , _editMasks           :: GarlicRecipeEditMask
     , _editNewIngredient   :: GarlicNewIngredient
-    , _editAddIngredient   :: Fetcher (Double, Text) GarlicRecipeIngredient
+    , _editAddIngredient   :: Fetcher (Double, Unit, Text) 
+                                  GarlicRecipeIngredient
     , _editDelete          :: Event ()
     , _editAbort           :: Event ()
     , _editStore           :: Event ()
@@ -124,7 +125,8 @@ recipeEdit stack = do
        <*> (fmap (fmap (Markdown . fromStrict)) <$> attrB sbuf #text)
        <*> pure masks
        <*> pure popover
-       <*> pure (dynamicFetcher $ uncurry (ingredientEntry ingredientList))
+       <*> pure (dynamicFetcher $ \(amount,name,unit) -> 
+                    ingredientEntry ingredientList amount name unit)
        <*> signalE0 deleteButton #clicked
        <*> signalE0 abortButton #clicked
        <*> signalE0 storeButton #clicked
@@ -213,13 +215,12 @@ getEditMasks b = do
 
 data GarlicNewIngredient = GarlicNewIngredient
     { _niClearAll   :: Consumer ()
-    , _niSetUnits   :: Consumer [Text]
     , _niClearClick :: Event ()
     , _niOkClick    :: Event ()
     , _niName       :: Behavior Text
     , _niComment    :: Behavior Text
     , _niAmount     :: Behavior Text
-    , _niUnit       :: Behavior Text
+    , _niUnit       :: Behavior Unit
     , _niProtein    :: Behavior Text
     , _niCarbs      :: Behavior Text
     , _niSugar      :: Behavior Text
@@ -253,6 +254,8 @@ newIngredient button = do
     monoFat  <- castB b "niMonoFat" Entry
     transFat <- castB b "niTransFat" Entry
 
+    mapM_ (comboBoxTextAppendText unit . prettyUnit) allUnits
+
     let clearAll = mapM_ (flip setEntryText "")
             [ name, comment, amount, protein, carbs, sugar, fibre
             , fat, satFat, polyFat, monoFat, transFat ]
@@ -262,13 +265,12 @@ newIngredient button = do
 
     lift $ GarlicNewIngredient
        <$> pure (ioConsumer $ \_ -> clearAll)
-       <*> pure (ioConsumer $ mapM_ (comboBoxTextAppendText unit))
        <*> signalE0 clearButton #clicked
        <*> signalE0 okButton #clicked
        <*> attrB name #text
        <*> attrB comment #text
        <*> attrB amount #text
-       <*> comboBoxTextB unit
+       <*> comboBoxUnitB unit
        <*> attrB protein #text
        <*> attrB carbs #text
        <*> attrB sugar #text
@@ -279,16 +281,16 @@ newIngredient button = do
        <*> attrB monoFat #text
        <*> attrB transFat #text
 
-comboBoxTextB :: ComboBoxText -> MomentIO (Behavior Text)
-comboBoxTextB box = do
+comboBoxUnitB :: ComboBoxText -> MomentIO (Behavior Unit)
+comboBoxUnitB box = do
     c  <- signalE0 box #changed
     c' <- mapEventIO (\_ -> comboBoxTextGetActiveText box) c
-    stepper "g" c'
+    stepper Gram $ parseUnit <$> c'
 
 data GarlicRecipeIngredient = GarlicRecipeIngredient
     { _irOptional    :: Behavior Bool
     , _irAmount      :: Behavior Double
-    , _irUnit        :: Behavior Text
+    , _irUnit        :: Behavior Unit
     , _irDeleteClick :: Event ()
     , _irRemove      :: Consumer ()
     }
@@ -296,9 +298,10 @@ data GarlicRecipeIngredient = GarlicRecipeIngredient
 ingredientEntry 
     :: ListBox
     -> Double 
+    -> Unit
     -> Text 
     -> MomentIO GarlicRecipeIngredient
-ingredientEntry lbox amount name = do
+ingredientEntry lbox amount unit name = do
     b <- builderNew
     _ <- builderAddFromString b uiIngredientEntryEdit (-1)
 
@@ -310,6 +313,8 @@ ingredientEntry lbox amount name = do
 
     entrySetText ingredientAmount $ pack (show amount)
     labelSetLabel ingredientName name
+    mapM_ (comboBoxTextAppendText ingredientUnit . prettyUnit) allUnits
+    comboBoxSetActive ingredientUnit (fromIntegral $ fromEnum unit)
 
     row <- castB b "ingredientEntry" ListBoxRow
     listBoxInsert lbox row (-1)
@@ -317,7 +322,7 @@ ingredientEntry lbox amount name = do
     GarlicRecipeIngredient
        <$> attrB ingredientOptional #active
        <*> (fmap parseNum <$> attrB ingredientAmount #text)
-       <*> comboBoxTextB ingredientUnit
+       <*> comboBoxUnitB ingredientUnit
        <*> signalE0 ingredientDelete #clicked
        <*> pure (ioConsumer $ \_ -> containerRemove lbox row)
 

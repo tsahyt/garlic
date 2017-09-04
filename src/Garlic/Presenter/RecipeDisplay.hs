@@ -64,7 +64,7 @@ replaceIngredients disp = mconcat
     where mkig :: WeighedIngredient -> ViewIngredient
           mkig WeighedIngredient{..} = 
               let m = pack $ printf "%G %s" _wingrAmount _wingrUnit
-               in ViewIngredient m (ingredientName _wingrIngr)
+               in ViewIngredient m (ingredientName . entityVal $ _wingrIngr)
 
 scaleIngredients :: Double -> [WeighedIngredient] -> [WeighedIngredient]
 scaleIngredients factor = over (traverse . wingrAmount) (* factor)

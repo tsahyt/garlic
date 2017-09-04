@@ -1,5 +1,6 @@
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RecursiveDo #-}
 module Garlic.Presenter.RecipeEdit
 (
     recipeEditP
@@ -16,7 +17,7 @@ import Reactive.Banana
 
 import Garlic.Model
 import Garlic.Model.Queries
-import Garlic.Model.Units
+import Garlic.Data.Units
 import Garlic.Types
 import Garlic.View
 import Garlic.View.HeaderBar
@@ -32,9 +33,8 @@ recipeEditP
 recipeEditP app selected = do
     key <- stepper Nothing (Just . entityKey <$> selected)
 
-    -- Set up ingredient editor
-    ingredientCreated <- ingredientEditor app
-    app ^. appRecipeEdit . editAddIngredient `fetch` (1.0, "foo") <$ ingredientCreated
+    -- Ingredients
+    ingredients <- ingredientList app
 
     -- Show Editor on Edit or Add Click, hide Edit Button and yield
     let click = app ^. appHeader . editClick
@@ -93,7 +93,7 @@ loadRecipe app rcp = do
 currentRecipe :: GarlicApp -> Garlic (Behavior Recipe)
 currentRecipe app = do
     let masks = app ^. appRecipeEdit . editMasks
-        rec   = Recipe 
+        r     = Recipe 
             <$> masks ^. editName
             <*> masks ^. editCuisine
             <*> masks ^. editRating
@@ -103,13 +103,28 @@ currentRecipe app = do
             <*> masks ^. editYieldUnit
             <*> fmap mtext (masks ^. editSource)
             <*> fmap mtext (masks ^. editURL)
-    pure rec
+    pure r
 
-ingredientEditor :: GarlicApp -> Garlic (Event (Key Ingredient))
+ingredientList :: GarlicApp -> Garlic (Behavior [WeighedIngredient])
+ingredientList app = mdo
+    -- Shorthands
+    let add = app ^. appRecipeEdit . editAddIngredient
+        fromWI WeighedIngredient{..} = 
+            (_wingrAmount, _wingrUnit, ingredientName . entityVal $ _wingrIngr)
+
+    -- New Ingredient Editor
+    ingredientCreated <- fromIngredient <$$> ingredientEditor app
+    let adding = fromWI <$> ingredientCreated
+
+    stdout `consume` show <$> adding
+    evs <- add `fetch` adding
+
+    return $ pure []
+
+ingredientEditor :: GarlicApp -> Garlic (Event (Entity Ingredient))
 ingredientEditor app = do
     let ni = app ^. appRecipeEdit . editNewIngredient
 
-    ni ^. niSetUnits `consume` (map prettyUnit allUnits) <$ app ^. appStartup
     ni ^. niClearAll `consume` ni ^. niClearClick
     ni ^. niClearAll `consume` ni ^. niOkClick
 
@@ -119,7 +134,7 @@ currentIngredient :: GarlicNewIngredient -> Behavior Ingredient
 currentIngredient editor = Ingredient
     <$> editor ^. niName
     <*> editor ^. niComment
-    <*> (parseUnit <$> editor ^. niUnit)
+    <*> editor ^. niUnit
     <*> (parseNum <$> editor ^. niAmount)
     <*> (parseNum <$> editor ^. niProtein)
     <*> (parseNum <$> editor ^. niCarbs)
