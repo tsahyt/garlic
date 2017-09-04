@@ -16,23 +16,31 @@ module Garlic.Types
 
     Fetcher,
     fetch,
+    dynamicFetcher,
     dbFetcher,
     
     -- * Misc
     makeGetters,
     (<:>),
     plainChanges,
-    (<$$>)
+    (<$$>),
+    mtext,
+    parseNum
 )
 where
 
 import Control.Lens
 import Control.Monad.Reader
 import Data.Functor.Compose
+import Data.Text (Text)
+import Data.Maybe
+import Text.Read (readMaybe)
 import Reactive.Banana
 import Data.Functor.Contravariant.Divisible
 import Reactive.Banana.Frameworks
 import Database.Persist.Sql
+
+import qualified Data.Text as T
 
 -- | The monad the garlic application is running in.
 type Garlic a = SqlPersistT MomentIO a
@@ -88,6 +96,11 @@ dbConsumer k = Consumer $ \e -> do
 -- | A fetcher can produce an event stream from another event stream, performing
 -- some action in the process to do the transformation.
 newtype Fetcher a b = Fetcher { fetch :: Event a -> Garlic (Event b) }
+infixr 1 `fetch`
+
+-- | Can be used to register new handlers/events dynamically in a fetcher.
+dynamicFetcher :: (a -> MomentIO b) -> Fetcher a b
+dynamicFetcher k = Fetcher $ \e -> lift $ execute (k <$> e)
 
 -- | Perform DB action on event to obtain a new event.
 dbFetcher :: (a -> SqlPersistT IO b) -> Fetcher a b
@@ -112,3 +125,9 @@ plainChanges b = lift $ do
 
 (<$$>) :: (Functor f, Functor g) => (a -> b) -> f (g a) -> f (g b)
 f <$$> x = getCompose . fmap f . Compose $ x
+
+mtext :: Text -> Maybe (Text)
+mtext x  = if T.null x then Nothing else Just x
+
+parseNum :: (Num a, Read a) => Text -> a
+parseNum = fromMaybe 0 . readMaybe . T.unpack

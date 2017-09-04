@@ -22,9 +22,7 @@ import Garlic.View
 import Garlic.View.HeaderBar
 import Garlic.View.RecipeEdit
 import Garlic.View.RecipeDisplay
-import Text.Read
 
-import qualified Data.Text as T
 import qualified Data.Sequence as S
 
 recipeEditP
@@ -36,6 +34,7 @@ recipeEditP app selected = do
 
     -- Set up ingredient editor
     ingredientCreated <- ingredientEditor app
+    app ^. appRecipeEdit . editAddIngredient `fetch` (1.0, "foo") <$ ingredientCreated
 
     -- Show Editor on Edit or Add Click, hide Edit Button and yield
     let click = app ^. appHeader . editClick
@@ -131,9 +130,3 @@ currentIngredient editor = Ingredient
     <*> (fmap parseNum . mtext <$> editor ^. niPolyFat)
     <*> (fmap parseNum . mtext <$> editor ^. niMonoFat)
     <*> (fmap parseNum . mtext <$> editor ^. niTransFat)
-
-mtext :: T.Text -> Maybe (T.Text)
-mtext x  = if T.null x then Nothing else Just x
-
-parseNum :: (Num a, Read a) => T.Text -> a
-parseNum = fromMaybe 0 . readMaybe . T.unpack

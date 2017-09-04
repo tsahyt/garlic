@@ -12,7 +12,7 @@
         <property name="can_focus">False</property>
         <property name="spacing">8</property>
         <child>
-          <object class="GtkButton">
+          <object class="GtkButton" id="ingredientDelete">
             <property name="visible">True</property>
             <property name="can_focus">True</property>
             <property name="receives_default">True</property>
@@ -35,7 +35,9 @@
           <object class="GtkEntry" id="ingredientAmount">
             <property name="visible">True</property>
             <property name="can_focus">True</property>
+            <property name="max_length">12</property>
             <property name="has_frame">False</property>
+            <property name="width_chars">12</property>
             <property name="shadow_type">etched-in</property>
           </object>
           <packing>

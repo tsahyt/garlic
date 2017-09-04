@@ -13,6 +13,7 @@ module Garlic.View.RecipeEdit
     editStore,
     editAbort,
     editNewIngredient,
+    editAddIngredient,
     recipeEdit,
 
     GarlicRecipeEditMask,
@@ -51,13 +52,19 @@ module Garlic.View.RecipeEdit
     niPolyFat,
     niMonoFat,
     niTransFat,
+
+    GarlicRecipeIngredient,
+    irOptional,
+    irAmount,
+    irUnit,
+    irDeleteClick,
+    irRemove,
 )
 where
 
-import Control.Monad
 import Control.Monad.Trans
 import Data.FileEmbed
-import Data.Text (Text)
+import Data.Text (Text, pack)
 import Data.Text.Lazy (fromStrict, toStrict)
 import Data.Text.Encoding (decodeUtf8)
 import GI.Gtk
@@ -65,7 +72,7 @@ import GI.GtkSource
 import Garlic.Types
 import Reactive.Banana.GI.Gtk
 import Reactive.Banana (stepper)
-import Reactive.Banana.Frameworks (mapEventIO)
+import Reactive.Banana.Frameworks (mapEventIO, MomentIO)
 import Text.Markdown (Markdown (..))
 
 uiRecipeEdit :: Text
@@ -83,6 +90,7 @@ data GarlicRecipeEdit = GarlicRecipeEdit
     , _editInstructions    :: Behavior (Maybe Markdown)
     , _editMasks           :: GarlicRecipeEditMask
     , _editNewIngredient   :: GarlicNewIngredient
+    , _editAddIngredient   :: Fetcher (Double, Text) GarlicRecipeIngredient
     , _editDelete          :: Event ()
     , _editAbort           :: Event ()
     , _editStore           :: Event ()
@@ -109,10 +117,6 @@ recipeEdit stack = do
     popover <- newIngredient newButton
 
     ingredientList <- castB b "ingredientList" ListBox
-    -- DUMMY VALUES
-    let attach x = listBoxInsert ingredientList x (-1)
-     in do replicateM_ 30 $ ingredientEntry >>= attach
-    -- /DUMMY VALUES
 
     lift $ GarlicRecipeEdit
        <$> pure (ioConsumer (\_ -> stackSetVisibleChild stack redt))
@@ -120,6 +124,7 @@ recipeEdit stack = do
        <*> (fmap (fmap (Markdown . fromStrict)) <$> attrB sbuf #text)
        <*> pure masks
        <*> pure popover
+       <*> pure (dynamicFetcher $ uncurry (ingredientEntry ingredientList))
        <*> signalE0 deleteButton #clicked
        <*> signalE0 abortButton #clicked
        <*> signalE0 storeButton #clicked
@@ -255,11 +260,6 @@ newIngredient button = do
     okButton    <- castB b "okButton" Button
     clearButton <- castB b "clearButton" Button
 
-    unitB <- lift $ do
-        c  <- signalE0 unit #changed
-        c' <- mapEventIO (\_ -> comboBoxTextGetActiveText unit) c
-        stepper "g" c'
-
     lift $ GarlicNewIngredient
        <$> pure (ioConsumer $ \_ -> clearAll)
        <*> pure (ioConsumer $ mapM_ (comboBoxTextAppendText unit))
@@ -268,7 +268,7 @@ newIngredient button = do
        <*> attrB name #text
        <*> attrB comment #text
        <*> attrB amount #text
-       <*> pure unitB
+       <*> comboBoxTextB unit
        <*> attrB protein #text
        <*> attrB carbs #text
        <*> attrB sugar #text
@@ -279,14 +279,50 @@ newIngredient button = do
        <*> attrB monoFat #text
        <*> attrB transFat #text
 
-ingredientEntry :: MonadIO m => m ListBoxRow
-ingredientEntry = do
+comboBoxTextB :: ComboBoxText -> MomentIO (Behavior Text)
+comboBoxTextB box = do
+    c  <- signalE0 box #changed
+    c' <- mapEventIO (\_ -> comboBoxTextGetActiveText box) c
+    stepper "g" c'
+
+data GarlicRecipeIngredient = GarlicRecipeIngredient
+    { _irOptional    :: Behavior Bool
+    , _irAmount      :: Behavior Double
+    , _irUnit        :: Behavior Text
+    , _irDeleteClick :: Event ()
+    , _irRemove      :: Consumer ()
+    }
+
+ingredientEntry 
+    :: ListBox
+    -> Double 
+    -> Text 
+    -> MomentIO GarlicRecipeIngredient
+ingredientEntry lbox amount name = do
     b <- builderNew
     _ <- builderAddFromString b uiIngredientEntryEdit (-1)
 
-    castB b "ingredientEntry" ListBoxRow
+    ingredientAmount   <- castB b "ingredientAmount" Entry
+    ingredientUnit     <- castB b "ingredientUnit" ComboBoxText
+    ingredientName     <- castB b "ingredientName" Label
+    ingredientOptional <- castB b "ingredientOptional" CheckButton
+    ingredientDelete   <- castB b "ingredientDelete" Button
+
+    entrySetText ingredientAmount $ pack (show amount)
+    labelSetLabel ingredientName name
+
+    row <- castB b "ingredientEntry" ListBoxRow
+    listBoxInsert lbox row (-1)
+
+    GarlicRecipeIngredient
+       <$> attrB ingredientOptional #active
+       <*> (fmap parseNum <$> attrB ingredientAmount #text)
+       <*> comboBoxTextB ingredientUnit
+       <*> signalE0 ingredientDelete #clicked
+       <*> pure (ioConsumer $ \_ -> containerRemove lbox row)
 
 -- LENSES
 makeGetters ''GarlicRecipeEdit
 makeGetters ''GarlicRecipeEditMask
 makeGetters ''GarlicNewIngredient
+makeGetters ''GarlicRecipeIngredient
