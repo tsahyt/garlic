@@ -1,6 +1,7 @@
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecursiveDo #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 module Garlic.Presenter.RecipeEdit
 (
     recipeEditP
@@ -17,7 +18,6 @@ import Reactive.Banana
 
 import Garlic.Model
 import Garlic.Model.Queries
-import Garlic.Data.Units
 import Garlic.Types
 import Garlic.View
 import Garlic.View.HeaderBar
@@ -106,7 +106,7 @@ currentRecipe app = do
     pure r
 
 ingredientList :: GarlicApp -> Garlic (Behavior [WeighedIngredient])
-ingredientList app = mdo
+ingredientList app = do
     -- Shorthands
     let reg = app ^. appRecipeEdit . editRegIngredient
         fromWI WeighedIngredient{..} = 
@@ -116,10 +116,34 @@ ingredientList app = mdo
     ingredientCreated <- fromIngredient <$$> ingredientEditor app
     let adding = fromWI <$> ingredientCreated
 
+    -- Registration of new Ingredient, and showing it
     regE <- reg `fetch` adding
     app ^. appRecipeEdit ^. editAddIngredient `consume` regE
 
+    -- Maintaining Behavior of active ingredients
+    (registered :: Behavior [GarlicRecipeIngredient]) <- mdo
+        let addE = flip (++) . return <$> regE
+            buildDel = unions 
+                     . map (\(i,r) -> deleteIdx i <$ r ^. irDeleteClick) 
+                     . zip [0..]
+
+            change = unions [ addE, delE ]
+
+        delE <- switchE $ buildDel <$> refs <@ change
+        refs <- accumB [] change
+        pure refs
+
+    registeredE <- plainChanges registered
+    amounts <- switchB (pure []) $ traverse (view irAmount) <$> registeredE
+    consume stdout . fmap show =<< plainChanges amounts
+
     return $ pure []
+
+deleteIdx :: Int -> [a] -> [a]
+deleteIdx 0 []     = []
+deleteIdx 0 (x:xs) = xs
+deleteIdx n []     = []
+deleteIdx n (x:xs) = x : deleteIdx (pred n) xs
 
 ingredientEditor :: GarlicApp -> Garlic (Event (Entity Ingredient))
 ingredientEditor app = do

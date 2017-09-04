@@ -58,7 +58,6 @@ module Garlic.View.RecipeEdit
     irAmount,
     irUnit,
     irDeleteClick,
-    irRemove,
 )
 where
 
@@ -287,7 +286,7 @@ newIngredient button = do
 comboBoxUnitB :: ComboBoxText -> MomentIO (Behavior Unit)
 comboBoxUnitB box = do
     c  <- signalE0 box #changed
-    c' <- mapEventIO (\_ -> comboBoxTextGetActiveText box) c
+    c' <- mapEventIO (const $ comboBoxTextGetActiveText box) c
     stepper Gram $ parseUnit <$> c'
 
 data GarlicRecipeIngredient = GarlicRecipeIngredient
@@ -295,7 +294,6 @@ data GarlicRecipeIngredient = GarlicRecipeIngredient
     , _irAmount      :: Behavior Double
     , _irUnit        :: Behavior Unit
     , _irDeleteClick :: Event ()
-    , _irRemove      :: Consumer ()
     , irRow          :: ListBoxRow
     }
 
@@ -321,13 +319,13 @@ ingredientEntry lbox amount unit name = do
     comboBoxSetActive ingredientUnit (fromIntegral $ fromEnum unit)
 
     row <- castB b "ingredientEntry" ListBoxRow
+    on ingredientDelete #clicked $ containerRemove lbox row
 
     GarlicRecipeIngredient
        <$> attrB ingredientOptional #active
        <*> (fmap parseNum <$> attrB ingredientAmount #text)
        <*> comboBoxUnitB ingredientUnit
        <*> signalE0 ingredientDelete #clicked
-       <*> pure (ioConsumer $ \_ -> containerRemove lbox row)
        <*> pure row
 
 -- LENSES
