@@ -319,7 +319,7 @@ ingredientEntry lbox amount unit name = do
     comboBoxSetActive ingredientUnit (fromIntegral $ fromEnum unit)
 
     row <- castB b "ingredientEntry" ListBoxRow
-    on ingredientDelete #clicked $ containerRemove lbox row
+    _   <- on ingredientDelete #clicked $ containerRemove lbox row
 
     GarlicRecipeIngredient
        <$> attrB ingredientOptional #active

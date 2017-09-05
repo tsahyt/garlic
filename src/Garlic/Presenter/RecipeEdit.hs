@@ -2,6 +2,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecursiveDo #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TupleSections #-}
 module Garlic.Presenter.RecipeEdit
 (
     recipeEditP
@@ -113,36 +114,47 @@ ingredientList app = do
             (_wingrAmount, _wingrUnit, ingredientName . entityVal $ _wingrIngr)
 
     -- New Ingredient Editor
-    ingredientCreated <- fromIngredient <$$> ingredientEditor app
-    let adding = fromWI <$> ingredientCreated
+    ingredientCreated <- ingredientEditor app
 
     -- Registration of new Ingredient, and showing it
-    regE <- reg `fetch` adding
-    app ^. appRecipeEdit ^. editAddIngredient `consume` regE
+    regE <- do 
+        lastIngr <- stepper Nothing (Just <$> ingredientCreated)
+        e <- fetch reg . fmap (fromWI . fromIngredient) 
+           . filterJust =<< plainChanges lastIngr
+        let f  = (\x y -> fmap (,y) x) <$> lastIngr
+            e' = filterJust . apply f $ e
+        pure e'
 
+    app ^. appRecipeEdit ^. editAddIngredient `consume` snd <$> regE
+    
     -- Maintaining Behavior of active ingredients
-    (registered :: Behavior [GarlicRecipeIngredient]) <- mdo
-        let addE = flip (++) . return <$> regE
-            buildDel = unions 
-                     . map (\(i,r) -> deleteIdx i <$ r ^. irDeleteClick) 
-                     . zip [0..]
-
+    (registered :: Behavior [WeighedIngredient]) <- mdo
+        let addE   = flip (++) . return <$> regE
+            mkDel  = unions 
+                   . map (\(i,(_,r)) -> deleteIdx i <$ r ^. irDeleteClick) 
+                   . zip [0..]
             change = unions [ addE, delE ]
 
-        delE <- switchE $ buildDel <$> refs <@ change
+        delE <- switchE $ mkDel <$> refs <@ change
         refs <- accumB [] change
-        pure refs
+        refsE <- plainChanges refs
 
-    registeredE <- plainChanges registered
-    amounts <- switchB (pure []) $ traverse (view irAmount) <$> registeredE
-    consume stdout . fmap show =<< plainChanges amounts
+        amounts <- switchB (pure []) $ 
+            sequenceA . toListOf (traverse . _2 . irAmount) <$> refsE
+        units <- switchB (pure []) $ 
+            sequenceA . toListOf (traverse . _2 . irUnit) <$> refsE
 
-    return $ pure []
+        pure . getCompose $ WeighedIngredient
+           <$> Compose amounts
+           <*> Compose units
+           <*> Compose (fmap (map fst) refs)
+
+    return registered
 
 deleteIdx :: Int -> [a] -> [a]
 deleteIdx 0 []     = []
-deleteIdx 0 (x:xs) = xs
-deleteIdx n []     = []
+deleteIdx 0 (_:xs) = xs
+deleteIdx _ []     = []
 deleteIdx n (x:xs) = x : deleteIdx (pred n) xs
 
 ingredientEditor :: GarlicApp -> Garlic (Event (Entity Ingredient))
