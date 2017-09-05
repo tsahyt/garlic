@@ -9,6 +9,7 @@ module Garlic.Presenter.RecipeEdit
 )
 where
 
+import Control.Applicative
 import Control.Lens
 import Data.Maybe
 import Data.Functor.Compose
@@ -148,6 +149,8 @@ ingredientList app selected = do
             e' = filterJust . apply f $ e
         pure (over _1 (view wingrIngr) <$> e')
 
+    stdout `consume` show . fst <$> regE
+
     app ^. appRecipeEdit ^. editAddIngredient `consume` snd <$> regE
     
     -- Maintaining Behavior of active ingredients
@@ -169,11 +172,13 @@ ingredientList app selected = do
         optionals <- switchB (pure []) $
             sequenceA . toListOf (traverse . _2 . irOptional) <$> refsE
 
-        pure . getCompose $ WeighedIngredient
-           <$> Compose amounts
-           <*> Compose units
-           <*> Compose optionals
-           <*> Compose (fmap (map fst) refs)
+        pure . fmap getZipList . getCompose $ WeighedIngredient
+           <$> Compose (fmap ZipList amounts)
+           <*> Compose (fmap ZipList units)
+           <*> Compose (fmap ZipList optionals)
+           <*> Compose (fmap (ZipList . (map fst)) refs)
+
+    consume stdout . fmap (show . map (\x -> (view (wingrIngr . to entityVal . to ingredientName) x, view wingrAmount x))) =<< plainChanges registered
 
     return registered
 
