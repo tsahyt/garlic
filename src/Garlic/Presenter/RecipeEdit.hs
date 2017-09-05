@@ -143,10 +143,13 @@ ingredientList app = do
             sequenceA . toListOf (traverse . _2 . irAmount) <$> refsE
         units <- switchB (pure []) $ 
             sequenceA . toListOf (traverse . _2 . irUnit) <$> refsE
+        optionals <- switchB (pure []) $
+            sequenceA . toListOf (traverse . _2 . irOptional) <$> refsE
 
         pure . getCompose $ WeighedIngredient
            <$> Compose amounts
            <*> Compose units
+           <*> Compose optionals
            <*> Compose (fmap (map fst) refs)
 
     return registered

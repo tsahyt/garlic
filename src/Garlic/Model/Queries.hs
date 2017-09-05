@@ -9,6 +9,7 @@ module Garlic.Model.Queries
     wingrAmount,
     wingrUnit,
     wingrIngr,
+    wingrOptional,
 
     -- * Updates
     newRecipe,
@@ -32,9 +33,10 @@ import qualified Database.Persist as P
 
 -- | Weighted ingredients are ingredients with an amount and a unit.
 data WeighedIngredient = WeighedIngredient
-    { _wingrAmount :: Double
-    , _wingrUnit   :: Unit
-    , _wingrIngr   :: Entity Ingredient
+    { _wingrAmount   :: Double
+    , _wingrUnit     :: Unit
+    , _wingrOptional :: Bool
+    , _wingrIngr     :: Entity Ingredient
     }
     deriving Show
 
@@ -43,6 +45,7 @@ fromIngredient e@(Entity _ v) =
     WeighedIngredient 
         (ingredientBasicAmount v)
         (ingredientBasicUnit v)
+        False
         e
 
 makeLenses ''WeighedIngredient
@@ -68,10 +71,11 @@ ingredientsFor = dbFetcher $ \recipe -> do
                 where_ (h ^. RecipeHasRecipe ==. val recipe
                     &&. i ^. IngredientId ==. h ^. RecipeHasIngredient)
 
-                return (h ^. RecipeHasAmount, h ^. RecipeHasUnit, i)
+                return (h ^. RecipeHasAmount, h ^. RecipeHasUnit
+                       ,h ^. RecipeHasOptional, i)
 
     pure $ map 
-        (\(a,b,c) -> WeighedIngredient (unValue a) (unValue b) c) 
+        (\(a,b,c,d) -> WeighedIngredient (unValue a) (unValue b) (unValue c) d) 
         xs
 
 updateRecipe :: Consumer (Entity Recipe)
