@@ -26,7 +26,8 @@ module Garlic.Types
     plainChanges,
     (<$$>),
     mtext,
-    parseNum
+    parseNum,
+    spread
 )
 where
 
@@ -135,3 +136,12 @@ mtext x  = if T.null x then Nothing else Just x
 
 parseNum :: (Num a, Read a) => Text -> a
 parseNum = fromMaybe 0 . readMaybe . T.unpack
+
+-- | Converts an event where each occurrence is a list of values to an event
+-- stream in which the values are happening sequentially. This of course does
+-- not all happen at the same time. The list is traversed left to right.
+spread :: Event [a] -> Garlic (Event a)
+spread evs = lift $ do
+    (e, handle) <- newEvent 
+    reactimate $ (mapM_ handle) <$> evs
+    pure e

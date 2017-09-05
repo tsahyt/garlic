@@ -12,6 +12,7 @@ module Garlic.View.RecipeEdit
     editDelete,
     editStore,
     editAbort,
+    editCleanIngredient,
     editNewIngredient,
     editRegIngredient,
     editAddIngredient,
@@ -91,6 +92,7 @@ data GarlicRecipeEdit = GarlicRecipeEdit
     , _editSetInstructions :: Consumer Markdown
     , _editInstructions    :: Behavior (Maybe Markdown)
     , _editMasks           :: GarlicRecipeEditMask
+    , _editCleanIngredient :: Consumer ()
     , _editNewIngredient   :: GarlicNewIngredient
     , _editRegIngredient   :: Fetcher (Double, Unit, Text) 
                                   GarlicRecipeIngredient
@@ -132,6 +134,7 @@ recipeEdit stack = do
        <*> pure (ioConsumer (\(Markdown t) -> set sbuf [ #text := toStrict t ]))
        <*> (fmap (fmap (Markdown . fromStrict)) <$> attrB sbuf #text)
        <*> pure masks
+       <*> pure (ioConsumer $ \_ -> clearList ingredientList)
        <*> pure popover
        <*> pure (dynamicFetcher $ \(amount,name,unit) -> 
                     ingredientEntry ingredientList amount name unit)
@@ -141,6 +144,9 @@ recipeEdit stack = do
        <*> signalE0 deleteButton #clicked
        <*> signalE0 abortButton #clicked
        <*> signalE0 storeButton #clicked
+
+    where clearList l = 
+              containerGetChildren l >>= mapM_ (containerRemove l)
 
 ingredientEnter :: Entry -> MomentIO (Event Text)
 ingredientEnter e = do
