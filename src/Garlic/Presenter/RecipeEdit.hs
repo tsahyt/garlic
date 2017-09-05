@@ -9,7 +9,6 @@ module Garlic.Presenter.RecipeEdit
 )
 where
 
-import Control.Applicative
 import Control.Lens
 import Data.Maybe
 import Data.Functor.Compose
@@ -42,11 +41,14 @@ recipeEditP app selected = do
            app ^. appHeader . yieldToggle `consume` click
            app ^. appHeader . editToggle `consume` click
 
-    selectedIngredients <- loadRecipe app selected
     recipe <- currentRecipe app
     
+    -- Ingredient Editor
+    _ <- ingredientEditor app
+
     -- Ingredients
-    ingredients <- ingredientList app selectedIngredients
+    selectedIngredients <- loadRecipe app selected
+    ingredients <- stepper [] selectedIngredients
 
     -- Recipe Entity, only Just when there is also a previous selection
     let recipeEntity = getCompose $ 
@@ -114,79 +116,6 @@ currentRecipe app = do
             <*> fmap mtext (masks ^. editSource)
             <*> fmap mtext (masks ^. editURL)
     pure r
-
-ingredientList 
-    :: GarlicApp 
-    -> Event [WeighedIngredient] 
-    -> Garlic (Behavior [WeighedIngredient])
-ingredientList app selected = do
-    -- Update completion list when necessary
-    ilist <- stepper [] =<< fetch completionList (app ^. appStartup)
-    consume (app ^. appRecipeEdit . editReplaceIngCompl) =<< plainChanges ilist
-
-    -- Shorthands
-    let reg = app ^. appRecipeEdit . editRegIngredient
-        fromWI WeighedIngredient{..} = 
-            (_wingrAmount, _wingrUnit, ingredientName . entityVal $ _wingrIngr)
-
-    -- Cleanup on selection
-    app ^. appRecipeEdit . editCleanIngredient `consume` () <$ selected
-
-    -- New Ingredient Editor
-    ingredientLoaded  <- spread selected
-    ingredientCreated <- fromIngredient <$$> ingredientEditor app
-    ingredientEntered <- fromIngredient <$$> (fetch ingredientByName $ 
-        app ^. appRecipeEdit . editEnterIngredient)
-
-    let entered = ingredientCreated <:> ingredientEntered <:> ingredientLoaded
-
-    -- Registration of new Ingredient, and showing it
-    (regE :: Event (Entity Ingredient, GarlicRecipeIngredient)) <- do 
-        lastIngr <- stepper Nothing (Just <$> entered)
-        e <- fetch reg . fmap fromWI
-           . filterJust =<< plainChanges lastIngr
-        let f  = (\x y -> fmap (,y) x) <$> lastIngr
-            e' = filterJust . apply f $ e
-        pure (over _1 (view wingrIngr) <$> e')
-
-    stdout `consume` show . fst <$> regE
-
-    app ^. appRecipeEdit ^. editAddIngredient `consume` snd <$> regE
-    
-    -- Maintaining Behavior of active ingredients
-    (registered :: Behavior [WeighedIngredient]) <- mdo
-        let addE   = flip (++) . return <$> regE
-            mkDel  = unions 
-                   . map (\(i,(_,r)) -> deleteIdx i <$ r ^. irDeleteClick) 
-                   . zip [0..]
-            change = unions [ addE, delE ]
-
-        delE <- switchE $ mkDel <$> refs <@ change
-        refs <- accumB [] change
-        refsE <- plainChanges refs
-
-        amounts <- switchB (pure []) $ 
-            sequenceA . toListOf (traverse . _2 . irAmount) <$> refsE
-        units <- switchB (pure []) $ 
-            sequenceA . toListOf (traverse . _2 . irUnit) <$> refsE
-        optionals <- switchB (pure []) $
-            sequenceA . toListOf (traverse . _2 . irOptional) <$> refsE
-
-        pure . fmap getZipList . getCompose $ WeighedIngredient
-           <$> Compose (fmap ZipList amounts)
-           <*> Compose (fmap ZipList units)
-           <*> Compose (fmap ZipList optionals)
-           <*> Compose (fmap (ZipList . (map fst)) refs)
-
-    consume stdout . fmap (show . map (\x -> (view (wingrIngr . to entityVal . to ingredientName) x, view wingrAmount x))) =<< plainChanges registered
-
-    return registered
-
-deleteIdx :: Int -> [a] -> [a]
-deleteIdx 0 []     = []
-deleteIdx 0 (_:xs) = xs
-deleteIdx _ []     = []
-deleteIdx n (x:xs) = x : deleteIdx (pred n) xs
 
 ingredientEditor :: GarlicApp -> Garlic (Event (Entity Ingredient))
 ingredientEditor app = do
