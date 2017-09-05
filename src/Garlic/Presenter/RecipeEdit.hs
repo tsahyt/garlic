@@ -48,12 +48,14 @@ recipeEditP app selected = do
     ingredients <- ingredientList app selectedIngredients
 
     -- Recipe Entity, only Just when there is also a previous selection
-    let recipeEntity = getCompose $ Entity
-                   <$> Compose key 
-                   <*> Compose (Just <$> recipe)
+    let recipeEntity = getCompose $ 
+            (,) <$> (Entity <$> Compose key 
+                            <*> Compose (Just <$> recipe))
+                <*> Compose (Just <$> ingredients)
     
     -- Save on Store Click, or do nothing when there was no selection
-    let storeE = filterJust (recipeEntity <@ app ^. appRecipeEdit . editStore)
+    let storeE :: Event (Entity Recipe, [WeighedIngredient])
+        storeE = filterJust (recipeEntity <@ app ^. appRecipeEdit . editStore)
     updateRecipe `consume` storeE
 
     -- Show Display on Abort Click
@@ -67,7 +69,7 @@ recipeEditP app selected = do
     pure $ unions
         [ (\x -> S.filter ((/= x) . entityKey)) <$> deleteE 
         , (\x -> fmap (\e -> if entityKey e == entityKey x then x else e)) 
-          <$> storeE ]
+        . fst <$> storeE ]
 
 revertDisplay :: GarlicApp -> Event a -> Garlic ()
 revertDisplay app e = do

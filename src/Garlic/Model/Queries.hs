@@ -1,5 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE RecordWildCards #-}
 module Garlic.Model.Queries
 (
     recipes,
@@ -89,8 +90,21 @@ ingredientByName :: Fetcher Text (Entity Ingredient)
 ingredientByName = filterMaybe . dbFetcher $ \name ->
     P.selectFirst [ IngredientName P.==. name ] []
 
-updateRecipe :: Consumer (Entity Recipe)
-updateRecipe = dbConsumer $ \(Entity k r) -> P.repsert k r
+updateRecipe :: Consumer (Entity Recipe, [WeighedIngredient])
+updateRecipe = dbConsumer $ \(Entity k r, is) -> do
+    -- update the recipe entry
+    P.repsert k r
+
+    -- remove all old associations to ingredients
+    delete $
+        from $ \h ->
+        where_ (h ^. RecipeHasRecipe ==. val k)
+
+    -- insert new ones
+    P.insertMany_ $
+        [ RecipeHas k (entityKey _wingrIngr) _wingrAmount 
+                    _wingrUnit _wingrOptional
+        | WeighedIngredient{..} <- is ]
 
 newRecipe :: Fetcher () (Entity Recipe)
 newRecipe = dbFetcher $ \_ ->
