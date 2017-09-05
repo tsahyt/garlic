@@ -119,10 +119,14 @@ ingredientList app = do
 
     -- New Ingredient Editor
     ingredientCreated <- ingredientEditor app
+    ingredientEntered <- fetch ingredientByName $ 
+        app ^. appRecipeEdit . editEnterIngredient
+
+    let entered = ingredientCreated <:> ingredientEntered
 
     -- Registration of new Ingredient, and showing it
     regE <- do 
-        lastIngr <- stepper Nothing (Just <$> ingredientCreated)
+        lastIngr <- stepper Nothing (Just <$> entered)
         e <- fetch reg . fmap (fromWI . fromIngredient) 
            . filterJust =<< plainChanges lastIngr
         let f  = (\x y -> fmap (,y) x) <$> lastIngr

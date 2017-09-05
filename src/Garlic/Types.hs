@@ -18,6 +18,7 @@ module Garlic.Types
     fetch,
     dynamicFetcher,
     dbFetcher,
+    filterMaybe,
     
     -- * Misc
     makeGetters,
@@ -107,6 +108,9 @@ dbFetcher :: (a -> SqlPersistT IO b) -> Fetcher a b
 dbFetcher k = Fetcher $ \e -> do
     backend <- ask
     lift $ mapEventIO (\x -> runReaderT (k x) backend) e
+
+filterMaybe :: Fetcher a (Maybe b) -> Fetcher a b
+filterMaybe (Fetcher x) = Fetcher (filterJust <$$> x)
 
 -- | Read only lens generation for GUI records
 makeGetters = makeLensesWith (set generateUpdateableOptics False lensRules)

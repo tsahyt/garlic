@@ -16,6 +16,7 @@ module Garlic.View.RecipeEdit
     editRegIngredient,
     editAddIngredient,
     editReplaceIngCompl,
+    editEnterIngredient,
     recipeEdit,
 
     GarlicRecipeEditMask,
@@ -73,7 +74,7 @@ import Garlic.Types
 import Garlic.Data.Units
 import Reactive.Banana.GI.Gtk
 import Reactive.Banana (stepper)
-import Reactive.Banana.Frameworks (mapEventIO, MomentIO)
+import Reactive.Banana.Frameworks (mapEventIO, MomentIO, reactimate)
 import Text.Markdown (Markdown (..))
 
 uiRecipeEdit :: Text
@@ -95,6 +96,7 @@ data GarlicRecipeEdit = GarlicRecipeEdit
                                   GarlicRecipeIngredient
     , _editAddIngredient   :: Consumer GarlicRecipeIngredient
     , _editReplaceIngCompl :: Consumer [Text]
+    , _editEnterIngredient :: Event Text
     , _editDelete          :: Event ()
     , _editAbort           :: Event ()
     , _editStore           :: Event ()
@@ -135,9 +137,17 @@ recipeEdit stack = do
                     ingredientEntry ingredientList amount name unit)
        <*> pure (ioConsumer (\r -> listBoxInsert ingredientList (irRow r) (-1)))
        <*> pure replaceCompletion
+       <*> ingredientEnter ingredientSearch
        <*> signalE0 deleteButton #clicked
        <*> signalE0 abortButton #clicked
        <*> signalE0 storeButton #clicked
+
+ingredientEnter :: Entry -> MomentIO (Event Text)
+ingredientEnter e = do
+    enter <- mapEventIO go =<< signalE0 e #activate
+    reactimate $ entrySetText e "" <$ enter
+    pure enter
+    where go _ = entryGetText e
 
 actionButtons :: MonadIO m => Builder -> m (Button, Button, Button)
 actionButtons b = do
