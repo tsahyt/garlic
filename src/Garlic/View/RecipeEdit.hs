@@ -15,6 +15,7 @@ module Garlic.View.RecipeEdit
     editNewIngredient,
     editRegIngredient,
     editAddIngredient,
+    editReplaceIngCompl,
     recipeEdit,
 
     GarlicRecipeEditMask,
@@ -93,6 +94,7 @@ data GarlicRecipeEdit = GarlicRecipeEdit
     , _editRegIngredient   :: Fetcher (Double, Unit, Text) 
                                   GarlicRecipeIngredient
     , _editAddIngredient   :: Consumer GarlicRecipeIngredient
+    , _editReplaceIngCompl :: Consumer [Text]
     , _editDelete          :: Event ()
     , _editAbort           :: Event ()
     , _editStore           :: Event ()
@@ -118,7 +120,10 @@ recipeEdit stack = do
     newButton <- castB b "ingredientNew" MenuButton
     popover <- newIngredient newButton
 
-    ingredientList <- castB b "ingredientList" ListBox
+    -- Ingredient List
+    ingredientList    <- castB b "ingredientList" ListBox
+    ingredientSearch  <- castB b "ingredientSearch" Entry
+    replaceCompletion <- ingredientCompletion ingredientSearch
 
     lift $ GarlicRecipeEdit
        <$> pure (ioConsumer (\_ -> stackSetVisibleChild stack redt))
@@ -129,6 +134,7 @@ recipeEdit stack = do
        <*> pure (dynamicFetcher $ \(amount,name,unit) -> 
                     ingredientEntry ingredientList amount name unit)
        <*> pure (ioConsumer (\r -> listBoxInsert ingredientList (irRow r) (-1)))
+       <*> pure replaceCompletion
        <*> signalE0 deleteButton #clicked
        <*> signalE0 abortButton #clicked
        <*> signalE0 storeButton #clicked
@@ -166,6 +172,30 @@ buildSourceView = do
                    ]
 
     pure (sourceview, sbuf)
+
+ingredientCompletion :: Entry -> Garlic (Consumer [Text])
+ingredientCompletion entry = do
+    model <- listStoreNew [gtypeString]
+
+    compl <- new EntryCompletion 
+        [ #model := model
+        , #textColumn := 0 ]
+
+    trender <- new CellRendererText []
+    Just area <- get compl #cellArea
+    cellLayoutPackStart area trender True
+    cellLayoutAddAttribute area trender "text" 0
+    
+    set entry [ #completion := compl ]
+
+    return $ ioConsumer $ \xs -> 
+        listStoreClear model >> mapM_ (appendOne model) xs
+
+    where appendOne :: MonadIO m => ListStore -> Text -> m ()
+          appendOne model str = do
+              x <- liftIO $ toGValue (Just str)
+              i <- listStoreAppend model
+              listStoreSet model i [0] [x]
 
 data GarlicRecipeEditMask = GarlicRecipeEditMask
     { _editSetName      :: Consumer Text

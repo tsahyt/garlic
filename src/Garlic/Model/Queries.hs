@@ -10,6 +10,7 @@ module Garlic.Model.Queries
     wingrUnit,
     wingrIngr,
     wingrOptional,
+    completionList,
 
     -- * Updates
     newRecipe,
@@ -77,6 +78,11 @@ ingredientsFor = dbFetcher $ \recipe -> do
     pure $ map 
         (\(a,b,c,d) -> WeighedIngredient (unValue a) (unValue b) (unValue c) d) 
         xs
+
+-- | Select all ingredient names in the DB
+completionList :: Fetcher () [Text]
+completionList = dbFetcher $ \_ ->
+    map (ingredientName . entityVal) <$> P.selectList [] []
 
 updateRecipe :: Consumer (Entity Recipe)
 updateRecipe = dbConsumer $ \(Entity k r) -> P.repsert k r

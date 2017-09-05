@@ -234,12 +234,9 @@
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
                 <child>
-                  <object class="GtkSearchEntry" id="ingredientSearch">
+                  <object class="GtkEntry" id="ingredientSearch">
                     <property name="visible">True</property>
                     <property name="can_focus">True</property>
-                    <property name="primary_icon_name">edit-find-symbolic</property>
-                    <property name="primary_icon_activatable">False</property>
-                    <property name="primary_icon_sensitive">False</property>
                   </object>
                   <packing>
                     <property name="expand">True</property>
@@ -252,6 +249,7 @@
                     <property name="visible">True</property>
                     <property name="can_focus">True</property>
                     <property name="receives_default">True</property>
+                    <property name="relief">half</property>
                     <child>
                       <object class="GtkImage">
                         <property name="visible">True</property>

@@ -108,6 +108,10 @@ currentRecipe app = do
 
 ingredientList :: GarlicApp -> Garlic (Behavior [WeighedIngredient])
 ingredientList app = do
+    -- Update completion list when necessary
+    ilist <- stepper [] =<< fetch completionList (app ^. appStartup)
+    consume (app ^. appRecipeEdit . editReplaceIngCompl) =<< plainChanges ilist
+
     -- Shorthands
     let reg = app ^. appRecipeEdit . editRegIngredient
         fromWI WeighedIngredient{..} = 
