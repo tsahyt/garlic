@@ -57,8 +57,6 @@ recipeEditP app selected = do
         selectedIngredients
         (new <:> entered)
 
-    consume stdout . fmap show =<< plainChanges ingredients
-
     -- Recipe Entity, only Just when there is also a previous selection
     let recipeEntity = getCompose $ 
             (,) <$> (Entity <$> Compose key 
@@ -180,24 +178,21 @@ ingredientList ilist selected new = mdo
     ilist ^. ilAppend `consume` (pure . fromWI . fromIngredient) <$> new
 
     -- Events that can affect the managed list of ingredients
-    let appendE  = (flip (++) . pure) . fromIngredient <$> new
-        replaceE = const <$> selected
+    let clearE   = const [] <$ selected
+        appendE  = (flip (++) . pure) . fromIngredient <$> new
         deleteE  = delete' <$> ilist ^. ilDeleted
         changedE = (\(i,(a,b,_,c)) xs -> modify' i xs (updWI (a,b,c)))
                <$> whenE (not . null <$> is) (ilist ^. ilChanged)
 
     insertE <- do
+        r  <- spread $ zip [0..] <$> selected
         let x = ilist ^. ilInserted
             f (i,a) b = (i, toWI a b)
         xB <- stepper undefined $ x
         e  <- fetch ingredientByName $ view (_2 . _3) <$> x
-        pure $ uncurry (flip . insert') <$> (f <$> xB <@> e)
+        pure $ uncurry (flip . insert') <$> ((f <$> xB <@> e) <:> r)
 
-    stdout `consume`  (("replace" <$ replaceE)
-                   <:> ("insert"  <$ insertE)
-                   <:> ("change"  <$ changedE))
-
-    is <- accumB [] $ unions [ replaceE, deleteE, changedE, insertE, appendE ]
+    is <- accumB [] $ unions [ deleteE, clearE, changedE, insertE, appendE ]
     pure is
 
 modify' :: Int -> [a] -> (a -> a) -> [a]
