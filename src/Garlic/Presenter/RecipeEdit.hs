@@ -46,6 +46,8 @@ recipeEditP app selected = do
     -- Ingredient Editor
     _ <- ingredientEditor app
 
+    stdout `consume` show <$> app ^. appRecipeEdit . editIngredients . ilChanged
+
     -- Ingredients
     selectedIngredients <- loadRecipe app selected
     ingredients <- stepper [] selectedIngredients

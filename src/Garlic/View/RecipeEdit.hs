@@ -64,6 +64,7 @@ module Garlic.View.RecipeEdit
 where
 
 import Control.Monad.Trans
+import Control.Monad
 import Data.FileEmbed
 import Data.Maybe (fromMaybe)
 import Data.Text (Text)
@@ -339,13 +340,34 @@ ingredientList view model = do
     units <- unitStore
 
     -- Build new Cell Renderers
-    amntR <- new CellRendererText   [ #editable    := True ]
+    amntR <- new CellRendererText [ #editable := True ]
+    _ <- on amntR #edited $ \path txt -> do
+        path' <- treePathNewFromString path
+        (b, iter)  <- treeModelGetIter model path'
+        when (b && parseNum @Double txt /= 0) $ do
+            txt' <- toGValue (Just txt)
+            listStoreSetValue model iter 0 txt'
+
     unitR <- new CellRendererCombo  [ #editable    := True
                                     , #hasEntry    := False
                                     , #model       := units
                                     , #textColumn  := 0 ]
+    _ <- on unitR #edited $ \path txt -> do
+        path' <- treePathNewFromString path
+        (b, iter)  <- treeModelGetIter model path'
+        when b $ do
+            txt' <- toGValue (Just txt)
+            listStoreSetValue model iter 1 txt'
+
     nameR <- new CellRendererText   []
     optiR <- new CellRendererToggle [ #activatable := True ]
+    _ <- on optiR #toggled $ \path -> do
+        path' <- treePathNewFromString path
+        (b, iter) <- treeModelGetIter model path'
+        when b $ do
+            x <- treeModelGetValue model iter 3
+            x' <- toGValue . not =<< fromGValue x
+            listStoreSetValue model iter 3 x'
 
     -- Columns
     amntC <- new TreeViewColumn [ #title := "Amount" ]
@@ -362,6 +384,10 @@ ingredientList view model = do
     treeViewColumnAddAttribute optiC optiR "active" 3
 
     mapM_ (treeViewAppendColumn view) [ amntC, unitC, nameC, optiC ]
+
+    -- DUMMY VALUES
+    append (100, Gram, "foo", False)
+    -- /DUMMY VALUES
 
     lift $ GarlicIngredientList 
        <$> signalEN model #rowInserted (\h p i -> fetch p i >>= h)
@@ -388,7 +414,7 @@ ingredientList view model = do
               idx       <- parseNum <$> treePathToString p
               [a,b,c,d] <- mapM (treeModelGetValue model i) [0..3]
               x <- liftIO $ (,,,) 
-               <$> fromGValue a 
+               <$> (maybe 0 parseNum <$> fromGValue a)
                <*> (maybe Gram (parseUnit @Text) <$> fromGValue b)
                <*> (fromMaybe "" <$> fromGValue c) 
                <*> fromGValue d
