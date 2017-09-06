@@ -132,7 +132,8 @@ ingredientEditor app = do
     ni ^. niClearAll `consume` ni ^. niOkClick
 
     new <- fetch newIngredient $ currentIngredient ni <@ ni ^. niOkClick
-    stdout `consume` "TODO: ingredient already exists!" <$ filterE isNothing new
+    app ^. appDisplayError `consume`
+        "Ingredient already exists!" <$ filterE isNothing new
     
     pure (filterJust new)
 

@@ -13,6 +13,7 @@ module Garlic.View
     appRecipeDisplay,
     appRecipeList,
     appEnableSearch,
+    appDisplayError,
     appSearchChange,
     appActivate,
     appShutdown,
@@ -63,6 +64,7 @@ data GarlicApp = GarlicApp
     , _appRecipeEdit    :: GarlicRecipeEdit
     , _appRecipeList    :: GarlicRecipes
     , _appEnableSearch  :: Consumer ()
+    , _appDisplayError  :: Consumer Text
     , _appSearchChange  :: Event Text
     , _appActivate      :: Event ()
     , _appStartup       :: Event ()
@@ -80,6 +82,8 @@ application app = do
     rstack      <- castB b "recipeStack" Stack
     searchBar   <- castB b "searchBar" SearchBar
     searchEntry <- castB b "searchEntry" SearchEntry
+    infoBar     <- castB b "infoBar" InfoBar
+    infoLabel   <- castB b "infoLabel" Label
 
     -- Sub elements
     hb   <- headerBar win
@@ -92,12 +96,19 @@ application app = do
         set win [ #application := app ]
         widgetShowAll win
 
+    -- Hardcode info hide
+    _ <- on infoBar #close $ set infoBar [ #visible := False ]
+    _ <- on infoBar #response $ \_ -> set infoBar [ #visible := False ]
+
     lift $ GarlicApp 
        <$> pure hb                          -- HeaderBar
        <*> pure rdis                        -- Recipe Display
        <*> pure redt                        -- Recipe Editor
        <*> pure recs                        -- Recipe List
        <*> pure (searchToggle searchBar)    -- Search Toggle
+       <*> pure (ioConsumer $ \t -> do
+               set infoBar [ #visible := True ]
+               set infoLabel [ #label := t ])
        <*> (mapEventIO (\_ -> get searchEntry #text) 
                 =<< signalE0 searchEntry #searchChanged)
        <*> signalE0 app #activate
