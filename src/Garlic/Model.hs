@@ -41,6 +41,7 @@ share [mkPersist sqlSettings, mkMigrate "migrateAll"] [persistLowerCase|
         polyFat Double Maybe
         monoFat Double Maybe
         transFat Double Maybe
+        UniqueName name
         deriving Show
 
     RecipeHas

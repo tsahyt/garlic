@@ -60,6 +60,7 @@ module Garlic.View.RecipeEdit
     ilChanged,
     ilDeleted,
     ilAppend,
+    ilClear,
 )
 where
 
@@ -332,7 +333,8 @@ data GarlicIngredientList = GarlicIngredientList
     { _ilInserted :: Event (Int, (Double, Unit, Text, Bool))
     , _ilChanged  :: Event (Int, (Double, Unit, Text, Bool))
     , _ilDeleted  :: Event Int
-    , _ilAppend   :: Consumer (Double, Unit, Text, Bool)
+    , _ilAppend   :: Consumer [(Double, Unit, Text, Bool)]
+    , _ilClear    :: Consumer ()
     }
 
 ingredientList :: TreeView -> ListStore -> Garlic GarlicIngredientList
@@ -385,16 +387,13 @@ ingredientList view model = do
 
     mapM_ (treeViewAppendColumn view) [ amntC, unitC, nameC, optiC ]
 
-    -- DUMMY VALUES
-    append (100, Gram, "foo", False)
-    -- /DUMMY VALUES
-
     lift $ GarlicIngredientList 
        <$> signalEN model #rowInserted (\h p i -> fetch p i >>= h)
        <*> signalEN model #rowChanged (\h p i -> fetch p i >>= h)
        <*> signalEN model #rowDeleted 
                (\h p -> treePathToString p >>= h . parseNum)
-       <*> pure (ioConsumer append)
+       <*> pure (ioConsumer (mapM_ append))
+       <*> pure (ioConsumer (\_ -> listStoreClear model))
 
     where append :: MonadIO m => (Double, Unit, Text, Bool) -> m ()
           append (a,b,c,d) = do

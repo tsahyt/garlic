@@ -114,5 +114,9 @@ newRecipe = dbFetcher $ \_ ->
 deleteRecipe :: Consumer (Key Recipe)
 deleteRecipe = dbConsumer $ \k -> P.delete k
 
-newIngredient :: Fetcher Ingredient (Entity Ingredient)
-newIngredient = dbFetcher P.insertEntity
+newIngredient :: Fetcher Ingredient (Maybe (Entity Ingredient))
+newIngredient = dbFetcher $ \i -> do
+    x <- P.selectFirst [ IngredientName P.==. ingredientName i ] []
+    case x of
+        Just _  -> pure Nothing
+        Nothing -> Just <$> P.insertEntity i
