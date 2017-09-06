@@ -2,15 +2,15 @@
 <!-- Generated with glade 3.20.0 -->
 <interface>
   <requires lib="gtk+" version="3.20"/>
-  <object class="GtkTreeStore" id="ingredientStore">
+  <object class="GtkListStore" id="ingredientStore">
     <columns>
-      <!-- column-name Amount -->
-      <column type="gdouble"/>
-      <!-- column-name Unit -->
+      <!-- column-name amount -->
       <column type="gchararray"/>
-      <!-- column-name Name -->
+      <!-- column-name unit -->
       <column type="gchararray"/>
-      <!-- column-name Optional -->
+      <!-- column-name name -->
+      <column type="gchararray"/>
+      <!-- column-name optional -->
       <column type="gboolean"/>
     </columns>
   </object>

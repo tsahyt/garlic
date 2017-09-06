@@ -2,6 +2,7 @@
 {-# LANGUAGE OverloadedLabels #-}
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE TypeApplications #-}
 module Garlic.View.RecipeEdit
 (
     GarlicRecipeEdit,
@@ -12,6 +13,7 @@ module Garlic.View.RecipeEdit
     editDelete,
     editStore,
     editAbort,
+    editIngredients,
     editNewIngredient,
     editEnterIngredient,
     editReplaceIngCompl,
@@ -52,12 +54,18 @@ module Garlic.View.RecipeEdit
     niPolyFat,
     niMonoFat,
     niTransFat,
+
+    GarlicIngredientList,
+    ilInserted,
+    ilChanged,
+    ilDeleted,
+    ilAppend,
 )
 where
 
-import Control.Monad
 import Control.Monad.Trans
 import Data.FileEmbed
+import Data.Maybe (fromMaybe)
 import Data.Text (Text)
 import Data.Text.Lazy (fromStrict, toStrict)
 import Data.Text.Encoding (decodeUtf8)
@@ -66,8 +74,9 @@ import GI.GtkSource
 import Garlic.Types
 import Garlic.Data.Units
 import Reactive.Banana.GI.Gtk
-import Reactive.Banana (stepper, never)
+import Reactive.Banana (stepper)
 import Reactive.Banana.Frameworks (mapEventIO, MomentIO, reactimate)
+import Text.Printf
 import Text.Markdown (Markdown (..))
 
 uiRecipeEdit :: Text
@@ -114,7 +123,7 @@ recipeEdit stack = do
     ingredientSearch  <- castB b "ingredientSearch" Entry
     replaceCompletion <- ingredientCompletion ingredientSearch
     ingredientTree    <- castB b "ingredientTree" TreeView
-    ingredientStore   <- castB b "ingredientStore" TreeStore
+    ingredientStore   <- castB b "ingredientStore" ListStore
 
     inglist <- ingredientList ingredientTree ingredientStore
 
@@ -319,24 +328,14 @@ comboBoxUnitB box = do
     stepper Gram $ parseUnit <$> c'
 
 data GarlicIngredientList = GarlicIngredientList
-    { _ilChanged :: Event ()
-    , _ilAdded   :: Event ()
-    , _ilDeleted :: Event ()
+    { _ilInserted :: Event (Int, (Double, Unit, Text, Bool))
+    , _ilChanged  :: Event (Int, (Double, Unit, Text, Bool))
+    , _ilDeleted  :: Event Int
+    , _ilAppend   :: Consumer (Double, Unit, Text, Bool)
     }
 
-ingredientList :: TreeView -> TreeStore -> Garlic GarlicIngredientList
+ingredientList :: TreeView -> ListStore -> Garlic GarlicIngredientList
 ingredientList view model = do
-    -- DUMMY VALUES
-    let insert :: MonadIO m => Double -> Text -> Text -> Bool -> m ()
-        insert a b c d = do
-            [b',c'] <- mapM (liftIO . toGValue . Just) [b,c]
-            a' <- liftIO $ toGValue a
-            d' <- liftIO $ toGValue d
-            i  <- treeStoreAppend model Nothing
-            treeStoreSet model i [0,1,2,3] [a',b',c',d']
-     in replicateM_ 100 (insert 100 "g" "milk" False)
-    -- /DUMMY VALUES
-    
     units <- unitStore
 
     -- Build new Cell Renderers
@@ -360,11 +359,40 @@ ingredientList view model = do
     treeViewColumnAddAttribute nameC nameR "text" 2
     optiC <- new TreeViewColumn [ #title := "Optional" ]
     treeViewColumnPackStart optiC optiR False
-    treeViewColumnAddAttribute optiC optiR "toggled" 3
+    treeViewColumnAddAttribute optiC optiR "active" 3
 
     mapM_ (treeViewAppendColumn view) [ amntC, unitC, nameC, optiC ]
 
-    return $ GarlicIngredientList never never never
+    lift $ GarlicIngredientList 
+       <$> signalEN model #rowInserted (\h p i -> fetch p i >>= h)
+       <*> signalEN model #rowChanged (\h p i -> fetch p i >>= h)
+       <*> signalEN model #rowDeleted 
+               (\h p -> treePathToString p >>= h . parseNum)
+       <*> pure (ioConsumer append)
+
+    where append :: MonadIO m => (Double, Unit, Text, Bool) -> m ()
+          append (a,b,c,d) = do
+              let astr = printf "%.2f" a :: String
+                  btxt = prettyUnit b :: Text
+
+              [b',c'] <- mapM (liftIO . toGValue . Just) [btxt, c]
+              a' <- liftIO $ toGValue . Just $ astr
+              d' <- liftIO $ toGValue d
+
+              i  <- listStoreAppend model
+              listStoreSet model i [0,1,2,3] [a',b',c',d']
+
+          fetch :: MonadIO m => TreePath -> TreeIter 
+                -> m (Int, (Double, Unit, Text, Bool))
+          fetch p i = do
+              idx       <- parseNum <$> treePathToString p
+              [a,b,c,d] <- mapM (treeModelGetValue model i) [0..3]
+              x <- liftIO $ (,,,) 
+               <$> fromGValue a 
+               <*> (maybe Gram (parseUnit @Text) <$> fromGValue b)
+               <*> (fromMaybe "" <$> fromGValue c) 
+               <*> fromGValue d
+              pure (idx,x)
 
 unitStore :: MonadIO m => m ListStore
 unitStore = do
