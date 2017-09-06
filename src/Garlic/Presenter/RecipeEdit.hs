@@ -44,15 +44,18 @@ recipeEditP app selected = do
 
     recipe <- currentRecipe app
     
-    -- Ingredient Editor
-    new <- ingredientEditor app
-
     -- Ingredients
+    new <- ingredientEditor app
     selectedIngredients <- loadRecipe app selected
+    completion <- fetch completionList (app ^. appStartup <:> (() <$ new))
+    app ^. appRecipeEdit . editReplaceIngCompl `consume` completion
+    entered <- fetch ingredientByName 
+        $ app ^. appRecipeEdit . editEnterIngredient
+
     ingredients <- ingredientList 
         (app ^. appRecipeEdit . editIngredients) 
         selectedIngredients
-        new
+        (new <:> entered)
 
     consume stdout . fmap show =<< plainChanges ingredients
 
