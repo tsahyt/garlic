@@ -55,6 +55,7 @@ module Garlic.View.RecipeEdit
 )
 where
 
+import Control.Monad
 import Control.Monad.Trans
 import Data.FileEmbed
 import Data.Text (Text)
@@ -189,11 +190,11 @@ ingredientCompletion entry = do
     return $ ioConsumer $ \xs -> 
         listStoreClear model >> mapM_ (appendOne model) xs
 
-    where appendOne :: MonadIO m => ListStore -> Text -> m ()
-          appendOne model str = do
-              x <- liftIO $ toGValue (Just str)
-              i <- listStoreAppend model
-              listStoreSet model i [0] [x]
+appendOne :: MonadIO m => ListStore -> Text -> m ()
+appendOne model str = do
+    x <- liftIO $ toGValue (Just str)
+    i <- listStoreAppend model
+    listStoreSet model i [0] [x]
 
 data GarlicRecipeEditMask = GarlicRecipeEditMask
     { _editSetName      :: Consumer Text
@@ -333,14 +334,19 @@ ingredientList view model = do
             d' <- liftIO $ toGValue d
             i  <- treeStoreAppend model Nothing
             treeStoreSet model i [0,1,2,3] [a',b',c',d']
-     in insert 100 "g" "milk" False
+     in replicateM_ 100 (insert 100 "g" "milk" False)
     -- /DUMMY VALUES
+    
+    units <- unitStore
 
     -- Build new Cell Renderers
-    amntR <- new CellRendererText []
-    unitR <- new CellRendererText []
-    nameR <- new CellRendererText []
-    optiR <- new CellRendererToggle []
+    amntR <- new CellRendererText   [ #editable    := True ]
+    unitR <- new CellRendererCombo  [ #editable    := True
+                                    , #hasEntry    := False
+                                    , #model       := units
+                                    , #textColumn  := 0 ]
+    nameR <- new CellRendererText   []
+    optiR <- new CellRendererToggle [ #activatable := True ]
 
     -- Columns
     amntC <- new TreeViewColumn [ #title := "Amount" ]
@@ -359,6 +365,12 @@ ingredientList view model = do
     mapM_ (treeViewAppendColumn view) [ amntC, unitC, nameC, optiC ]
 
     return $ GarlicIngredientList never never never
+
+unitStore :: MonadIO m => m ListStore
+unitStore = do
+    units <- listStoreNew [ gtypeString ]
+    mapM_ (appendOne units . prettyUnit) allUnits
+    return units
 
 -- LENSES
 makeGetters ''GarlicRecipeEdit
