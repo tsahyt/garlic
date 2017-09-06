@@ -10,6 +10,8 @@
       <column type="gchararray"/>
       <!-- column-name Name -->
       <column type="gchararray"/>
+      <!-- column-name Optional -->
+      <column type="gboolean"/>
     </columns>
   </object>
   <object class="GtkAdjustment" id="ratingAdjustment">

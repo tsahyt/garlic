@@ -65,7 +65,7 @@ import GI.GtkSource
 import Garlic.Types
 import Garlic.Data.Units
 import Reactive.Banana.GI.Gtk
-import Reactive.Banana (stepper)
+import Reactive.Banana (stepper, never)
 import Reactive.Banana.Frameworks (mapEventIO, MomentIO, reactimate)
 import Text.Markdown (Markdown (..))
 
@@ -81,6 +81,7 @@ data GarlicRecipeEdit = GarlicRecipeEdit
     , _editInstructions    :: Behavior (Maybe Markdown)
     , _editMasks           :: GarlicRecipeEditMask
     , _editNewIngredient   :: GarlicNewIngredient
+    , _editIngredients     :: GarlicIngredientList
     , _editEnterIngredient :: Event Text
     , _editReplaceIngCompl :: Consumer [Text]
     , _editDelete          :: Event ()
@@ -111,6 +112,10 @@ recipeEdit stack = do
     -- Ingredient List
     ingredientSearch  <- castB b "ingredientSearch" Entry
     replaceCompletion <- ingredientCompletion ingredientSearch
+    ingredientTree    <- castB b "ingredientTree" TreeView
+    ingredientStore   <- castB b "ingredientStore" TreeStore
+
+    inglist <- ingredientList ingredientTree ingredientStore
 
     lift $ GarlicRecipeEdit
        <$> pure (ioConsumer (\_ -> stackSetVisibleChild stack redt))
@@ -118,6 +123,7 @@ recipeEdit stack = do
        <*> (fmap (fmap (Markdown . fromStrict)) <$> attrB sbuf #text)
        <*> pure masks
        <*> pure popover
+       <*> pure inglist
        <*> ingredientEnter ingredientSearch
        <*> pure replaceCompletion
        <*> signalE0 deleteButton #clicked
@@ -311,7 +317,51 @@ comboBoxUnitB box = do
     c' <- mapEventIO (const $ comboBoxTextGetActiveText box) c
     stepper Gram $ parseUnit <$> c'
 
+data GarlicIngredientList = GarlicIngredientList
+    { _ilChanged :: Event ()
+    , _ilAdded   :: Event ()
+    , _ilDeleted :: Event ()
+    }
+
+ingredientList :: TreeView -> TreeStore -> Garlic GarlicIngredientList
+ingredientList view model = do
+    -- DUMMY VALUES
+    let insert :: MonadIO m => Double -> Text -> Text -> Bool -> m ()
+        insert a b c d = do
+            [b',c'] <- mapM (liftIO . toGValue . Just) [b,c]
+            a' <- liftIO $ toGValue a
+            d' <- liftIO $ toGValue d
+            i  <- treeStoreAppend model Nothing
+            treeStoreSet model i [0,1,2,3] [a',b',c',d']
+     in insert 100 "g" "milk" False
+    -- /DUMMY VALUES
+
+    -- Build new Cell Renderers
+    amntR <- new CellRendererText []
+    unitR <- new CellRendererText []
+    nameR <- new CellRendererText []
+    optiR <- new CellRendererToggle []
+
+    -- Columns
+    amntC <- new TreeViewColumn [ #title := "Amount" ]
+    treeViewColumnPackStart amntC amntR False
+    treeViewColumnAddAttribute amntC amntR "text" 0
+    unitC <- new TreeViewColumn [ #title := "Unit" ]
+    treeViewColumnPackStart unitC unitR False
+    treeViewColumnAddAttribute unitC unitR "text" 1
+    nameC <- new TreeViewColumn [ #title := "Name", #expand := True ]
+    treeViewColumnPackStart nameC nameR True
+    treeViewColumnAddAttribute nameC nameR "text" 2
+    optiC <- new TreeViewColumn [ #title := "Optional" ]
+    treeViewColumnPackStart optiC optiR False
+    treeViewColumnAddAttribute optiC optiR "toggled" 3
+
+    mapM_ (treeViewAppendColumn view) [ amntC, unitC, nameC, optiC ]
+
+    return $ GarlicIngredientList never never never
+
 -- LENSES
 makeGetters ''GarlicRecipeEdit
 makeGetters ''GarlicRecipeEditMask
 makeGetters ''GarlicNewIngredient
+makeGetters ''GarlicIngredientList
