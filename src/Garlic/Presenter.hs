@@ -67,4 +67,4 @@ listRecipes app = mconcat
     , fmap mklr >$< app ^. appRecipeList ^. addRecipes ]
     where mklr :: Recipe -> ListRecipe
           mklr Recipe{..} = 
-              ListRecipe recipeRating recipeDuration 0 recipeName recipeCuisine
+              ListRecipe recipeRating recipeDuration recipeName recipeCuisine

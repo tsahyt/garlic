@@ -29,7 +29,6 @@ module Garlic.View
     ListRecipe (..),
     lrRating,
     lrDuration,
-    lrKcal,
     lrName,
     lrCuisine,
 )
@@ -125,7 +124,6 @@ searchToggle s = ioConsumer $ \_ -> do
 data ListRecipe = ListRecipe 
     { _lrRating   :: Int
     , _lrDuration :: Int
-    , _lrKcal     :: Int
     , _lrName     :: Text
     , _lrCuisine  :: Text
     }
@@ -146,31 +144,27 @@ recipes rlist =
     
     where clearList l = 
               containerGetChildren l >>= mapM_ (containerRemove l)
-          append (ListRecipe a b c d e) = 
-              recipeEntry a b c d e >>= \x -> listBoxInsert rlist x (-1)
+          append (ListRecipe a b d e) = 
+              recipeEntry a b d e >>= \x -> listBoxInsert rlist x (-1)
 
 -- | Build a new ListBoxRow for a recipe entry in the recipe sidebar/list.
 recipeEntry 
     :: MonadIO m 
     => Int          -- ^ Rating
     -> Int          -- ^ Time Required
-    -> Int          -- ^ Kcal
     -> Text         -- ^ Name
     -> Text         -- ^ Cuisine
     -> m ListBoxRow
-recipeEntry rate time kcal name cuisine = do
+recipeEntry rate time name cuisine = do
     b <- builderNew
     _ <- builderAddFromString b uiRecipeEntry (-1)
     
     nameL <- castB b "recipeName" Label
     infoL <- castB b "recipeInfo" Label
-    kcalL <- castB b "recipeKcal" Label
 
-    let kcal' = pack $ printf "%dkcal" kcal
-        info  = pack $ printf "%s —  %s — %s" rating cuisine time'
+    let info  = pack $ printf "%s —  %s — %s" rating cuisine time'
 
     set nameL [ #label := name ]
-    set kcalL [ #label := kcal' ]
     set infoL [ #label := info ]
 
     castB b "recipeEntry" ListBoxRow
