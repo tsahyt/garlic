@@ -6,6 +6,7 @@ module Garlic.Data.Units
 (
     Unit (..),
     allUnits,
+    findFactor,
     convert,
     prettyUnit,
     parseUnit

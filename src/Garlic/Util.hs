@@ -119,25 +119,34 @@ getNutrition ref r is =
 
 toLabel :: ReferencePerson -> WeighedIngredient -> NutritionLabel Double
 toLabel ref w = x
-    where factor = fromMaybe 0 $ 
-             convert (w ^. wingrIngr . to entityVal . to ingredientBasicUnit) 
-                     (w ^. wingrAmount)
-                     (w ^. wingrUnit)
+    where factor = fromMaybe 0 $
+              convert (ingredientBasicUnit i)
+                      (w ^. wingrAmount / ingredientBasicAmount i)
+                      (w ^. wingrUnit)
           i = w ^. wingrIngr . to entityVal
 
           x = NutritionLabel
-              { nlServing  = ""
-              , nlKcal     = 4 * (nlCarbs x ^. _x + nlProtein x ^. _x) 
-                           + nlKcalFat x
-              , nlKcalFat  = 9 * nlFat x ^. _x
-              , nlFat      = NVec (factor * ingredientFat i)
-                                  (nlFat x ^. _x / referenceFat ref)
-              , nlSatFat   = NVec (factor * fromMaybe 0 (ingredientSatFat i)) 0
-              , nlTransFat = NVec (factor * fromMaybe 0 (ingredientTransFat i)) 0
-              , nlCarbs    = NVec (factor * ingredientCarbs i)
-                                  (nlCarbs x ^. _x / referenceCarbs ref)
-              , nlFibre    = NVec (factor * fromMaybe 0 (ingredientFibre i)) 0
-              , nlSugars   = NVec (factor * fromMaybe 0 (ingredientSugar i)) 0
-              , nlProtein  = NVec (factor * ingredientProtein i)
-                                  (nlProtein x ^. _x / referenceProtein ref)
+              { nlServing  = 
+                    ""
+              , nlKcal     = 
+                    4 * (nlCarbs x ^. _x + nlProtein x ^. _x) + nlKcalFat x
+              , nlKcalFat  = 
+                    9 * nlFat x ^. _x
+              , nlFat      = NVec 
+                    (factor * ingredientFat i)
+                    (nlFat x ^. _x / referenceFat ref)
+              , nlSatFat   = NVec 
+                    (factor * fromMaybe 0 (ingredientSatFat i)) 0
+              , nlTransFat = NVec 
+                    (factor * fromMaybe 0 (ingredientTransFat i)) 0
+              , nlCarbs    = NVec 
+                    (factor * ingredientCarbs i)
+                    (nlCarbs x ^. _x / referenceCarbs ref)
+              , nlFibre    = NVec 
+                    (factor * fromMaybe 0 (ingredientFibre i)) 0
+              , nlSugars   = NVec 
+                    (factor * fromMaybe 0 (ingredientSugar i)) 0
+              , nlProtein  = NVec 
+                    (factor * ingredientProtein i)
+                    (nlProtein x ^. _x / referenceProtein ref)
               }

@@ -141,4 +141,4 @@ nutritionFacts nl = H.div ! A.id "nutrition" $
                   H.div ! A.class_ "label" $ do
                       text label 
                       H.div ! A.class_ "weight" $ string (printf "%.1fg" v)
-                  H.div ! A.class_ "dv" $ string (printf "%.0f%%" dv)
+                  H.div ! A.class_ "dv" $ string (printf "%.0f%%" (100 * dv))
