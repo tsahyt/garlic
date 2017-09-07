@@ -176,9 +176,9 @@ buildSourceView = do
                 Just md -> [ #language := md ]
                 Nothing -> []
     sourceview <- viewNewWithBuffer sbuf
-    set sourceview [ #showLineNumbers := True
-                   , #smartBackspace := True
+    set sourceview [ #smartBackspace := True
                    , #monospace := True
+                   , #wrapMode := WrapModeWord
                    ]
 
     pure (sourceview, sbuf)

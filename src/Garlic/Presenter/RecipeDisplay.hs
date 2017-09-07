@@ -25,6 +25,7 @@ import Garlic.View.RecipeDisplay
 import Garlic.View.HeaderBar
 import Garlic.Util
 import Text.Blaze.Html
+import Text.Blaze.Html.Renderer.String
 
 import qualified Text.Blaze.Html5 as H
 import qualified Text.Blaze.Html5.Attributes as A
@@ -49,6 +50,8 @@ recipeDisplayP app selected = do
         recipeYield . entityVal <$> selected
     disp ^. loadInstructions `consume` 
         uncurry fullInstructions . (over _1 entityVal) <$> selected'
+    stdout `consume` 
+        renderHtml . uncurry fullInstructions . (over _1 entityVal) <$> selected'
 
     weighed <- do
         ryield <- stepper 1 $ recipeYield . entityVal <$> selected
@@ -66,7 +69,7 @@ replaceIngredients disp = mconcat
     , map mkig >$< disp ^. addIngredients ]
     where mkig :: WeighedIngredient -> ViewIngredient
           mkig WeighedIngredient{..} = 
-              let m = pack $ printf "%G %s" _wingrAmount _wingrUnit
+              let m = pack $ printf "%.2f %s" _wingrAmount _wingrUnit
                in ViewIngredient m (ingredientName . entityVal $ _wingrIngr)
 
 scaleIngredients :: Double -> [WeighedIngredient] -> [WeighedIngredient]
@@ -77,15 +80,16 @@ fullInstructions :: Recipe -> [WeighedIngredient] -> Html
 fullInstructions r is = do
     H.style (text $ recipeStyle)
     H.div ! A.class_ "main" $ do
-        H.h1 (text $ recipeName r)
         nutritionFacts (getNutrition defaultReferencePerson r is)
+        H.h1 (text $ recipeName r)
         recipeHead r
         H.h2 "Instructions"
-        toHtml (recipeInstructions r)
+        H.div ! A.class_ "instructions" $
+            toHtml (recipeInstructions r)
 
 -- | Rendering of Recipe Head
 recipeHead :: Recipe -> Html
-recipeHead Recipe{..} = H.div $ H.dl $ do
+recipeHead Recipe{..} = H.div ! A.class_ "recipe-head" $ H.dl $ do
     H.dt "Cuisine"
     H.dd (text recipeCuisine)
 
@@ -97,11 +101,11 @@ recipeHead Recipe{..} = H.div $ H.dl $ do
 
     case recipeSource of
         Nothing -> return ()
-        Just s  -> H.dt "Source" >> H.dd (text s)
-
-    case recipeUrl of
-        Nothing -> return ()
-        Just s  -> H.dt "Website" >> H.dd (H.a ! A.href (textValue s) $ text s)
+        Just s  -> do
+            H.dt "Source"
+            H.dd $ case recipeUrl of
+                       Nothing -> text s
+                       Just u -> H.a ! A.href (textValue u) $ text s
 
 data NEntry = Indent | IndentNoDV | Standard
     deriving (Show, Eq)
@@ -144,7 +148,7 @@ nutritionFacts nl = H.div ! A.id "nutrition" $ H.table $ do
         H.div ! A.class_ "line" $ pure ()
         "Calories per gram:"
         H.br
-        "Fat 9 &bull; Carbohydrate 4 &bull; Protein 4"
+        "Fat 9 ⚫ Carbohydrate 4 ⚫ Protein 4"
 
     where thickLine = H.tr ! A.class_ "thick-line" $ 
                           H.td ! A.class_ "solid" $ pure ()
