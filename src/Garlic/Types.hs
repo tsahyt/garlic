@@ -1,4 +1,5 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE TupleSections #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 {-# OPTIONS_GHC -fno-warn-missing-signatures #-}
 module Garlic.Types
@@ -16,6 +17,7 @@ module Garlic.Types
 
     Fetcher,
     fetch,
+    fetchThrough,
     dynamicFetcher,
     dbFetcher,
     filterMaybe,
@@ -100,6 +102,11 @@ dbConsumer k = Consumer $ \e -> do
 newtype Fetcher a b = Fetcher { fetch :: Event a -> Garlic (Event b) }
 infixr 1 `fetch`
 
+instance Profunctor Fetcher where
+    dimap f g k = Fetcher $ \a ->
+        let b = fmap f a
+         in g <$$> fetch k b
+
 -- | Can be used to register new handlers/events dynamically in a fetcher.
 dynamicFetcher :: (a -> MomentIO b) -> Fetcher a b
 dynamicFetcher k = Fetcher $ \e -> lift $ execute (k <$> e)
@@ -112,6 +119,12 @@ dbFetcher k = Fetcher $ \e -> do
 
 filterMaybe :: Fetcher a (Maybe b) -> Fetcher a b
 filterMaybe (Fetcher x) = Fetcher (filterJust <$$> x)
+
+fetchThrough :: Fetcher a b -> Fetcher a (a,b)
+fetchThrough k = Fetcher $ \a -> do
+    aB <- stepper (error "impossible") a
+    b  <- fetch k a
+    pure $ ((,) <$> aB) <@> b
 
 -- | Read only lens generation for GUI records
 makeGetters = makeLensesWith (set generateUpdateableOptics False lensRules)

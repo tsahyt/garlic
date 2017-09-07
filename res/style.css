@@ -33,3 +33,61 @@ dd {
     line-height: 18px;
     padding: 4px 0 4px 40px;
 }
+
+
+#nutrition { 
+    background-color:white; 
+    border:1px solid black; 
+    padding:3px; width:244px; 
+}
+
+#nutrition td { 
+    color:black; 
+    font-family:'Arial Black','Helvetica Bold',sans-serif; 
+    font-size:8pt; 
+    padding:0; 
+}
+
+#nutrition td.header { 
+    font-family:'Arial Black','Helvetica Bold',sans-serif; 
+    font-size:28px; 
+    white-space:nowrap; 
+}        
+
+#nutrition div.label { 
+    float:left; 
+    font-family:'Arial Black','Helvetica Bold',sans-serif; 
+}
+
+#nutrition div.serving { 
+    font-family:Arial,Helvetica,sans-serif; 
+    font-size:8pt; 
+    text-align:center; 
+}
+
+#nutrition div.weight { 
+    display:inline; 
+    font-family:Arial,Helvetica,sans-serif; 
+    padding-left:1px; 
+}
+
+#nutrition div.dv { 
+    display:inline; 
+    float:right; 
+    font-family:'Arial Black','Helvetica Bold',sans-serif; 
+}
+
+#nutrition table.vitamins td {  
+    font-family:Arial,Helvetica,sans-serif; 
+    white-space:nowrap; 
+    width:33%; 
+}
+
+#nutrition div.line { 
+    border-top:1px solid black; 
+}
+
+#nutrition div.labellight { 
+    float:left; 
+    font-family:Arial,Helvetica,sans-serif; 
+}
