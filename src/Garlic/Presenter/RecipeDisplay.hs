@@ -113,9 +113,10 @@ nutritionFacts nl = H.div ! A.id "nutrition" $ H.table $ do
     thickLine
     H.tr $ H.td $ do
         H.div ! A.class_ "top-lbls" $ do
-            H.div ! A.class_ "amount-lbl" $ "Amount per serving"
+            H.div ! A.class_ "amount-lbl" $ text $ 
+                "Amount per " `mappend` nlServing nl
             H.div ! A.class_ "cal-lbl" $ "Calories"
-        H.div ! A.class_ "cal" $ "140"
+        H.div ! A.class_ "cal" $ string $ printf "%0.f" (nlKcal nl)
 
     mediumLine
     H.tr $ H.td ! A.class_ "pct-dv" $ "% Daily Value*"
