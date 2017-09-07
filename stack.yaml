@@ -7,4 +7,4 @@ extra-deps:
 - gi-webkit2-4.0.14
 - gi-gtksource-3.0.15
 - gi-javascriptcore-4.0.11
-resolver: lts-9.2
+resolver: lts-9.3
