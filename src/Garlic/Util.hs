@@ -99,6 +99,7 @@ data ReferencePerson = ReferencePerson
     }
     deriving (Show, Eq)
 
+-- | The default reference person as declared by the US government
 defaultReferencePerson :: ReferencePerson
 defaultReferencePerson = ReferencePerson
     { referenceKcal = 2000

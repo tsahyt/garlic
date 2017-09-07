@@ -34,60 +34,94 @@ dd {
     padding: 4px 0 4px 40px;
 }
 
-
-#nutrition { 
-    background-color:white; 
-    border:1px solid black; 
-    padding:3px; width:244px; 
+#nutrition tr.thick-line {
+    height: 7pt
 }
 
-#nutrition td { 
-    color:black; 
-    font-family:'Arial Black','Helvetica Bold',sans-serif; 
-    font-size:8pt; 
-    padding:0; 
+#nutrition td.solid {
+    background: #000;
 }
 
-#nutrition td.header { 
-    font-family:'Arial Black','Helvetica Bold',sans-serif; 
-    font-size:28px; 
-    white-space:nowrap; 
-}        
-
-#nutrition div.label { 
-    float:left; 
-    font-family:'Arial Black','Helvetica Bold',sans-serif; 
+#nutrition tr {
+    margin: 0;
+    padding: 0;
 }
 
-#nutrition div.serving { 
-    font-family:Arial,Helvetica,sans-serif; 
-    font-size:8pt; 
-    text-align:center; 
+#nutrition tr.medium-line {
+    height: 3pt;
 }
 
-#nutrition div.weight { 
-    display:inline; 
-    font-family:Arial,Helvetica,sans-serif; 
-    padding-left:1px; 
+#nutrition td.solid {
+    background: #000;
 }
 
-#nutrition div.dv { 
-    display:inline; 
-    float:right; 
-    font-family:'Arial Black','Helvetica Bold',sans-serif; 
+#nutrition td.pct-dv {
+    font-weight: 900;
+    font-size: 8pt;
+    text-align: right;
 }
 
-#nutrition table.vitamins td {  
-    font-family:Arial,Helvetica,sans-serif; 
-    white-space:nowrap; 
-    width:33%; 
+#nutrition span.label {
+    font-size: 12pt;
+    font-weight: 600;
+    margin-right: 4pt;
 }
 
-#nutrition div.line { 
-    border-top:1px solid black; 
+#nutrition span.llabel {
+    font-size: 12pt;
+    margin-left: 1em;
+    margin-right: 4pt;
 }
 
-#nutrition div.labellight { 
-    float:left; 
-    font-family:Arial,Helvetica,sans-serif; 
+#nutrition span.dv {
+    font-size: 12pt;
+    font-weight: 600;
+    float: right;
+}
+
+#nutrition div.line {
+    border-top: solid 0.25pt #555;
+}
+
+#nutrition td.header {
+    font-weight: 900;
+    font-size: 24pt;
+    text-align: center;
+}
+
+#nutrition div.top-lbls {
+    float: left;
+}
+
+#nutrition div.amount-lbl {
+    font-size: 8pt;
+    font-weight: 900;
+}
+
+#nutrition div.cal-lbl {
+    font-size: 16pt;
+    font-weight: 900;
+}
+
+#nutrition div.cal {
+    font-size: 22pt;
+    font-weight: 900;
+    float: right;
+}
+
+#nutrition td.dv-expl {
+    font-size: 6pt;
+    max-width: 6em;
+}
+
+#nutrition td.cl-expl {
+    font-size: 6pt;
+    text-align: center;
+}
+
+#nutrition {
+    display: inline-block;
+    border: solid 0.5pt #000;
+    font-family: Helvetica;
+    float: right;
 }
