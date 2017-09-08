@@ -128,11 +128,12 @@ recipeEdit stack = do
     replaceCompletion <- ingredientCompletion ingredientSearch
     ingredientTree    <- castB b "ingredientTree" TreeView
     ingredientStore   <- castB b "ingredientStore" ListStore
+    ingredientDelete  <- castB b "ingredientDelete" Button
 
     treeSelection <- treeViewGetSelection ingredientTree
     set treeSelection [ #mode := SelectionModeMultiple ]
 
-    inglist <- ingredientList ingredientTree ingredientStore
+    inglist <- ingredientList ingredientTree ingredientStore ingredientDelete
 
     lift $ GarlicRecipeEdit
        <$> pure (ioConsumer (\_ -> stackSetVisibleChild stack redt))
@@ -348,9 +349,17 @@ data GarlicIngredientList = GarlicIngredientList
     , _ilClear    :: Consumer ()
     }
 
-ingredientList :: TreeView -> ListStore -> Garlic GarlicIngredientList
-ingredientList view model = do
+ingredientList :: TreeView -> ListStore -> Button -> Garlic GarlicIngredientList
+ingredientList view model delButton = do
     units <- unitStore
+
+    -- Deletion to model
+    _ <- on delButton #clicked $ do
+        sel <- treeViewGetSelection view
+        (rows, _) <- treeSelectionGetSelectedRows sel
+        forM_ rows $ \row -> do
+            (b, iter)  <- treeModelGetIter model row
+            when b . void $ listStoreRemove model iter
 
     -- Build new Cell Renderers
     amntR <- new CellRendererText [ #editable := True ]

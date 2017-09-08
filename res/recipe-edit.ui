@@ -318,7 +318,6 @@
                         <property name="model">ingredientStore</property>
                         <property name="reorderable">True</property>
                         <property name="search_column">2</property>
-                        <property name="fixed_height_mode">True</property>
                         <property name="rubber_banding">True</property>
                         <child internal-child="selection">
                           <object class="GtkTreeSelection"/>
