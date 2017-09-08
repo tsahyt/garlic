@@ -98,7 +98,7 @@ recipeHead Recipe{..} = H.div ! A.class_ "recipe-head" $ H.dl $ do
     H.dd (string . ratingString $ recipeRating) 
 
     H.dt "Duration"
-    H.dd (string . durationString $ recipeDuration)
+    H.dd (text . durationString $ recipeDuration)
 
     case recipeSource of
         Nothing -> return ()

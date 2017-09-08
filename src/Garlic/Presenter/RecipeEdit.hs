@@ -25,6 +25,7 @@ import Garlic.View
 import Garlic.View.HeaderBar
 import Garlic.View.RecipeEdit
 import Garlic.View.RecipeDisplay
+import Garlic.Util
 
 import qualified Data.Sequence as S
 
@@ -97,7 +98,7 @@ loadRecipe app selected = do
         rcp   = entityVal <$> selected
     masks ^. editSetName `consume` recipeName <$> rcp
     masks ^. editSetCuisine `consume` recipeCuisine <$> rcp
-    masks ^. editSetDuration `consume` pack . show . recipeDuration <$> rcp
+    masks ^. editSetDuration `consume` durationString . recipeDuration <$> rcp
     masks ^. editSetYield `consume` recipeYield <$> rcp
     masks ^. editSetYieldUnit `consume` recipeYieldUnit <$> rcp
     masks ^. editSetSource `consume` fromMaybe "" . recipeSource <$> rcp
@@ -117,7 +118,7 @@ currentRecipe app = do
             <*> masks ^. editCuisine
             <*> masks ^. editRating
             <*> fmap (fromMaybe "") (app ^. appRecipeEdit . editInstructions)
-            <*> fmap parseNum (masks ^. editDuration)
+            <*> fmap (fromMaybe 0 . parseDuration) (masks ^. editDuration)
             <*> masks ^. editYield
             <*> masks ^. editYieldUnit
             <*> fmap mtext (masks ^. editSource)

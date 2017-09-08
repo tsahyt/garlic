@@ -55,6 +55,7 @@ library
                      , esqueleto
                      , linear
                      , profunctors
+                     , attoparsec
   default-language:    Haskell2010
 
 executable garlic-exe
