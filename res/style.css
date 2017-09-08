@@ -66,6 +66,7 @@ h2 {
 #nutrition span.dv {
     font-size: 12pt;
     font-weight: 600;
+    margin-left: 1em;
     float: right;
 }
 

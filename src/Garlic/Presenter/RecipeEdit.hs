@@ -152,6 +152,8 @@ currentIngredient editor = Ingredient
     <*> (fmap parseNum . mtext <$> editor ^. niPolyFat)
     <*> (fmap parseNum . mtext <$> editor ^. niMonoFat)
     <*> (fmap parseNum . mtext <$> editor ^. niTransFat)
+    <*> (fmap parseNum . mtext <$> editor ^. niSodium)
+    <*> (fmap parseNum . mtext <$> editor ^. niCholesterol)
 
 ingredientList 
     :: GarlicIngredientList 

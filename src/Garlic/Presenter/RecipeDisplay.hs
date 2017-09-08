@@ -17,6 +17,7 @@ import Data.FileEmbed
 import Database.Persist.Sql
 import Text.Printf
 
+import Garlic.Data.Units
 import Garlic.Model
 import Garlic.Model.Queries
 import Garlic.Types
@@ -126,15 +127,17 @@ nutritionFacts nl = H.div ! A.id "nutrition" $ H.table $ do
     H.tr $ H.td ! A.class_ "pct-dv" $ "% Daily Value*"
 
     -- Entries
-    entry Standard "Total Fat" (nlFat nl)
-    entry Indent "Saturated Fat" (nlSatFat nl)
-    entry IndentNoDV "Trans Fat" (nlTransFat nl)
+    entry Standard Gram "Total Fat" (nlFat nl)
+    entry Indent Gram "Saturated Fat" (nlSatFat nl)
+    entry IndentNoDV Gram "Trans Fat" (nlTransFat nl)
+    entry Standard Milligram "Cholesterol" (nlCholesterol nl)
+    entry Standard Milligram "Sodium" (nlSodium nl)
 
-    entry Standard "Total Carbohydrates" (nlCarbs nl)
-    entry Indent "Dietary Fibre" (nlFibre nl)
-    entry Indent "Sugars" (nlSugars nl)
+    entry Standard Gram "Total Carbohydrates" (nlCarbs nl)
+    entry Indent Gram "Dietary Fibre" (nlFibre nl)
+    entry Indent Gram "Sugars" (nlSugars nl)
 
-    entry Standard "Protein" (nlProtein nl)
+    entry Standard Gram "Protein" (nlProtein nl)
 
     thickLine
 
@@ -155,13 +158,13 @@ nutritionFacts nl = H.div ! A.id "nutrition" $ H.table $ do
           mediumLine = H.tr ! A.class_ "medium-line" $ 
                           H.td ! A.class_ "solid" $ pure ()
           
-          entry ty lbl (NVec g dv) = H.tr $ H.td $ do
+          entry ty unit lbl (NVec g dv) = H.tr $ H.td $ do
               let cl = case ty of
                            Standard -> "label"
                            _        -> "llabel"
               H.div ! A.class_ "line" $ pure ()
               H.span ! A.class_ cl $ text lbl
-              string $ printf "%.1fg" g
+              string $ printf "%.1f%s" g (prettyUnit unit :: String)
               unless (ty == IndentNoDV) $
                   H.span ! A.class_ "dv" $ string $
                       printf "%.0f%%" (dv * 100)

@@ -41,6 +41,8 @@ share [mkPersist sqlSettings, mkMigrate "migrateAll"] [persistLowerCase|
         polyFat Double Maybe
         monoFat Double Maybe
         transFat Double Maybe
+        sodium Double Maybe
+        cholesterol Double Maybe
         UniqueName name
         deriving Show
 

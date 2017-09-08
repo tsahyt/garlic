@@ -54,6 +54,8 @@ module Garlic.View.RecipeEdit
     niPolyFat,
     niMonoFat,
     niTransFat,
+    niSodium,
+    niCholesterol,
 
     GarlicIngredientList,
     ilInserted,
@@ -256,22 +258,24 @@ getEditMasks b = do
        <*> (fmap truncate <$> attrB recipeRating #value)
 
 data GarlicNewIngredient = GarlicNewIngredient
-    { _niClearAll   :: Consumer ()
-    , _niClearClick :: Event ()
-    , _niOkClick    :: Event ()
-    , _niName       :: Behavior Text
-    , _niComment    :: Behavior Text
-    , _niAmount     :: Behavior Text
-    , _niUnit       :: Behavior Unit
-    , _niProtein    :: Behavior Text
-    , _niCarbs      :: Behavior Text
-    , _niSugar      :: Behavior Text
-    , _niFibre      :: Behavior Text
-    , _niFat        :: Behavior Text
-    , _niSatFat     :: Behavior Text
-    , _niPolyFat    :: Behavior Text
-    , _niMonoFat    :: Behavior Text
-    , _niTransFat   :: Behavior Text
+    { _niClearAll    :: Consumer ()
+    , _niClearClick  :: Event ()
+    , _niOkClick     :: Event ()
+    , _niName        :: Behavior Text
+    , _niComment     :: Behavior Text
+    , _niAmount      :: Behavior Text
+    , _niUnit        :: Behavior Unit
+    , _niProtein     :: Behavior Text
+    , _niCarbs       :: Behavior Text
+    , _niSugar       :: Behavior Text
+    , _niFibre       :: Behavior Text
+    , _niFat         :: Behavior Text
+    , _niSatFat      :: Behavior Text
+    , _niPolyFat     :: Behavior Text
+    , _niMonoFat     :: Behavior Text
+    , _niTransFat    :: Behavior Text
+    , _niSodium      :: Behavior Text
+    , _niCholesterol :: Behavior Text
     }
 
 newIngredient :: MenuButton -> Garlic GarlicNewIngredient
@@ -295,6 +299,8 @@ newIngredient button = do
     polyFat  <- castB b "niPolyFat" Entry
     monoFat  <- castB b "niMonoFat" Entry
     transFat <- castB b "niTransFat" Entry
+    sodium   <- castB b "niSodium" Entry
+    chlstrl  <- castB b "niCholesterol" Entry
 
     mapM_ (comboBoxTextAppendText unit . prettyUnit) allUnits
 
@@ -322,6 +328,8 @@ newIngredient button = do
        <*> attrB polyFat #text
        <*> attrB monoFat #text
        <*> attrB transFat #text
+       <*> attrB sodium #text
+       <*> attrB chlstrl #text
 
 comboBoxUnitB :: ComboBoxText -> MomentIO (Behavior Unit)
 comboBoxUnitB box = do
