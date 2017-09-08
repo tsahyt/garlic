@@ -129,6 +129,9 @@ recipeEdit stack = do
     ingredientTree    <- castB b "ingredientTree" TreeView
     ingredientStore   <- castB b "ingredientStore" ListStore
 
+    treeSelection <- treeViewGetSelection ingredientTree
+    set treeSelection [ #mode := SelectionModeMultiple ]
+
     inglist <- ingredientList ingredientTree ingredientStore
 
     lift $ GarlicRecipeEdit
