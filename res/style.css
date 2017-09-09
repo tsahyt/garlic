@@ -2,6 +2,16 @@ body {
     background-color: white;
 }
 
+.main a {
+    color: #444;
+    text-decoration: underline;
+}
+
+.main a:hover {
+    color: #666;
+    text-decoration: none;
+}
+
 .main h1 {
     font-family: Montserrat;
     font-weight: 300;
@@ -69,6 +79,25 @@ span.opt-ingr {
 
 div.instructions {
     column-count: 2;
+}
+
+.instructions h1 {
+    font-size: 16pt;
+}
+
+.instructions h2 {
+    font-size: 14pt;
+    display: inline;
+}
+
+.instructions h3 {
+    font-size: 12pt;
+    display: inline;
+}
+
+.instructions h4 {
+    font-size: 12pt;
+    display: inline;
 }
 
 @media only screen and (max-width: 800px) {
