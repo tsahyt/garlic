@@ -2,12 +2,48 @@ body {
     background-color: white;
 }
 
-h1 {
-    font-size: 16pt;
+.main h1 {
+    font-family: Montserrat;
+    font-weight: 300;
+    font-size: 28pt;
+    text-align: center;
 }
 
-h2 {
-    font-size: 14pt;
+.main h2 {
+    font-family: Montserrat;
+    font-weight: 300;
+    font-size: 18pt;
+    text-align: center;
+}
+
+.recipe-head {
+    border-top: 1px solid;
+    border-bottom: 1px solid;
+    margin-bottom: 2em;
+    text-align: center;
+    font-weight: 400;
+}
+
+.recipe-head dt {
+    margin-left: 2em;
+}
+
+.recipe-head dl {
+    display: inline-flex;
+    flex-wrap: wrap;
+    margin-left: auto;
+    margin-right: auto;
+    font-family: Montserrat;
+}
+
+.recipe-head dd {
+    margin-left: 1em;
+    font-weight: 300;
+}
+
+details {
+    font-family: Montserrat;
+    text-align: right;
 }
 
 .main {
@@ -16,8 +52,27 @@ h2 {
     width: 75%;
     max-width: 60em;
     margin-top: 2em;
-    border: 1px;
-    font-family: Helvetica;
+    font-family: Palatino, serif;
+    font-size: 13pt;
+}
+
+#ingredients {
+    column-count: 3;
+    list-style-type: none;
+}
+
+div.instructions {
+    column-count: 2;
+}
+
+@media only screen and (max-width: 800px) {
+    #ingredients {
+        column-count: 2;
+    }
+
+    div.instructions {
+        column-count: 1;
+    }
 }
 
 .recipe-head dt {
@@ -111,8 +166,9 @@ h2 {
 }
 
 #nutrition {
-    display: inline-block;
+    display: block;
     border: solid 0.5pt #000;
     font-family: Helvetica;
     float: right;
+    margin-left: 1em;
 }

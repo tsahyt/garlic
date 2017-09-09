@@ -81,9 +81,11 @@ fullInstructions :: Recipe -> [WeighedIngredient] -> Html
 fullInstructions r is = do
     H.style (text $ recipeStyle)
     H.div ! A.class_ "main" $ do
-        nutritionFacts (getNutrition defaultReferencePerson r is)
         H.h1 (text $ recipeName r)
         recipeHead r
+        H.details $ do
+            H.summary "Nutrition"
+            nutritionFacts (getNutrition defaultReferencePerson r is)
         H.h2 "Ingredients"
         ingredientList is
         H.h2 "Instructions"
