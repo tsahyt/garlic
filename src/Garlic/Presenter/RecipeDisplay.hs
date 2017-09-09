@@ -7,25 +7,25 @@ module Garlic.Presenter.RecipeDisplay
 )
 where
 
-import Control.Monad
 import Control.Lens
-import Reactive.Banana
+import Control.Monad
+import Data.FileEmbed
 import Data.Functor.Contravariant
 import Data.Text (Text, pack)
 import Data.Text.Encoding (decodeUtf8)
-import Data.FileEmbed
 import Database.Persist.Sql
+import Reactive.Banana
 import Text.Printf
 
+import Garlic.Data.Duration
 import Garlic.Data.Nutrition
 import Garlic.Data.Units
 import Garlic.Model
 import Garlic.Model.Queries
 import Garlic.Types
 import Garlic.View
-import Garlic.View.RecipeDisplay
 import Garlic.View.HeaderBar
-import Garlic.Util
+import Garlic.View.RecipeDisplay
 import Text.Blaze.Html
 import Text.Blaze.Html.Renderer.String
 

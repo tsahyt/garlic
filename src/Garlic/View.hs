@@ -36,20 +36,20 @@ where
 
 import Control.Lens.TH
 import Control.Monad.Trans
+import Data.FileEmbed
+import Data.Sequence (Seq)
+import Data.Text (Text, pack)
+import Data.Text.Encoding (decodeUtf8)
+import GI.Gtk
 import Garlic.Types
 import Reactive.Banana.Frameworks (mapEventIO)
 import Reactive.Banana.GI.Gtk
-import Data.FileEmbed
-import Data.Text (Text, pack)
 import Text.Printf
-import Data.Text.Encoding (decodeUtf8)
-import Data.Sequence (Seq)
-import GI.Gtk
 
+import Garlic.Data.Duration
 import Garlic.View.HeaderBar
 import Garlic.View.RecipeDisplay
 import Garlic.View.RecipeEdit
-import Garlic.Util
 
 uiMainWindow :: Text
 uiMainWindow = decodeUtf8 $(embedFile "res/main-window.ui")

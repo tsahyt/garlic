@@ -17,14 +17,14 @@ import Data.Sequence (Seq)
 import Database.Persist.Sql
 import Reactive.Banana
 
+import Garlic.Data.Duration
 import Garlic.Model
 import Garlic.Model.Queries
 import Garlic.Types
 import Garlic.View
 import Garlic.View.HeaderBar
-import Garlic.View.RecipeEdit
 import Garlic.View.RecipeDisplay
-import Garlic.Util
+import Garlic.View.RecipeEdit
 
 import qualified Data.Sequence as S
 

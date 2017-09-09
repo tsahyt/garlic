@@ -23,6 +23,7 @@ library
                        Garlic.Model.Queries
                        Garlic.Data.Units
                        Garlic.Data.Nutrition
+                       Garlic.Data.Duration
                        Garlic.Types
                        Garlic.View
                        Garlic.View.HeaderBar
@@ -31,7 +32,6 @@ library
                        Garlic.Presenter
                        Garlic.Presenter.RecipeDisplay
                        Garlic.Presenter.RecipeEdit
-                       Garlic.Util
                        Text.Markdown.Persist
   ghc-options:         -Wall
   build-depends:       base >= 4.7 && < 5

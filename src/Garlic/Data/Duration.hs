@@ -1,8 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE DeriveFunctor #-}
--- | Utility functions and types
-module Garlic.Util
+module Garlic.Data.Duration
 (
     ratingString,
     durationString,
@@ -12,9 +11,6 @@ where
 
 import Data.Monoid
 import Data.Text (Text, pack)
-import Linear.Vector
-import Linear.V2
-
 import Data.Attoparsec.Text
 
 ratingString :: Int -> String
@@ -42,7 +38,7 @@ durationString t
                       <> durationString (snd (extract msPerSecond))
     | otherwise     = ""
     where extract x =
-              let y = last [ y | y <- [1..t `div` x], t >= y * x ]
+              let y = last [ z | z <- [1..t `div` x], t >= z * x ]
                in (pack . show $ y, t - y * x)
 {-# INLINE durationString #-}
 
@@ -52,14 +48,14 @@ parseDuration = either (const Nothing) Just . parseOnly duration
 
 duration :: Parser Int
 duration = truncate . sum <$> many1 (comp <* skipSpace)
-    where comp = choice [ (* msPerSecond) <$> sec, (* msPerMinute) <$> min
+    where comp = choice [ (* msPerSecond) <$> sec, (* msPerMinute) <$> mins
                         , (* msPerHour) <$> hour, (* msPerDay) <$> day ]
 
           dec  = double <* skipSpace
 
           sec  = dec <* choice [ string "seconds", string "second"
                                , string "sec", string "s" ]
-          min  = dec <* choice [ string "minutes", string "minute"
+          mins = dec <* choice [ string "minutes", string "minute"
                                , string "min", string "m" ]
           hour = dec <* choice [ string "hours", string "hour", string "h" ]
           day  = dec <* choice [ string "days", string "day", string "d" ]
