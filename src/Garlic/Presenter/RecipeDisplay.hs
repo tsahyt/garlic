@@ -10,11 +10,13 @@ where
 import Control.Lens
 import Control.Monad
 import Data.FileEmbed
+import Data.Monoid
 import Data.Text (Text)
 import Data.Text.Encoding (decodeUtf8)
 import Database.Persist.Sql
 import Reactive.Banana
 import Text.Printf
+import Numeric (showFFloatAlt)
 
 import Garlic.Data.Duration
 import Garlic.Data.Nutrition
@@ -29,6 +31,7 @@ import Text.Blaze.Html
 
 import qualified Text.Blaze.Html5 as H
 import qualified Text.Blaze.Html5.Attributes as A
+import qualified Data.Text as T
 
 -- TODO: Load dynamically from config location
 recipeStyle :: Text
@@ -111,7 +114,17 @@ ingredientList is = H.ul ! A.id "ingredients" $
         let a = i ^. wingrAmount
             u = i ^. wingrUnit
             n = i ^. wingrIngr . to entityVal . to ingredientName
-        H.li . string $ printf "%.2f%s %s" a (prettyUnit u :: String) n
+        H.li . text $ (prettyFloat 2 a) <> " " <> (prettyUnit u) <> " " <> n
+
+-- | Prettier float rendering. Will give at most @d@ digits of precision after
+-- the decimal point, but will omit the decimal point if not needed, and not
+-- show trailing zeroes.
+prettyFloat :: RealFloat a => Int -> a -> Text
+prettyFloat d x = 
+    let s = T.dropWhileEnd (== '0') . T.pack . showFFloatAlt (Just d) x $ ""
+     in if T.last s == '.'
+        then T.init s
+        else s
 
 data NEntry = Indent | IndentNoDV | Standard
     deriving (Show, Eq)
@@ -125,7 +138,7 @@ nutritionFacts nl = H.div ! A.id "nutrition" $ H.table $ do
     H.tr $ H.td $ do
         H.div ! A.class_ "top-lbls" $ do
             H.div ! A.class_ "amount-lbl" $ text $ 
-                "Amount per " `mappend` nlServing nl
+                "Amount per " <> nlServing nl
             H.div ! A.class_ "cal-lbl" $ "Calories"
         H.div ! A.class_ "cal" $ string $ printf "%0.f" (nlKcal nl)
 
