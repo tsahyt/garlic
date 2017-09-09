@@ -17,6 +17,7 @@ import Data.FileEmbed
 import Database.Persist.Sql
 import Text.Printf
 
+import Garlic.Data.Nutrition
 import Garlic.Data.Units
 import Garlic.Model
 import Garlic.Model.Queries

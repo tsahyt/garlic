@@ -22,6 +22,7 @@ library
                        Garlic.Model
                        Garlic.Model.Queries
                        Garlic.Data.Units
+                       Garlic.Data.Nutrition
                        Garlic.Types
                        Garlic.View
                        Garlic.View.HeaderBar
