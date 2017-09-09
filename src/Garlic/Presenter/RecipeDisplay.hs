@@ -62,17 +62,11 @@ recipeDisplayP app selected = do
         pure $ scaleIngredients <$> factor <*> ingredients
 
     -- Display ingredient changes
-    consume (replaceIngredients (app ^. appRecipeDisplay)) =<< 
-        plainChanges weighed
-
-replaceIngredients :: GarlicRecipeDisplay -> Consumer [WeighedIngredient]
-replaceIngredients disp = mconcat
-    [ disp ^. clearIngredients $< ()
-    , map mkig >$< disp ^. addIngredients ]
-    where mkig :: WeighedIngredient -> ViewIngredient
-          mkig WeighedIngredient{..} = 
-              let m = pack $ printf "%.2f %s" _wingrAmount _wingrUnit
-               in ViewIngredient m (ingredientName . entityVal $ _wingrIngr)
+    pure ()
+    {-
+     -consume (replaceIngredients (app ^. appRecipeDisplay)) =<< 
+     -    plainChanges weighed
+     -}
 
 scaleIngredients :: Double -> [WeighedIngredient] -> [WeighedIngredient]
 scaleIngredients factor = over (traverse . wingrAmount) (* factor)
@@ -85,6 +79,8 @@ fullInstructions r is = do
         nutritionFacts (getNutrition defaultReferencePerson r is)
         H.h1 (text $ recipeName r)
         recipeHead r
+        H.h2 "Ingredients"
+        ingredientList is
         H.h2 "Instructions"
         H.div ! A.class_ "instructions" $
             toHtml (recipeInstructions r)
@@ -108,6 +104,14 @@ recipeHead Recipe{..} = H.div ! A.class_ "recipe-head" $ H.dl $ do
             H.dd $ case recipeUrl of
                        Nothing -> text s
                        Just u -> H.a ! A.href (textValue u) $ text s
+
+ingredientList :: [WeighedIngredient] -> Html
+ingredientList is = H.ul ! A.id "ingredients" $
+    forM_ is $ \i -> do
+        let a = i ^. wingrAmount
+            u = i ^. wingrUnit
+            n = i ^. wingrIngr . to entityVal . to ingredientName
+        H.li . string $ printf "%.2f%s %s" a (prettyUnit u :: String) n
 
 data NEntry = Indent | IndentNoDV | Standard
     deriving (Show, Eq)
