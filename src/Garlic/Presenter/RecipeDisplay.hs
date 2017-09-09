@@ -138,7 +138,7 @@ nutritionFacts nl = H.div ! A.id "nutrition" $ H.table $ do
     H.tr $ H.td $ do
         H.div ! A.class_ "top-lbls" $ do
             H.div ! A.class_ "amount-lbl" $ text $ 
-                "Amount per " <> nlServing nl
+                "Amount for all " <> nlServing nl
             H.div ! A.class_ "cal-lbl" $ "Calories"
         H.div ! A.class_ "cal" $ string $ printf "%0.f" (nlKcal nl)
 
