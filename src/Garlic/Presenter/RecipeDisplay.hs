@@ -112,6 +112,7 @@ recipeHead Recipe{..} = H.div ! A.class_ "recipe-head" $ H.dl $ do
 data NEntry = Indent | IndentNoDV | Standard
     deriving (Show, Eq)
 
+-- | Rendering of nutrition facts label
 nutritionFacts :: NutritionLabel Double -> Html
 nutritionFacts nl = H.div ! A.id "nutrition" $ H.table $ do
     -- Header

@@ -13,7 +13,6 @@ import Control.Lens
 import Data.Maybe
 import Data.Monoid
 import Data.Functor.Compose
-import Data.Text (pack)
 import Data.Sequence (Seq)
 import Database.Persist.Sql
 import Reactive.Banana
@@ -110,6 +109,7 @@ loadRecipe app selected = do
 
     fetch ingredientsFor (entityKey <$> selected)
 
+-- | The currently edited recipe
 currentRecipe :: GarlicApp -> Garlic (Behavior Recipe)
 currentRecipe app = do
     let masks = app ^. appRecipeEdit . editMasks
@@ -125,6 +125,7 @@ currentRecipe app = do
             <*> fmap mtext (masks ^. editURL)
     pure r
 
+-- | Network describing the new ingredient dialog
 ingredientEditor :: GarlicApp -> Garlic (Event (Entity Ingredient))
 ingredientEditor app = do
     let ni = app ^. appRecipeEdit . editNewIngredient
@@ -138,6 +139,8 @@ ingredientEditor app = do
     
     pure (filterJust new)
 
+-- | Behavior describing the current ingredient as specified in the new
+-- ingredient popover.
 currentIngredient :: GarlicNewIngredient -> Behavior Ingredient
 currentIngredient editor = Ingredient
     <$> editor ^. niName
@@ -156,6 +159,7 @@ currentIngredient editor = Ingredient
     <*> (fmap parseNum . mtext <$> editor ^. niSodium)
     <*> (fmap parseNum . mtext <$> editor ^. niCholesterol)
 
+-- | Management of the ingredient list
 ingredientList 
     :: GarlicIngredientList 
     -> Event [WeighedIngredient] 
@@ -199,12 +203,14 @@ ingredientList ilist selected new = mdo
     is <- accumB [] $ unions [ deleteE, clearE, changedE, insertE, appendE ]
     pure is
 
+-- | Modify a list element at the specified index
 modify' :: Int -> [a] -> (a -> a) -> [a]
 modify' _ [] _ = []
 modify' n xs f =
     let (l,x:r) = splitAt n xs
      in l ++ [f x] ++ r
 
+-- | Insert element into list by index
 insert' :: Int -> [a] -> a -> [a]
 insert' 0 xs y = y : xs
 insert' n xs y =
@@ -212,6 +218,7 @@ insert' n xs y =
         []      -> pure y
         (x:xs') -> x : insert' (pred n) xs' y
 
+-- | Delete element from list by index
 delete' :: Int -> [a] -> [a]
 delete' 0 xs = drop 1 xs
 delete' n xs =
