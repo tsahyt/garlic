@@ -114,7 +114,10 @@ ingredientList is = H.ul ! A.id "ingredients" $
         let a = i ^. wingrAmount
             u = i ^. wingrUnit
             n = i ^. wingrIngr . to entityVal . to ingredientName
-        H.li . text $ (prettyFloat 2 a) <> " " <> (prettyUnit u) <> " " <> n
+            o = i ^. wingrOptional
+        H.li $ do
+            text $ (prettyFloat 2 a) <> " " <> (prettyUnit u) <> " " <> n
+            when o $ H.span ! A.class_ "opt-ingr" $ " (optional)"
 
 -- | Prettier float rendering. Will give at most @d@ digits of precision after
 -- the decimal point, but will omit the decimal point if not needed, and not
