@@ -10,8 +10,7 @@ where
 import Control.Lens
 import Control.Monad
 import Data.FileEmbed
-import Data.Functor.Contravariant
-import Data.Text (Text, pack)
+import Data.Text (Text)
 import Data.Text.Encoding (decodeUtf8)
 import Database.Persist.Sql
 import Reactive.Banana
@@ -27,7 +26,6 @@ import Garlic.View
 import Garlic.View.HeaderBar
 import Garlic.View.RecipeDisplay
 import Text.Blaze.Html
-import Text.Blaze.Html.Renderer.String
 
 import qualified Text.Blaze.Html5 as H
 import qualified Text.Blaze.Html5.Attributes as A
@@ -47,26 +45,26 @@ recipeDisplayP app selected = do
     selected' <- fetch (fetchThrough (lmap entityKey ingredientsFor)) selected
     ingredients <- stepper [] (snd <$> selected')
 
-    -- Load instructions and reset spinner only on new selection
+    -- Load instructions and reset spinner on new selection
     app  ^. appHeader . changeYield `consume` 
         recipeYield . entityVal <$> selected
-    disp ^. loadInstructions `consume` 
-        uncurry fullInstructions . (over _1 entityVal) <$> selected'
-    stdout `consume` 
-        renderHtml . uncurry fullInstructions . (over _1 entityVal) <$> selected'
 
+    -- Event denoting a change in the weighed ingredients
     weighed <- do
         ryield <- stepper 1 $ recipeYield . entityVal <$> selected
         syield <- stepper 1 $ app ^. appHeader . yieldChanged
         let factor = liftA2 (/) syield ryield
-        pure $ scaleIngredients <$> factor <*> ingredients
+        plainChanges (scaleIngredients <$> factor <*> ingredients)
 
-    -- Display ingredient changes
-    pure ()
-    {-
-     -consume (replaceIngredients (app ^. appRecipeDisplay)) =<< 
-     -    plainChanges weighed
-     -}
+    -- Behavior keeping track of the displayed data
+    display <- accumB (error "no recipe") $ unions
+        [ const <$> selected'
+        , set _2 <$> weighed ]
+    
+    -- Display on changes
+    consume (disp ^. loadInstructions) .
+        fmap (uncurry fullInstructions . (over _1 entityVal)) =<< 
+        plainChanges display
 
 scaleIngredients :: Double -> [WeighedIngredient] -> [WeighedIngredient]
 scaleIngredients factor = over (traverse . wingrAmount) (* factor)
