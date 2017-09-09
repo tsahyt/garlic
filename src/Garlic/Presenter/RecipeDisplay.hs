@@ -29,7 +29,6 @@ import Text.Blaze.Html
 
 import qualified Text.Blaze.Html5 as H
 import qualified Text.Blaze.Html5.Attributes as A
-import Text.Blaze.Html.Renderer.Pretty
 
 -- TODO: Load dynamically from config location
 recipeStyle :: Text
@@ -66,12 +65,6 @@ recipeDisplayP app selected = do
     consume (disp ^. loadInstructions) .
         fmap (uncurry fullInstructions . (over _1 entityVal)) =<< 
         plainChanges display
-
-    -- DEBUG
-    consume stdout . fmap (renderHtml . uncurry fullInstructions . (over _1 entityVal)) =<< 
-        plainChanges display
-    -- /DEBUG
-
 
 scaleIngredients :: Double -> [WeighedIngredient] -> [WeighedIngredient]
 scaleIngredients factor = over (traverse . wingrAmount) (* factor)
