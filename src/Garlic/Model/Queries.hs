@@ -23,6 +23,7 @@ module Garlic.Model.Queries
 )
 where
 
+import Control.Monad.IO.Class
 import Control.Lens.TH
 import Garlic.Data.Units
 import Garlic.Model
@@ -117,7 +118,11 @@ newRecipe = dbFetcher $ \_ ->
         Recipe "New Recipe" "Cuisine" 0 "" 0 1 "Serving" Nothing Nothing
 
 deleteRecipe :: Consumer (Key Recipe)
-deleteRecipe = dbConsumer $ \k -> P.delete k
+deleteRecipe = dbConsumer $ \k -> do
+    delete $
+        from $ \h ->
+            where_ (h ^. RecipeHasRecipe ==. val k)
+    P.delete k
 
 newIngredient :: Fetcher Ingredient (Maybe (Entity Ingredient))
 newIngredient = dbFetcher $ \i -> do
