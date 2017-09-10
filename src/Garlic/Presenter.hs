@@ -12,6 +12,7 @@ import Garlic.Types
 import Reactive.Banana
 
 import Garlic.Model
+import Garlic.Model.CSV
 import Garlic.Model.Queries
 import Garlic.Presenter.RecipeDisplay
 import Garlic.Presenter.RecipeEdit
@@ -39,6 +40,9 @@ presenter app' = mdo
     -- Selection Event holding current recipe entity
     let selected = (S.index <$> rcps) <@> app ^. appRecipeList . recipeSelected
                <:> newKey
+
+    -- Importing CSV
+    importCSV `consume` app ^. appHeader . importIng
 
     -- Subsystems
     editChange <- recipeEditP app selected

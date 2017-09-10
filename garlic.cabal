@@ -60,6 +60,7 @@ library
                      , attoparsec
                      , csv-conduit
                      , conduit
+                     , conduit-extra
   default-language:    Haskell2010
 
 executable garlic-exe

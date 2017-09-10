@@ -46,6 +46,25 @@
       </packing>
     </child>
     <child>
+      <object class="GtkToggleButton" id="searchButton">
+        <property name="visible">True</property>
+        <property name="can_focus">True</property>
+        <property name="receives_default">True</property>
+        <property name="always_show_image">True</property>
+        <child>
+          <object class="GtkImage">
+            <property name="visible">True</property>
+            <property name="can_focus">False</property>
+            <property name="stock">gtk-find</property>
+          </object>
+        </child>
+      </object>
+      <packing>
+        <property name="pack_type">end</property>
+        <property name="position">1</property>
+      </packing>
+    </child>
+    <child>
       <object class="GtkSpinButton" id="yieldSpinner">
         <property name="visible">True</property>
         <property name="can_focus">True</property>
@@ -63,22 +82,15 @@
       </packing>
     </child>
     <child>
-      <object class="GtkToggleButton" id="searchButton">
+      <object class="GtkButton" id="importButton">
+        <property name="label" translatable="yes">Import Ingredients</property>
         <property name="visible">True</property>
         <property name="can_focus">True</property>
         <property name="receives_default">True</property>
-        <property name="always_show_image">True</property>
-        <child>
-          <object class="GtkImage">
-            <property name="visible">True</property>
-            <property name="can_focus">False</property>
-            <property name="stock">gtk-find</property>
-          </object>
-        </child>
       </object>
       <packing>
         <property name="pack_type">end</property>
-        <property name="position">1</property>
+        <property name="position">4</property>
       </packing>
     </child>
   </object>

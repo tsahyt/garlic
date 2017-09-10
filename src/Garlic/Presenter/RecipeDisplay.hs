@@ -113,7 +113,8 @@ ingredientList is = H.ul ! A.id "ingredients" $
     forM_ is $ \i -> do
         let a = i ^. wingrAmount
             u = i ^. wingrUnit
-            n = i ^. wingrIngr . to entityVal . to ingredientName
+            n = abbreviateName 2 
+              $ i ^. wingrIngr . to entityVal . to ingredientName
             o = i ^. wingrOptional
         H.li $ do
             text $ (prettyFloat 2 a) <> " " <> (prettyUnit u) <> " " <> n
@@ -128,6 +129,9 @@ prettyFloat d x =
      in if T.last s == '.'
         then T.init s
         else s
+
+abbreviateName :: Int -> Text -> Text
+abbreviateName n = mconcat . take n . T.split (== ',')
 
 data NEntry = Indent | IndentNoDV | Standard
     deriving (Show, Eq)
