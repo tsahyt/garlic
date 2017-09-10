@@ -63,6 +63,8 @@ module Garlic.View.RecipeEdit
     ilDeleted,
     ilAppend,
     ilClear,
+
+    EditorIngredient(..)
 )
 where
 
@@ -341,11 +343,20 @@ comboBoxUnitB box = do
     c' <- mapEventIO (const $ comboBoxTextGetActiveText box) c
     stepper Gram $ parseUnit <$> c'
 
+data EditorIngredient = EditorIngredient
+    { eiAmount   :: Double
+    , eiUnit     :: Unit
+    , eiName     :: Text
+    , eiDisplay  :: Maybe Text
+    , eiOptional :: Bool
+    }
+    deriving (Eq, Show)
+
 data GarlicIngredientList = GarlicIngredientList
-    { _ilInserted :: Event (Int, (Double, Unit, Text, Bool))
-    , _ilChanged  :: Event (Int, (Double, Unit, Text, Bool))
+    { _ilInserted :: Event (Int, EditorIngredient)
+    , _ilChanged  :: Event (Int, EditorIngredient)
     , _ilDeleted  :: Event Int
-    , _ilAppend   :: Consumer [(Double, Unit, Text, Bool)]
+    , _ilAppend   :: Consumer [EditorIngredient]
     , _ilClear    :: Consumer ()
     }
 
@@ -376,20 +387,28 @@ ingredientList view model delButton = do
                                     , #textColumn  := 0 ]
     _ <- on unitR #edited $ \path txt -> do
         path' <- treePathNewFromString path
-        (b, iter)  <- treeModelGetIter model path'
+        (b, iter) <- treeModelGetIter model path'
         when b $ do
             txt' <- toGValue (Just txt)
             listStoreSetValue model iter 1 txt'
 
     nameR <- new CellRendererText   []
+    dispR <- new CellRendererText   [ #editable := True ]
+    _ <- on dispR #edited $ \path txt -> do
+        path' <- treePathNewFromString path
+        (b, iter) <- treeModelGetIter model path'
+        when b $ do
+            txt' <- toGValue (Just txt)
+            listStoreSetValue model iter 3 txt'
+
     optiR <- new CellRendererToggle [ #activatable := True ]
     _ <- on optiR #toggled $ \path -> do
         path' <- treePathNewFromString path
         (b, iter) <- treeModelGetIter model path'
         when b $ do
-            x <- treeModelGetValue model iter 3
+            x <- treeModelGetValue model iter 4
             x' <- toGValue . not =<< fromGValue x
-            listStoreSetValue model iter 3 x'
+            listStoreSetValue model iter 4 x'
 
     -- Columns
     amntC <- new TreeViewColumn [ #title := "Amount" ]
@@ -401,11 +420,14 @@ ingredientList view model delButton = do
     nameC <- new TreeViewColumn [ #title := "Name", #expand := True ]
     treeViewColumnPackStart nameC nameR True
     treeViewColumnAddAttribute nameC nameR "text" 2
+    dispC <- new TreeViewColumn [ #title := "Display Name", #expand := True ]
+    treeViewColumnPackStart dispC dispR True
+    treeViewColumnAddAttribute dispC dispR "text" 3
     optiC <- new TreeViewColumn [ #title := "Optional" ]
     treeViewColumnPackStart optiC optiR False
-    treeViewColumnAddAttribute optiC optiR "active" 3
+    treeViewColumnAddAttribute optiC optiR "active" 4
 
-    mapM_ (treeViewAppendColumn view) [ amntC, unitC, nameC, optiC ]
+    mapM_ (treeViewAppendColumn view) [ amntC, unitC, nameC, dispC, optiC ]
 
     lift $ GarlicIngredientList 
        <$> signalEN model #rowInserted (\h p i -> fetch p i >>= h)
@@ -415,28 +437,31 @@ ingredientList view model delButton = do
        <*> pure (ioConsumer (mapM_ append))
        <*> pure (ioConsumer (\_ -> listStoreClear model))
 
-    where append :: MonadIO m => (Double, Unit, Text, Bool) -> m ()
-          append (a,b,c,d) = do
-              let astr = printf "%.2f" a :: String
-                  btxt = prettyUnit b :: Text
+    where append :: MonadIO m => EditorIngredient -> m ()
+          append EditorIngredient{..} = do
+              let astr = printf "%.2f" eiAmount :: String
+                  utxt = prettyUnit eiUnit :: Text
 
-              [b',c'] <- mapM (liftIO . toGValue . Just) [btxt, c]
-              a' <- liftIO $ toGValue . Just $ astr
-              d' <- liftIO $ toGValue d
+              amnt <- liftIO $ toGValue . Just $ astr
+              unit <- liftIO $ toGValue . Just $ utxt
+              name <- liftIO $ toGValue . Just $ eiName
+              disp <- liftIO $ toGValue eiDisplay
+              opt  <- liftIO $ toGValue eiOptional
 
               i  <- listStoreAppend model
-              listStoreSet model i [0,1,2,3] [a',b',c',d']
+              listStoreSet model i [0..4] [amnt, unit, name, disp, opt]
 
           fetch :: MonadIO m => TreePath -> TreeIter 
-                -> m (Int, (Double, Unit, Text, Bool))
+                -> m (Int, EditorIngredient)
           fetch p i = do
-              idx       <- parseNum <$> treePathToString p
-              [a,b,c,d] <- mapM (treeModelGetValue model i) [0..3]
-              x <- liftIO $ (,,,) 
+              idx         <- parseNum <$> treePathToString p
+              [a,b,c,d,e] <- mapM (treeModelGetValue model i) [0..4]
+              x <- liftIO $ EditorIngredient 
                <$> (maybe 0 parseNum <$> fromGValue a)
                <*> (maybe Gram (parseUnit @Text) <$> fromGValue b)
                <*> (fromMaybe "" <$> fromGValue c) 
                <*> fromGValue d
+               <*> fromGValue e
               pure (idx,x)
 
 unitStore :: MonadIO m => m ListStore

@@ -52,5 +52,6 @@ share [mkPersist sqlSettings, mkMigrate "migrateAll"] [persistLowerCase|
         amount Double
         unit Unit
         optional Bool
+        display Text Maybe
         deriving Show
  |]

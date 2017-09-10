@@ -113,9 +113,11 @@ ingredientList is = H.ul ! A.id "ingredients" $
     forM_ is $ \i -> do
         let a = i ^. wingrAmount
             u = i ^. wingrUnit
-            n = abbreviateName 2 
-              $ i ^. wingrIngr . to entityVal . to ingredientName
             o = i ^. wingrOptional
+            n = case i ^. wingrDisp of
+                    Nothing -> abbreviateName 2 $ 
+                        i ^. wingrIngr . to entityVal . to ingredientName
+                    Just x  -> x
         H.li $ do
             text $ (prettyFloat 2 a) <> " " <> (prettyUnit u) <> " " <> n
             when o $ H.span ! A.class_ "opt-ingr" $ " (optional)"

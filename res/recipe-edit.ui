@@ -10,6 +10,8 @@
       <column type="gchararray"/>
       <!-- column-name name -->
       <column type="gchararray"/>
+      <!-- column-name display -->
+      <column type="gchararray"/>
       <!-- column-name optional -->
       <column type="gboolean"/>
     </columns>

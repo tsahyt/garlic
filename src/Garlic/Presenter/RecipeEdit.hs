@@ -171,17 +171,18 @@ ingredientList
     -> Event (Entity Ingredient)
     -> Garlic (Behavior [WeighedIngredient])
 ingredientList ilist selected new = mdo
-    let fromWI w = ( view wingrAmount w
-                   , view wingrUnit w
-                   , view (wingrIngr . to entityVal . to ingredientName) w
-                   , view wingrOptional w )
+    let fromWI w = EditorIngredient
+                       (view wingrAmount w)
+                       (view wingrUnit w)
+                       (view (wingrIngr . to entityVal . to ingredientName) w)
+                       (view wingrDisp w)
+                       (view wingrOptional w)
         
-        toWI (a,b,_,d) x = 
-            let w = fromIngredient x
-             in updWI (a,b,d) w
+        toWI i = updWI i . fromIngredient
 
-        updWI (a,b,c) = 
-            set wingrOptional c . set wingrUnit b . set wingrAmount a
+        updWI EditorIngredient{..} = 
+            set wingrOptional eiOptional . set wingrDisp eiDisplay 
+          . set wingrUnit eiUnit . set wingrAmount eiAmount
 
     -- Replace ingredient list on new selection
     ((() >$ ilist ^. ilClear) <> ilist ^. ilAppend) `consume` 
@@ -194,7 +195,7 @@ ingredientList ilist selected new = mdo
     let clearE   = const [] <$ selected
         appendE  = (flip (++) . pure) . fromIngredient <$> new
         deleteE  = delete' <$> ilist ^. ilDeleted
-        changedE = (\(i,(a,b,_,c)) xs -> modify' i xs (updWI (a,b,c)))
+        changedE = (\(i,x) xs -> modify' i xs (updWI x))
                <$> whenE (not . null <$> is) (ilist ^. ilChanged)
 
     insertE <- do
@@ -202,7 +203,7 @@ ingredientList ilist selected new = mdo
         let x = ilist ^. ilInserted
             f (i,a) b = (i, toWI a b)
         xB <- stepper undefined $ x
-        e  <- fetch ingredientByName $ view (_2 . _3) <$> x
+        e  <- fetch ingredientByName $ view (_2 . to eiName) <$> x
         pure $ uncurry (flip . insert') <$> ((f <$> xB <@> e) <:> r)
 
     is <- accumB [] $ unions [ deleteE, clearE, changedE, insertE, appendE ]
