@@ -14,6 +14,20 @@
     <property name="title">Garlic</property>
     <property name="show_close_button">True</property>
     <child>
+      <object class="GtkButton" id="backButton">
+        <property name="can_focus">True</property>
+        <property name="receives_default">True</property>
+        <property name="no_show_all">True</property>
+        <child>
+          <object class="GtkImage">
+            <property name="visible">True</property>
+            <property name="can_focus">False</property>
+            <property name="stock">gtk-revert-to-saved</property>
+          </object>
+        </child>
+      </object>
+    </child>
+    <child>
       <object class="GtkButton" id="addButton">
         <property name="visible">True</property>
         <property name="can_focus">True</property>
@@ -46,6 +60,23 @@
       </packing>
     </child>
     <child>
+      <object class="GtkSpinButton" id="yieldSpinner">
+        <property name="visible">True</property>
+        <property name="can_focus">True</property>
+        <property name="input_purpose">number</property>
+        <property name="adjustment">yieldAdjustment</property>
+        <property name="digits">2</property>
+        <property name="snap_to_ticks">True</property>
+        <property name="numeric">True</property>
+        <property name="wrap">True</property>
+        <property name="value">2.2351741811588166e-10</property>
+      </object>
+      <packing>
+        <property name="pack_type">end</property>
+        <property name="position">1</property>
+      </packing>
+    </child>
+    <child>
       <object class="GtkToggleButton" id="searchButton">
         <property name="visible">True</property>
         <property name="can_focus">True</property>
@@ -58,23 +89,6 @@
             <property name="stock">gtk-find</property>
           </object>
         </child>
-      </object>
-      <packing>
-        <property name="pack_type">end</property>
-        <property name="position">1</property>
-      </packing>
-    </child>
-    <child>
-      <object class="GtkSpinButton" id="yieldSpinner">
-        <property name="visible">True</property>
-        <property name="can_focus">True</property>
-        <property name="input_purpose">number</property>
-        <property name="adjustment">yieldAdjustment</property>
-        <property name="digits">2</property>
-        <property name="snap_to_ticks">True</property>
-        <property name="numeric">True</property>
-        <property name="wrap">True</property>
-        <property name="value">2.2351741811588166e-10</property>
       </object>
       <packing>
         <property name="pack_type">end</property>

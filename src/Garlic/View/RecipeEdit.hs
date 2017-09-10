@@ -12,7 +12,6 @@ module Garlic.View.RecipeEdit
     editMasks,
     editDelete,
     editStore,
-    editAbort,
     editIngredients,
     editNewIngredient,
     editEnterIngredient,
@@ -101,7 +100,6 @@ data GarlicRecipeEdit = GarlicRecipeEdit
     , _editEnterIngredient :: Event Text
     , _editReplaceIngCompl :: Consumer [Text]
     , _editDelete          :: Event ()
-    , _editAbort           :: Event ()
     , _editStore           :: Event ()
     }
 
@@ -119,7 +117,7 @@ recipeEdit stack = do
     setContainerChild sourcevp sourceview
 
     masks <- getEditMasks b
-    (deleteButton, abortButton, storeButton) <- actionButtons b
+    (deleteButton, storeButton) <- actionButtons b
 
     -- New Ingredient Popover
     newButton <- castB b "ingredientNew" MenuButton
@@ -147,7 +145,6 @@ recipeEdit stack = do
        <*> ingredientEnter ingredientSearch
        <*> pure replaceCompletion
        <*> signalE0 deleteButton #clicked
-       <*> signalE0 abortButton #clicked
        <*> signalE0 storeButton #clicked
 
 ingredientEnter :: Entry -> MomentIO (Event Text)
@@ -157,11 +154,10 @@ ingredientEnter e = do
     pure enter
     where go _ = entryGetText e
 
-actionButtons :: MonadIO m => Builder -> m (Button, Button, Button)
+actionButtons :: MonadIO m => Builder -> m (Button, Button)
 actionButtons b = do
     actionBar    <- castB b "actionBar" ActionBar
     deleteButton <- new Button [ #label := "Delete" ]
-    abortButton  <- new Button [ #label := "Abort" ]
     storeButton  <- new Button [ #label := "Store" ]
 
     deleteContext <- widgetGetStyleContext deleteButton
@@ -171,10 +167,9 @@ actionButtons b = do
     styleContextAddClass storeContext STYLE_CLASS_SUGGESTED_ACTION
 
     actionBarPackStart actionBar deleteButton
-    actionBarPackStart actionBar abortButton
     actionBarPackEnd actionBar storeButton
 
-    pure (deleteButton, abortButton, storeButton)
+    pure (deleteButton, storeButton)
 
 buildSourceView :: MonadIO m => m (View, Buffer)
 buildSourceView = do

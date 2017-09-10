@@ -41,6 +41,8 @@ recipeEditP app selected = do
      in do app ^. appRecipeEdit . showEditor `consume` click
            app ^. appHeader . yieldToggle `consume` click
            app ^. appHeader . editToggle `consume` click
+           app ^. appHeader . addToggle `consume` click
+           app ^. appHeader . backToggle `consume` click
 
     recipe <- currentRecipe app
     
@@ -74,7 +76,7 @@ recipeEditP app selected = do
     updateRecipe `consume` storeE
 
     -- Show Display on Abort Click
-    revertDisplay app $ app ^. appRecipeEdit . editAbort
+    revertDisplay app $ app ^. appHeader . backClick
 
     -- Delete Selected Recipe on Delete, revert to display view
     let deleteE = filterJust (key <@ app ^. appRecipeEdit . editDelete)
@@ -91,6 +93,8 @@ revertDisplay app e = do
     app ^. appRecipeDisplay . showDisplay `consume` () <$ e
     app ^. appHeader . yieldToggle `consume` () <$ e
     app ^. appHeader . editToggle `consume` () <$ e
+    app ^. appHeader . addToggle  `consume` () <$ e
+    app ^. appHeader . backToggle  `consume` () <$ e
 
 -- | Load recipe into mask on selection event
 loadRecipe 

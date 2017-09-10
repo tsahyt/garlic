@@ -4,9 +4,12 @@
 module Garlic.View.HeaderBar
 (
     GarlicHeader,
+    backClick,
     addClick,
     editClick,
     searchToggled,
+    backToggle,
+    addToggle,
     editToggle,
     yieldChanged,
     changeYield,
@@ -28,11 +31,14 @@ uiHeaderBar :: Text
 uiHeaderBar = decodeUtf8 $(embedFile "res/headerbar.ui")
 
 data GarlicHeader = GarlicHeader
-    { _addClick        :: Event ()
+    { _backClick       :: Event ()
+    , _addClick        :: Event ()
     , _editClick       :: Event ()
     , _searchToggled   :: Event ()
     , _yieldChanged    :: Event Double
     , _changeYield     :: Consumer Double
+    , _backToggle      :: Consumer ()
+    , _addToggle       :: Consumer ()
     , _editToggle      :: Consumer ()
     , _yieldToggle     :: Consumer ()
     , _importIng       :: Event FilePath
@@ -47,6 +53,7 @@ headerBar win = do
 
     -- Widgets
     hb              <- castB b "headerBar" HeaderBar
+    backButton      <- castB b "backButton" Button
     addButton       <- castB b "addButton" Button
     searchButton    <- castB b "searchButton" ToggleButton
     editButton      <- castB b "editButton" Button
@@ -60,11 +67,14 @@ headerBar win = do
     impEv <- importIngredients importButton
 
     lift $ GarlicHeader
-       <$> signalE0 addButton #clicked
+       <$> signalE0 backButton #clicked
+       <*> signalE0 addButton #clicked
        <*> signalE0 editButton #clicked
        <*> signalE0 searchButton #toggled
        <*> attrE yieldAdjustment #value
        <*> pure (ioConsumer $ \x -> set yieldAdjustment [ #value := x ])
+       <*> pure (toggle backButton)
+       <*> pure (toggle addButton)
        <*> pure (toggle editButton)
        <*> pure (toggle yieldSpinner)
        <*> pure impEv
