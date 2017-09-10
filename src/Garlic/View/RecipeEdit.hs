@@ -411,16 +411,16 @@ ingredientList view model delButton = do
             listStoreSetValue model iter 4 x'
 
     -- Columns
-    amntC <- new TreeViewColumn [ #title := "Amount" ]
+    amntC <- new TreeViewColumn [ #title := "Amount", #resizable := True]
     treeViewColumnPackStart amntC amntR False
     treeViewColumnAddAttribute amntC amntR "text" 0
-    unitC <- new TreeViewColumn [ #title := "Unit" ]
+    unitC <- new TreeViewColumn [ #title := "Unit", #resizable := True]
     treeViewColumnPackStart unitC unitR False
     treeViewColumnAddAttribute unitC unitR "text" 1
-    nameC <- new TreeViewColumn [ #title := "Name", #expand := True ]
+    nameC <- new TreeViewColumn [ #title := "Name", #resizable := True ]
     treeViewColumnPackStart nameC nameR True
     treeViewColumnAddAttribute nameC nameR "text" 2
-    dispC <- new TreeViewColumn [ #title := "Display Name", #expand := True ]
+    dispC <- new TreeViewColumn [ #title := "Display Name", #resizable := True ]
     treeViewColumnPackStart dispC dispR True
     treeViewColumnAddAttribute dispC dispR "text" 3
     optiC <- new TreeViewColumn [ #title := "Optional" ]
