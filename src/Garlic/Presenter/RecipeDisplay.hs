@@ -61,27 +61,35 @@ recipeDisplayP app selected = do
 
     -- Behavior keeping track of the displayed data
     display <- accumB (error "no recipe") $ unions
-        [ const <$> selected'
+        [ const . fromSel <$> selected'
         , set _2 <$> weighed ]
     
     -- Display on changes
     consume (disp ^. loadInstructions) .
-        fmap (uncurry fullInstructions . (over _1 entityVal)) =<< 
-        plainChanges display
+        fmap ((uncurry . uncurry) fullInstructions 
+            . (over (_1 . _1) entityVal)) =<< plainChanges display
+    
+    where fromSel (a,b) = 
+              let n = getNutrition defaultReferencePerson (entityVal a) b
+               in ((a,n),b)
 
 scaleIngredients :: Double -> [WeighedIngredient] -> [WeighedIngredient]
 scaleIngredients factor = over (traverse . wingrAmount) (* factor)
 
 -- | Render a recipe to HTML.
-fullInstructions :: Recipe -> [WeighedIngredient] -> Html
-fullInstructions r is = do
+fullInstructions 
+    :: Recipe 
+    -> NutritionLabel Double 
+    -> [WeighedIngredient] 
+    -> Html
+fullInstructions r lbl is = do
     H.style (text $ recipeStyle)
     H.div ! A.class_ "main" $ do
         H.h1 (text $ recipeName r)
         recipeHead r
         H.details $ do
             H.summary "Nutrition"
-            nutritionFacts (getNutrition defaultReferencePerson r is)
+            nutritionFacts lbl
         H.h2 "Ingredients"
         ingredientList is
         H.h2 "Instructions"
@@ -147,7 +155,7 @@ nutritionFacts nl = H.div ! A.id "nutrition" $ H.table $ do
     H.tr $ H.td $ do
         H.div ! A.class_ "top-lbls" $ do
             H.div ! A.class_ "amount-lbl" $ text $ 
-                "Amount for all " <> nlServing nl
+                "Amount for one " <> nlServing nl
             H.div ! A.class_ "cal-lbl" $ "Calories"
         H.div ! A.class_ "cal" $ string $ printf "%0.f" (nlKcal nl)
 

@@ -80,6 +80,10 @@ conversions = mirror
     , (FlOz      , (1          , Ounce))
     , (Pint      , (1          , Pound))
     , (Liter     , (1          , Kilogram))
+      -- Arbitrary, complete estimation
+    , (Small     , (85         , Gram))
+    , (Medium    , (120        , Gram))
+    , (Large     , (150        , Gram))
     ]
 
 mirror :: [(Unit, (Double, Unit))] -> [(Unit, (Double, Unit))]
