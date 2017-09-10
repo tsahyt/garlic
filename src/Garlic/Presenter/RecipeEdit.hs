@@ -213,8 +213,9 @@ ingredientList ilist selected new = mdo
 modify' :: Int -> [a] -> (a -> a) -> [a]
 modify' _ [] _ = []
 modify' n xs f =
-    let (l,x:r) = splitAt n xs
-     in l ++ [f x] ++ r
+    case splitAt n xs of
+        (l,[])  -> l
+        (l,x:r) -> l ++ [f x] ++ r
 
 -- | Insert element into list by index
 insert' :: Int -> [a] -> a -> [a]
