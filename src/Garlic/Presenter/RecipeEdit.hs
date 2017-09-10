@@ -202,7 +202,7 @@ ingredientList ilist selected new = mdo
         r  <- spread $ zip [0..] <$> selected
         let x = ilist ^. ilInserted
             f (i,a) b = (i, toWI a b)
-        xB <- stepper undefined $ x
+        xB <- stepper (error "insertE: empty stepper") $ x
         e  <- fetch ingredientByName $ view (_2 . to eiName) <$> x
         pure $ uncurry (flip . insert') <$> ((f <$> xB <@> e) <:> r)
 
