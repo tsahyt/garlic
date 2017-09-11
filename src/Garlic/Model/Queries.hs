@@ -23,7 +23,6 @@ module Garlic.Model.Queries
 )
 where
 
-import Control.Monad.IO.Class
 import Control.Lens.TH
 import Garlic.Data.Units
 import Garlic.Model

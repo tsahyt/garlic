@@ -13,6 +13,7 @@ module Garlic.View
     appRecipeDisplay,
     appRecipeList,
     appAppMenu,
+    appIngredientEd,
     appEnableSearch,
     appDisplayError,
     appSearchChange,
@@ -62,6 +63,7 @@ import Garlic.Data.Duration
 import Garlic.View.HeaderBar
 import Garlic.View.RecipeDisplay
 import Garlic.View.RecipeEdit
+import Garlic.View.IngredientEditor
 
 import qualified GI.Gio as Gio
 
@@ -80,6 +82,7 @@ data GarlicApp = GarlicApp
     , _appRecipeEdit    :: GarlicRecipeEdit
     , _appRecipeList    :: GarlicRecipes
     , _appAppMenu       :: GarlicAppMenu
+    , _appIngredientEd  :: GarlicIngredientEditor
     , _appEnableSearch  :: Consumer ()
     , _appDisplayError  :: Consumer Text
     , _appSearchChange  :: Event Text
@@ -114,6 +117,9 @@ application app = do
     menu <- appMenu app win
     _ <- on app #startup $ applicationSetAppMenu app (Just (amMenu menu))
 
+    -- Ingredient Editor
+    editor <- ingredientEditor win
+
     -- Hardcoded window setting on activation
     _ <- on app #activate $ do
         set win [ #application := app ]
@@ -129,6 +135,7 @@ application app = do
        <*> pure redt                        -- Recipe Editor
        <*> pure recs                        -- Recipe List
        <*> pure menu
+       <*> pure editor
        <*> pure (searchToggle searchBar)    -- Search Toggle
        <*> pure (ioConsumer $ \t -> do
                set infoBar [ #visible := True ]

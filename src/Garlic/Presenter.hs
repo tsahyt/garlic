@@ -18,6 +18,7 @@ import Garlic.Presenter.RecipeDisplay
 import Garlic.Presenter.RecipeEdit
 import Garlic.View
 import Garlic.View.HeaderBar
+import Garlic.View.IngredientEditor (ieRun)
 
 import qualified Data.Text as T
 import qualified Data.Sequence as S
@@ -42,7 +43,7 @@ presenter app' = mdo
                <:> newKey
 
     -- AppMenu
-    stdout `consume` "editor" <$ app ^. appAppMenu . amIngEditor
+    app ^. appIngredientEd . ieRun `consume` app ^. appAppMenu . amIngEditor
     importCSV `consume` app ^. appAppMenu . amIngImport
     app ^. appQuit `consume` app ^. appAppMenu . amQuit
     app ^. appAbout `consume` app ^. appAppMenu . amAbout
