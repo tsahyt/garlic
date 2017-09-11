@@ -7,6 +7,8 @@ where
 
 import Control.Lens
 import Reactive.Banana
+import Database.Persist
+import Data.Functor.Compose
 
 import Garlic.View
 import Garlic.View.IngredientEditor
@@ -19,11 +21,18 @@ ingredientEditorP app = do
     let editor = app ^. appIngredientEd
         ingredient = currentIngredient $ editor ^. ieMask
 
-    -- Filling the ComboBox
-    inames <- fetch allIngredientNames $
-        app ^. appStartup
+    -- Load on Enter
+    load   <- fetch ingredientByName $ editor ^. ieEnter
+    loaded <- stepper Nothing (Just . entityKey <$> load)
+    editor ^. ieMask . imLoad `consume` entityVal <$> load
 
-    consume stdout . fmap show =<< plainChanges ingredient
+    -- Deletion
+    deleteIngredient `consume` filterJust (loaded <@ editor ^. ieDelete)
+
+    -- Store
+    let editing = getCompose $ 
+            (,) <$> Compose loaded <*> (Compose $ Just <$> ingredient)
+    updateIngredient `consume` filterJust (editing <@ editor ^. ieStore)
 
 -- | Behavior describing the current ingredient as specified in the new
 -- ingredient popover.

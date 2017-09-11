@@ -8,11 +8,14 @@ module Garlic.View.IngredientEditor
     GarlicIngredientEditor,
     ieRun,
     ieDelete,
+    ieStore,
+    ieEnter,
     ieMask,
 
     ingredientMask,
     GarlicIngredientMask,
     imClearAll,
+    imLoad,
     imName,
     imComment,
     imAmount,
@@ -39,8 +42,9 @@ import Reactive.Banana.GI.Gtk
 import GI.Gtk hiding (Unit)
 import Garlic.Types
 import Garlic.Data.Units
+import Garlic.Model (Ingredient (..))
 import Data.FileEmbed
-import Data.Text (Text)
+import Data.Text (Text, pack)
 import Data.Text.Encoding (decodeUtf8)
 
 uiIngredientEditor :: Text
@@ -52,6 +56,8 @@ uiIngredientMask = decodeUtf8 $(embedFile "res/ingredient-mask.ui")
 data GarlicIngredientEditor = GarlicIngredientEditor
     { _ieRun    :: Consumer ()
     , _ieDelete :: Event ()
+    , _ieStore  :: Event ()
+    , _ieEnter  :: Event Text
     , _ieMask   :: GarlicIngredientMask
     }
 
@@ -66,6 +72,7 @@ ingredientEditor win newCompl = do
     editor       <- castB b "ingredientEditor" Dialog
     search       <- castB b "ingredientSearch" SearchEntry
     deleteButton <- castB b "deleteButton" Button
+    storeButton  <- castB b "storeButton" Button
     box          <- castB b "box" Box
     mask         <- ingredientMask box
 
@@ -80,10 +87,16 @@ ingredientEditor win newCompl = do
     GarlicIngredientEditor
         <$> pure (ioConsumer $ \_ -> void $ dialogRun editor)
         <*> lift (signalE0 deleteButton #clicked)
+        <*> lift (signalE0 storeButton #clicked)
+        <*> lift (signalEN search #activate $ \h -> do
+                t <- entryGetText search
+                h t
+            )
         <*> pure mask
 
 data GarlicIngredientMask = GarlicIngredientMask
     { _imClearAll    :: Consumer ()
+    , _imLoad        :: Consumer Ingredient
     , _imName        :: Behavior Text
     , _imComment     :: Behavior Text
     , _imAmount      :: Behavior Text
@@ -129,10 +142,31 @@ ingredientMask box = do
             [ name, comment, amount, protein, carbs, sugar, fibre
             , fat, satFat, polyFat, monoFat, transFat ]
 
+        load i = do
+            mapM_ (uncurry setEntryText)
+                [ (name, ingredientName i)
+                , (comment, ingredientComment i)
+                , (amount, pack . show $ ingredientBasicAmount i)
+                , (protein, pack . show $ ingredientProtein i)
+                , (carbs, pack . show $ ingredientCarbs i)
+                , (sugar, maybe "" (pack . show) $ ingredientSugar i)
+                , (fibre, maybe "" (pack . show) $ ingredientFibre i)
+                , (fat, pack . show $ ingredientFat i)
+                , (satFat, maybe "" (pack . show) $ ingredientSatFat i)
+                , (polyFat, maybe "" (pack . show) $ ingredientPolyFat i)
+                , (monoFat, maybe "" (pack . show) $ ingredientMonoFat i)
+                , (transFat, maybe "" (pack . show) $ ingredientTransFat i)
+                , (sodium, maybe "" (pack . show) $ ingredientSodium i)
+                , (chlstrl, maybe "" (pack . show) $ ingredientCholesterol i)
+                ]
+            comboBoxSetActive unit 
+                (fromIntegral . fromEnum $ ingredientBasicUnit i)
+
     boxPackEnd box mask True True 0
 
     lift $ GarlicIngredientMask
        <$> pure (ioConsumer $ \_ -> clearAll)
+       <*> pure (ioConsumer load)
        <*> attrB name #text
        <*> attrB comment #text
        <*> attrB amount #text

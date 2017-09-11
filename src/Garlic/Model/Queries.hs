@@ -20,6 +20,8 @@ module Garlic.Model.Queries
     updateRecipe,
     deleteRecipe,
     newIngredient,
+    deleteIngredient,
+    updateIngredient
 )
 where
 
@@ -129,3 +131,13 @@ newIngredient = dbFetcher $ \i -> do
     case x of
         Just _  -> pure Nothing
         Nothing -> Just <$> P.insertEntity i
+
+deleteIngredient :: Consumer (Key Ingredient)
+deleteIngredient = dbConsumer $ \k -> do
+    delete $
+        from $ \h ->
+            where_ (h ^. RecipeHasIngredient ==. val k)
+    P.delete k
+
+updateIngredient :: Consumer (Key Ingredient, Ingredient)
+updateIngredient = dbConsumer $ \(k,i) -> P.repsert k i

@@ -184,11 +184,15 @@ appMenu app win = do
         , ("Import CSV", "app.csv")
         ]
 
-    Gio.menuAppendSubmenu menu (Just "Ingredient") ingMenu
+    Gio.menuAppendSection menu (Just "Ingredients") ingMenu
 
-    append menu 
+    generalMenu <- new Gio.Menu []
+
+    append generalMenu 
         [ ("About", "app.about")
         , ("Quit", "app.quit") ]
+
+    Gio.menuAppendSection menu Nothing generalMenu
 
     GarlicAppMenu
         <$> menuClick "ingredients"

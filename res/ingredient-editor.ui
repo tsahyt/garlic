@@ -78,7 +78,7 @@
           </object>
         </child>
         <child>
-          <object class="GtkButton">
+          <object class="GtkButton" id="storeButton">
             <property name="label">gtk-save</property>
             <property name="visible">True</property>
             <property name="can_focus">True</property>
