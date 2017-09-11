@@ -25,6 +25,8 @@ import Garlic.View
 import Garlic.View.HeaderBar
 import Garlic.View.RecipeDisplay
 import Garlic.View.RecipeEdit
+import Garlic.View.IngredientEditor
+import Garlic.Presenter.IngredientEditor
 
 import qualified Data.Sequence as S
 
@@ -47,7 +49,7 @@ recipeEditP app selected = do
     recipe <- currentRecipe app
     
     -- Ingredients
-    new <- ingredientEditor app
+    new <- newIngredientPopover app
     selectedIngredients <- loadRecipe app selected
 
     completion <- fetch completionList $
@@ -135,38 +137,19 @@ currentRecipe app = do
     pure r
 
 -- | Network describing the new ingredient dialog
-ingredientEditor :: GarlicApp -> Garlic (Event (Entity Ingredient))
-ingredientEditor app = do
+newIngredientPopover :: GarlicApp -> Garlic (Event (Entity Ingredient))
+newIngredientPopover app = do
     let ni = app ^. appRecipeEdit . editNewIngredient
 
-    ni ^. niClearAll `consume` ni ^. niClearClick
-    ni ^. niClearAll `consume` ni ^. niOkClick
+    ni ^. niMask ^. imClearAll `consume` ni ^. niClearClick
+    ni ^. niMask ^. imClearAll `consume` ni ^. niOkClick
 
-    new <- fetch newIngredient $ currentIngredient ni <@ ni ^. niOkClick
+    new <- fetch newIngredient $ 
+        currentIngredient (ni ^. niMask) <@ ni ^. niOkClick
     app ^. appDisplayError `consume`
         "Ingredient already exists!" <$ filterE isNothing new
     
     pure (filterJust new)
-
--- | Behavior describing the current ingredient as specified in the new
--- ingredient popover.
-currentIngredient :: GarlicNewIngredient -> Behavior Ingredient
-currentIngredient editor = Ingredient
-    <$> editor ^. niName
-    <*> editor ^. niComment
-    <*> editor ^. niUnit
-    <*> (parseNum <$> editor ^. niAmount)
-    <*> (parseNum <$> editor ^. niProtein)
-    <*> (parseNum <$> editor ^. niCarbs)
-    <*> (fmap parseNum . mtext <$> editor ^. niSugar)
-    <*> (fmap parseNum . mtext <$> editor ^. niFibre)
-    <*> (parseNum <$> editor ^. niFat)
-    <*> (fmap parseNum . mtext <$> editor ^. niSatFat)
-    <*> (fmap parseNum . mtext <$> editor ^. niPolyFat)
-    <*> (fmap parseNum . mtext <$> editor ^. niMonoFat)
-    <*> (fmap parseNum . mtext <$> editor ^. niTransFat)
-    <*> (fmap parseNum . mtext <$> editor ^. niSodium)
-    <*> (fmap parseNum . mtext <$> editor ^. niCholesterol)
 
 -- | Management of the ingredient list
 ingredientList 

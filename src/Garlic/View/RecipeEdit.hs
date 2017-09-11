@@ -37,24 +37,9 @@ module Garlic.View.RecipeEdit
     editRating,
 
     GarlicNewIngredient,
-    niClearAll,
     niClearClick,
     niOkClick,
-    niName,
-    niComment,
-    niAmount,
-    niUnit,
-    niProtein,
-    niCarbs,
-    niSugar,
-    niFibre,
-    niFat,
-    niSatFat,
-    niPolyFat,
-    niMonoFat,
-    niTransFat,
-    niSodium,
-    niCholesterol,
+    niMask,
 
     GarlicIngredientList,
     ilInserted,
@@ -77,6 +62,7 @@ import Data.Text.Encoding (decodeUtf8)
 import GI.Gtk hiding (Unit)
 import GI.GtkSource
 import Garlic.Types
+import Garlic.View.IngredientEditor
 import Garlic.Data.Units
 import Reactive.Banana.GI.Gtk
 import Reactive.Banana (stepper)
@@ -259,24 +245,9 @@ getEditMasks b = do
        <*> (fmap truncate <$> attrB recipeRating #value)
 
 data GarlicNewIngredient = GarlicNewIngredient
-    { _niClearAll    :: Consumer ()
-    , _niClearClick  :: Event ()
+    { _niClearClick  :: Event ()
     , _niOkClick     :: Event ()
-    , _niName        :: Behavior Text
-    , _niComment     :: Behavior Text
-    , _niAmount      :: Behavior Text
-    , _niUnit        :: Behavior Unit
-    , _niProtein     :: Behavior Text
-    , _niCarbs       :: Behavior Text
-    , _niSugar       :: Behavior Text
-    , _niFibre       :: Behavior Text
-    , _niFat         :: Behavior Text
-    , _niSatFat      :: Behavior Text
-    , _niPolyFat     :: Behavior Text
-    , _niMonoFat     :: Behavior Text
-    , _niTransFat    :: Behavior Text
-    , _niSodium      :: Behavior Text
-    , _niCholesterol :: Behavior Text
+    , _niMask        :: GarlicIngredientMask
     }
 
 newIngredient :: MenuButton -> Garlic GarlicNewIngredient
@@ -284,59 +255,18 @@ newIngredient button = do
     b <- builderNew
     _ <- builderAddFromString b uiIngredientNew (-1)
 
-    popover <- castB b "ingredientNew" Popover
-    set button [ #popover := popover ]
-
-    name     <- castB b "niName" Entry
-    comment  <- castB b "niComment" Entry
-    unit     <- castB b "niUnit" ComboBoxText
-    amount   <- castB b "niAmount" Entry
-    protein  <- castB b "niProtein" Entry
-    carbs    <- castB b "niCarbs" Entry
-    sugar    <- castB b "niSugar" Entry
-    fibre    <- castB b "niFibre" Entry
-    fat      <- castB b "niFat" Entry
-    satFat   <- castB b "niSatFat" Entry
-    polyFat  <- castB b "niPolyFat" Entry
-    monoFat  <- castB b "niMonoFat" Entry
-    transFat <- castB b "niTransFat" Entry
-    sodium   <- castB b "niSodium" Entry
-    chlstrl  <- castB b "niCholesterol" Entry
-
-    mapM_ (comboBoxTextAppendText unit . prettyUnit) allUnits
-
-    let clearAll = mapM_ (flip setEntryText "")
-            [ name, comment, amount, protein, carbs, sugar, fibre
-            , fat, satFat, polyFat, monoFat, transFat ]
-
-    okButton    <- castB b "okButton" Button
     clearButton <- castB b "clearButton" Button
+    okButton    <- castB b "okButton" Button
+    box         <- castB b "box" Box
+    popover     <- castB b "ingredientNew" Popover
 
-    lift $ GarlicNewIngredient
-       <$> pure (ioConsumer $ \_ -> clearAll)
-       <*> signalE0 clearButton #clicked
-       <*> signalE0 okButton #clicked
-       <*> attrB name #text
-       <*> attrB comment #text
-       <*> attrB amount #text
-       <*> comboBoxUnitB unit
-       <*> attrB protein #text
-       <*> attrB carbs #text
-       <*> attrB sugar #text
-       <*> attrB fibre #text
-       <*> attrB fat #text
-       <*> attrB satFat #text
-       <*> attrB polyFat #text
-       <*> attrB monoFat #text
-       <*> attrB transFat #text
-       <*> attrB sodium #text
-       <*> attrB chlstrl #text
+    mask <- ingredientMask box
+    menuButtonSetPopover button (Just popover)
 
-comboBoxUnitB :: ComboBoxText -> MomentIO (Behavior Unit)
-comboBoxUnitB box = do
-    c  <- signalE0 box #changed
-    c' <- mapEventIO (const $ comboBoxTextGetActiveText box) c
-    stepper Gram $ parseUnit <$> c'
+    GarlicNewIngredient
+        <$> lift (signalE0 clearButton #clicked)
+        <*> lift (signalE0 okButton #clicked)
+        <*> pure mask
 
 data EditorIngredient = EditorIngredient
     { eiAmount   :: Double
