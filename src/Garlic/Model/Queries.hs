@@ -12,7 +12,7 @@ module Garlic.Model.Queries
     wingrIngr,
     wingrOptional,
     wingrDisp,
-    completionList,
+    allIngredientNames,
     ingredientByName,
 
     -- * Updates
@@ -87,8 +87,8 @@ ingredientsFor = dbFetcher $ \recipe -> do
         xs
 
 -- | Select all ingredient names in the DB
-completionList :: Fetcher () [Text]
-completionList = dbFetcher $ \_ ->
+allIngredientNames :: Fetcher () [Text]
+allIngredientNames = dbFetcher $ \_ ->
     map (ingredientName . entityVal) <$> P.selectList [] []
 
 ingredientByName :: Fetcher Text (Entity Ingredient)

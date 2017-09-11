@@ -6,16 +6,24 @@ module Garlic.Presenter.IngredientEditor
 where
 
 import Control.Lens
-import Garlic.Types
-import Garlic.Model
 import Reactive.Banana
 
+import Garlic.View
 import Garlic.View.IngredientEditor
+import Garlic.Types
+import Garlic.Model
+import Garlic.Model.Queries
 
-ingredientEditorP
-    :: GarlicIngredientEditor
-    -> Garlic ()
-ingredientEditorP editor = pure ()
+ingredientEditorP :: GarlicApp -> Garlic ()
+ingredientEditorP app = do
+    let editor = app ^. appIngredientEd
+        ingredient = currentIngredient $ editor ^. ieMask
+
+    -- Filling the ComboBox
+    inames <- fetch allIngredientNames $
+        app ^. appStartup
+
+    consume stdout . fmap show =<< plainChanges ingredient
 
 -- | Behavior describing the current ingredient as specified in the new
 -- ingredient popover.

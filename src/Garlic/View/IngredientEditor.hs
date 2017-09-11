@@ -8,6 +8,7 @@ module Garlic.View.IngredientEditor
     GarlicIngredientEditor,
     ieRun,
     ieDelete,
+    ieMask,
 
     ingredientMask,
     GarlicIngredientMask,
@@ -51,21 +52,35 @@ uiIngredientMask = decodeUtf8 $(embedFile "res/ingredient-mask.ui")
 data GarlicIngredientEditor = GarlicIngredientEditor
     { _ieRun    :: Consumer ()
     , _ieDelete :: Event ()
+    , _ieMask   :: GarlicIngredientMask
     }
 
-ingredientEditor :: ApplicationWindow -> Garlic GarlicIngredientEditor
-ingredientEditor win = do
+ingredientEditor 
+    :: ApplicationWindow 
+    -> Garlic EntryCompletion 
+    -> Garlic GarlicIngredientEditor
+ingredientEditor win newCompl = do
     b <- builderNew
     _ <- builderAddFromString b uiIngredientEditor (-1)
 
-    editor <- castB b "ingredientEditor" Dialog
+    editor       <- castB b "ingredientEditor" Dialog
+    search       <- castB b "ingredientSearch" SearchEntry
     deleteButton <- castB b "deleteButton" Button
+    box          <- castB b "box" Box
+    mask         <- ingredientMask box
 
+    windowSetModal editor True
     windowSetTransientFor editor (Just win)
+
+    newCompl >>= \compl -> set search [ #completion := compl ]
+
+    -- Keep alive when closing
+    _ <- on editor #deleteEvent $ \_ -> widgetHideOnDelete editor
 
     GarlicIngredientEditor
         <$> pure (ioConsumer $ \_ -> void $ dialogRun editor)
         <*> lift (signalE0 deleteButton #clicked)
+        <*> pure mask
 
 data GarlicIngredientMask = GarlicIngredientMask
     { _imClearAll    :: Consumer ()

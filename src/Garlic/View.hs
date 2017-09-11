@@ -15,6 +15,7 @@ module Garlic.View
     appAppMenu,
     appIngredientEd,
     appEnableSearch,
+    appReplaceIngr,
     appDisplayError,
     appSearchChange,
     appActivate,
@@ -85,6 +86,7 @@ data GarlicApp = GarlicApp
     , _appIngredientEd  :: GarlicIngredientEditor
     , _appEnableSearch  :: Consumer ()
     , _appDisplayError  :: Consumer Text
+    , _appReplaceIngr   :: Consumer [Text]
     , _appSearchChange  :: Event Text
     , _appActivate      :: Event ()
     , _appStartup       :: Event ()
@@ -107,10 +109,13 @@ application app = do
     infoBar     <- castB b "infoBar" InfoBar
     infoLabel   <- castB b "infoLabel" Label
 
+    -- Ingredient Completion
+    (newCompl, replaceCompl) <- ingredientCompletion
+
     -- Sub elements
     hb   <- headerBar win
     rdis <- recipeDisplay rstack
-    redt <- recipeEdit rstack
+    redt <- recipeEdit rstack newCompl
     recs <- recipes rlist
 
     -- App Menu
@@ -118,7 +123,7 @@ application app = do
     _ <- on app #startup $ applicationSetAppMenu app (Just (amMenu menu))
 
     -- Ingredient Editor
-    editor <- ingredientEditor win
+    editor <- ingredientEditor win newCompl
 
     -- Hardcoded window setting on activation
     _ <- on app #activate $ do
@@ -140,6 +145,7 @@ application app = do
        <*> pure (ioConsumer $ \t -> do
                set infoBar [ #visible := True ]
                set infoLabel [ #label := t ])
+       <*> pure replaceCompl
        <*> (mapEventIO (\_ -> get searchEntry #text) 
                 =<< signalE0 searchEntry #searchChanged)
        <*> signalE0 app #activate
@@ -273,6 +279,36 @@ importIngredients win = lift . fmap filterJust . mapEventIO (const go)
                        pure path
                   1 -> widgetDestroy fc >> pure Nothing
                   _ -> error "importIngredients: Invalid response"
+
+ingredientCompletion 
+    :: MonadIO m 
+    => Garlic (m EntryCompletion, Consumer [Text])
+ingredientCompletion = do
+    model <- listStoreNew [gtypeString]
+
+    let newCompl = do
+            compl <- new EntryCompletion 
+                [ #model := model
+                , #textColumn := 0 ]
+
+            trender <- new CellRendererText []
+            Just area <- get compl #cellArea
+            cellLayoutPackStart area trender True
+            cellLayoutAddAttribute area trender "text" 0
+
+            pure compl
+
+    let cons = ioConsumer $ \xs -> do
+            listStoreClear model
+            mapM_ (appendOne model) xs
+
+    return (newCompl, cons)
+
+appendOne :: MonadIO m => ListStore -> Text -> m ()
+appendOne model str = do
+    x <- liftIO $ toGValue (Just str)
+    i <- listStoreAppend model
+    listStoreSet model i [0] [x]
 
 -- LENSES --
 makeLenses ''ListRecipe

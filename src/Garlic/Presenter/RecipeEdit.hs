@@ -51,12 +51,8 @@ recipeEditP app selected = do
     -- Ingredients
     new <- newIngredientPopover app
     selectedIngredients <- loadRecipe app selected
-
-    completion <- fetch completionList $
-            app ^. appStartup 
-        <:> (() <$ new)
-        <:> (() <$ app ^. appAppMenu . amIngImport)
-    app ^. appRecipeEdit . editReplaceIngCompl `consume` completion
+    completion <- fetch allIngredientNames $ () <$ new
+    app ^. appReplaceIngr `consume` completion
 
     entered <- fetch ingredientByName 
         $ app ^. appRecipeEdit . editEnterIngredient

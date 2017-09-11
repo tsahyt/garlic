@@ -16,6 +16,7 @@ import Garlic.Model.CSV
 import Garlic.Model.Queries
 import Garlic.Presenter.RecipeDisplay
 import Garlic.Presenter.RecipeEdit
+import Garlic.Presenter.IngredientEditor
 import Garlic.View
 import Garlic.View.HeaderBar
 import Garlic.View.IngredientEditor (ieRun)
@@ -30,6 +31,12 @@ presenter app' = mdo
 
     -- New Recipe
     newKey <- fetch newRecipe $ app ^. appHeader . addClick
+
+    -- Ingredient Completion
+    completion <- fetch allIngredientNames $
+            app ^. appStartup 
+        <:> (() <$ app ^. appAppMenu . amIngImport)
+    app ^. appReplaceIngr `consume` completion
 
     -- Search
     search <- searchBar app
@@ -52,6 +59,7 @@ presenter app' = mdo
     editChange <- recipeEditP app selected
     recipeDisplayP app selected
     recipeList app rcps
+    ingredientEditorP app
 
     return ()
 

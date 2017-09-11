@@ -15,7 +15,6 @@ module Garlic.View.RecipeEdit
     editIngredients,
     editNewIngredient,
     editEnterIngredient,
-    editReplaceIngCompl,
     recipeEdit,
 
     GarlicRecipeEditMask,
@@ -84,13 +83,12 @@ data GarlicRecipeEdit = GarlicRecipeEdit
     , _editNewIngredient   :: GarlicNewIngredient
     , _editIngredients     :: GarlicIngredientList
     , _editEnterIngredient :: Event Text
-    , _editReplaceIngCompl :: Consumer [Text]
     , _editDelete          :: Event ()
     , _editStore           :: Event ()
     }
 
-recipeEdit :: Stack -> Garlic GarlicRecipeEdit
-recipeEdit stack = do
+recipeEdit :: Stack -> Garlic EntryCompletion -> Garlic GarlicRecipeEdit
+recipeEdit stack newCompl = do
     b <- builderNew
     _ <- builderAddFromString b uiRecipeEdit (-1)
 
@@ -111,10 +109,11 @@ recipeEdit stack = do
 
     -- Ingredient List
     ingredientSearch  <- castB b "ingredientSearch" Entry
-    replaceCompletion <- ingredientCompletion ingredientSearch
     ingredientTree    <- castB b "ingredientTree" TreeView
     ingredientStore   <- castB b "ingredientStore" ListStore
     ingredientDelete  <- castB b "ingredientDelete" Button
+
+    newCompl >>= \compl -> set ingredientSearch [ #completion := compl ]
 
     treeSelection <- treeViewGetSelection ingredientTree
     set treeSelection [ #mode := SelectionModeMultiple ]
@@ -129,7 +128,6 @@ recipeEdit stack = do
        <*> pure popover
        <*> pure inglist
        <*> ingredientEnter ingredientSearch
-       <*> pure replaceCompletion
        <*> signalE0 deleteButton #clicked
        <*> signalE0 storeButton #clicked
 
@@ -171,24 +169,6 @@ buildSourceView = do
                    ]
 
     pure (sourceview, sbuf)
-
-ingredientCompletion :: Entry -> Garlic (Consumer [Text])
-ingredientCompletion entry = do
-    model <- listStoreNew [gtypeString]
-
-    compl <- new EntryCompletion 
-        [ #model := model
-        , #textColumn := 0 ]
-
-    trender <- new CellRendererText []
-    Just area <- get compl #cellArea
-    cellLayoutPackStart area trender True
-    cellLayoutAddAttribute area trender "text" 0
-    
-    set entry [ #completion := compl ]
-
-    return $ ioConsumer $ \xs -> 
-        listStoreClear model >> mapM_ (appendOne model) xs
 
 appendOne :: MonadIO m => ListStore -> Text -> m ()
 appendOne model str = do
