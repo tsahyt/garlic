@@ -14,7 +14,6 @@ module Garlic.View.HeaderBar
     yieldChanged,
     changeYield,
     yieldToggle,
-    importIng,
     headerBar,
 )
 where
@@ -41,7 +40,6 @@ data GarlicHeader = GarlicHeader
     , _addToggle       :: Consumer ()
     , _editToggle      :: Consumer ()
     , _yieldToggle     :: Consumer ()
-    , _importIng       :: Event FilePath
     }
 
 -- | Creates a new 'GarlicHeader' and sets the HeaderBar of the supplied
@@ -59,12 +57,9 @@ headerBar win = do
     editButton      <- castB b "editButton" Button
     yieldSpinner    <- castB b "yieldSpinner" SpinButton
     yieldAdjustment <- castB b "yieldAdjustment" Adjustment
-    importButton    <- castB b "importButton" Button
 
     -- Set the window title to the 'HeaderBar'
     windowSetTitlebar win (Just hb)
-
-    impEv <- importIngredients importButton
 
     lift $ GarlicHeader
        <$> signalE0 backButton #clicked
@@ -77,7 +72,6 @@ headerBar win = do
        <*> pure (toggle addButton)
        <*> pure (toggle editButton)
        <*> pure (toggle yieldSpinner)
-       <*> pure impEv
 
 -- | Toggle visibility of any widget.
 --
@@ -86,21 +80,5 @@ toggle :: IsWidget w => w -> Consumer a
 toggle w = ioConsumer $ \_ -> do
     vis <- widgetGetVisible w
     widgetSetVisible w (not vis)
-
-importIngredients :: Button -> Garlic (Event FilePath)
-importIngredients btn = lift $ signalEN btn #clicked $ \h -> do
-    fc <- new FileChooserDialog []
-    _  <- dialogAddButton fc "Import" 0
-    _  <- dialogAddButton fc "Cancel" 1
-    dialogSetDefaultResponse fc 0
-
-    r <- dialogRun fc
-
-    case r of
-        0 -> fileChooserGetFilename fc >>= maybe (pure ()) h
-        1 -> pure ()
-        _ -> error "importIngredients: Invalid response"
-
-    widgetDestroy fc
 
 makeGetters ''GarlicHeader

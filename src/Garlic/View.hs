@@ -12,13 +12,23 @@ module Garlic.View
     appRecipeEdit,
     appRecipeDisplay,
     appRecipeList,
+    appAppMenu,
     appEnableSearch,
     appDisplayError,
     appSearchChange,
     appActivate,
     appShutdown,
     appStartup,
+    appQuit,
+    appAbout,
     application,
+
+    -- * App Menu
+    GarlicAppMenu,
+    amIngEditor,
+    amIngImport,
+    amAbout,
+    amQuit,
 
     -- * Recipe List
     GarlicRecipes,
@@ -35,6 +45,7 @@ module Garlic.View
 where
 
 import Control.Lens.TH
+import Control.Monad
 import Control.Monad.Trans
 import Data.FileEmbed
 import Data.Sequence (Seq)
@@ -43,6 +54,7 @@ import Data.Text.Encoding (decodeUtf8)
 import GI.Gtk
 import Garlic.Types
 import Reactive.Banana.Frameworks (mapEventIO)
+import Reactive.Banana (filterJust)
 import Reactive.Banana.GI.Gtk
 import Text.Printf
 
@@ -51,23 +63,31 @@ import Garlic.View.HeaderBar
 import Garlic.View.RecipeDisplay
 import Garlic.View.RecipeEdit
 
+import qualified GI.Gio as Gio
+
 uiMainWindow :: Text
 uiMainWindow = decodeUtf8 $(embedFile "res/main-window.ui")
 
 uiRecipeEntry :: Text
 uiRecipeEntry = decodeUtf8 $(embedFile "res/recipe-entry.ui")
 
+uiAboutDialog :: Text
+uiAboutDialog = decodeUtf8 $(embedFile "res/about-dialog.ui")
+
 data GarlicApp = GarlicApp
     { _appHeader        :: GarlicHeader
     , _appRecipeDisplay :: GarlicRecipeDisplay
     , _appRecipeEdit    :: GarlicRecipeEdit
     , _appRecipeList    :: GarlicRecipes
+    , _appAppMenu       :: GarlicAppMenu
     , _appEnableSearch  :: Consumer ()
     , _appDisplayError  :: Consumer Text
     , _appSearchChange  :: Event Text
     , _appActivate      :: Event ()
     , _appStartup       :: Event ()
     , _appShutdown      :: Event ()
+    , _appQuit          :: Consumer ()
+    , _appAbout         :: Consumer ()
     }
 
 application :: Application -> Garlic GarlicApp
@@ -90,6 +110,10 @@ application app = do
     redt <- recipeEdit rstack
     recs <- recipes rlist
 
+    -- App Menu
+    menu <- appMenu app win
+    _ <- on app #startup $ applicationSetAppMenu app (Just (amMenu menu))
+
     -- Hardcoded window setting on activation
     _ <- on app #activate $ do
         set win [ #application := app ]
@@ -104,6 +128,7 @@ application app = do
        <*> pure rdis                        -- Recipe Display
        <*> pure redt                        -- Recipe Editor
        <*> pure recs                        -- Recipe List
+       <*> pure menu
        <*> pure (searchToggle searchBar)    -- Search Toggle
        <*> pure (ioConsumer $ \t -> do
                set infoBar [ #visible := True ]
@@ -113,6 +138,57 @@ application app = do
        <*> signalE0 app #activate
        <*> signalE0 app #startup
        <*> signalE0 app #shutdown
+       <*> pure (ioConsumer $ \_ -> widgetDestroy win)
+       <*> pure (ioConsumer $ \_ -> about win)
+
+about :: MonadIO m => ApplicationWindow -> m ()
+about appWin = do
+    b <- builderNew
+    _ <- builderAddFromString b uiAboutDialog (-1)
+
+    dialog <- castB b "aboutDialog" AboutDialog
+    windowSetTransientFor dialog (Just appWin)
+
+    void $ dialogRun dialog
+
+data GarlicAppMenu = GarlicAppMenu
+    { _amIngEditor :: Event ()
+    , _amIngImport :: Event FilePath
+    , _amAbout     :: Event ()
+    , _amQuit      :: Event ()
+    , amMenu       :: Gio.Menu
+    }
+
+appMenu :: Application -> ApplicationWindow -> Garlic GarlicAppMenu
+appMenu app win = do
+    menu <- new Gio.Menu []
+
+    let append m = mapM_ (\(a,b) -> (Gio.menuAppend m (Just a) (Just b)))
+
+    ingMenu <- new Gio.Menu []
+    append ingMenu
+        [ ("Editor", "app.ingredients")
+        , ("Import CSV", "app.csv")
+        ]
+
+    Gio.menuAppendSubmenu menu (Just "Ingredient") ingMenu
+
+    append menu 
+        [ ("About", "app.about")
+        , ("Quit", "app.quit") ]
+
+    GarlicAppMenu
+        <$> menuClick "ingredients"
+        <*> (importIngredients win =<< menuClick "csv")
+        <*> menuClick "about"
+        <*> menuClick "quit"
+        <*> pure menu
+
+    where menuClick s = do
+              action <- Gio.simpleActionNew s Nothing
+              Gio.simpleActionSetEnabled action True
+              Gio.actionMapAddAction app action
+              lift $ signalEN action #activate (\h _ -> h ())
 
 -- | Toggle a 'SearchBar'
 searchToggle :: SearchBar -> Consumer ()
@@ -172,7 +248,27 @@ recipeEntry rate time name cuisine = do
     where rating = ratingString rate
           time'  = durationString time 
 
+importIngredients :: ApplicationWindow -> Event () -> Garlic (Event FilePath)
+importIngredients win = lift . fmap filterJust . mapEventIO (const go)
+    where go = do
+              fc <- new FileChooserDialog []
+              _  <- dialogAddButton fc "Import" 0
+              _  <- dialogAddButton fc "Cancel" 1
+              dialogSetDefaultResponse fc 0
+              windowSetTransientFor fc (Just win)
+
+              r <- dialogRun fc
+
+              case r of
+                  0 -> do
+                       path <- fileChooserGetFilename fc
+                       widgetDestroy fc
+                       pure path
+                  1 -> widgetDestroy fc >> pure Nothing
+                  _ -> error "importIngredients: Invalid response"
+
 -- LENSES --
 makeLenses ''ListRecipe
 makeGetters ''GarlicApp
 makeGetters ''GarlicRecipes
+makeGetters ''GarlicAppMenu

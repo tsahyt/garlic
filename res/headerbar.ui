@@ -41,6 +41,9 @@
           </object>
         </child>
       </object>
+      <packing>
+        <property name="position">1</property>
+      </packing>
     </child>
     <child>
       <object class="GtkButton" id="editButton">
@@ -57,23 +60,6 @@
       </object>
       <packing>
         <property name="position">3</property>
-      </packing>
-    </child>
-    <child>
-      <object class="GtkSpinButton" id="yieldSpinner">
-        <property name="visible">True</property>
-        <property name="can_focus">True</property>
-        <property name="input_purpose">number</property>
-        <property name="adjustment">yieldAdjustment</property>
-        <property name="digits">2</property>
-        <property name="snap_to_ticks">True</property>
-        <property name="numeric">True</property>
-        <property name="wrap">True</property>
-        <property name="value">2.2351741811588166e-10</property>
-      </object>
-      <packing>
-        <property name="pack_type">end</property>
-        <property name="position">1</property>
       </packing>
     </child>
     <child>
@@ -96,15 +82,20 @@
       </packing>
     </child>
     <child>
-      <object class="GtkButton" id="importButton">
-        <property name="label" translatable="yes">Import Ingredients</property>
+      <object class="GtkSpinButton" id="yieldSpinner">
         <property name="visible">True</property>
         <property name="can_focus">True</property>
-        <property name="receives_default">True</property>
+        <property name="input_purpose">number</property>
+        <property name="adjustment">yieldAdjustment</property>
+        <property name="digits">2</property>
+        <property name="snap_to_ticks">True</property>
+        <property name="numeric">True</property>
+        <property name="wrap">True</property>
+        <property name="value">2.2351741811588166e-10</property>
       </object>
       <packing>
         <property name="pack_type">end</property>
-        <property name="position">4</property>
+        <property name="position">1</property>
       </packing>
     </child>
   </object>

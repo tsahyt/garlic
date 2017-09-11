@@ -41,8 +41,11 @@ presenter app' = mdo
     let selected = (S.index <$> rcps) <@> app ^. appRecipeList . recipeSelected
                <:> newKey
 
-    -- Importing CSV
-    importCSV `consume` app ^. appHeader . importIng
+    -- AppMenu
+    stdout `consume` "editor" <$ app ^. appAppMenu . amIngEditor
+    importCSV `consume` app ^. appAppMenu . amIngImport
+    app ^. appQuit `consume` app ^. appAppMenu . amQuit
+    app ^. appAbout `consume` app ^. appAppMenu . amAbout
 
     -- Subsystems
     editChange <- recipeEditP app selected

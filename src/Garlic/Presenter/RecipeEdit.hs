@@ -53,7 +53,7 @@ recipeEditP app selected = do
     completion <- fetch completionList $
             app ^. appStartup 
         <:> (() <$ new)
-        <:> (() <$ app ^. appHeader . importIng)
+        <:> (() <$ app ^. appAppMenu . amIngImport)
     app ^. appRecipeEdit . editReplaceIngCompl `consume` completion
 
     entered <- fetch ingredientByName 
