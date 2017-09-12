@@ -14,6 +14,7 @@ module Garlic.Model.Queries
     wingrDisp,
     allIngredientNames,
     ingredientByName,
+    ingredientsByName,
 
     -- * Updates
     newRecipe,
@@ -29,6 +30,7 @@ import Control.Lens.TH
 import Garlic.Data.Units
 import Garlic.Model
 import Garlic.Types
+import Data.Maybe (catMaybes)
 import Database.Esqueleto
 import Data.Text (Text)
 import Data.Sequence (Seq)
@@ -96,6 +98,11 @@ allIngredientNames = dbFetcher $ \_ ->
 ingredientByName :: Fetcher Text (Entity Ingredient)
 ingredientByName = filterMaybe . dbFetcher $ \name ->
     P.selectFirst [ IngredientName P.==. name ] []
+
+ingredientsByName :: Fetcher [Text] [Entity Ingredient]
+ingredientsByName = dbFetcher $ \names -> do
+    xs <- mapM (\n -> P.selectFirst [ IngredientName P.==. n ] []) names
+    pure $ catMaybes xs
 
 updateRecipe :: Consumer (Entity Recipe, [WeighedIngredient])
 updateRecipe = dbConsumer $ \(Entity k r, is) -> do

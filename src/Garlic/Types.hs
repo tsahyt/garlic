@@ -20,6 +20,7 @@ module Garlic.Types
     fetchThrough,
     dynamicFetcher,
     dbFetcher,
+    ioFetcher,
     filterMaybe,
     
     -- * Misc
@@ -34,6 +35,7 @@ module Garlic.Types
 where
 
 import Control.Lens
+import Control.Category
 import Control.Monad.Reader
 import Data.Functor.Compose
 import Data.Text (Text)
@@ -43,6 +45,8 @@ import Reactive.Banana
 import Data.Functor.Contravariant.Divisible
 import Reactive.Banana.Frameworks
 import Database.Persist.Sql
+
+import Prelude hiding ((.), id)
 
 import qualified Data.Text as T
 
@@ -107,6 +111,10 @@ instance Profunctor Fetcher where
         let b = fmap f a
          in g <$$> fetch k b
 
+instance Category Fetcher where
+    id = Fetcher $ pure
+    a . b = Fetcher $ fetch a <=< fetch b
+
 -- | Can be used to register new handlers/events dynamically in a fetcher.
 dynamicFetcher :: (a -> MomentIO b) -> Fetcher a b
 dynamicFetcher k = Fetcher $ \e -> lift $ execute (k <$> e)
@@ -116,6 +124,9 @@ dbFetcher :: (a -> SqlPersistT IO b) -> Fetcher a b
 dbFetcher k = Fetcher $ \e -> do
     backend <- ask
     lift $ mapEventIO (\x -> runReaderT (k x) backend) e
+
+ioFetcher :: (a -> IO b) -> Fetcher a b
+ioFetcher k = Fetcher $ \e -> lift $ mapEventIO k e
 
 filterMaybe :: Fetcher a (Maybe b) -> Fetcher a b
 filterMaybe (Fetcher x) = Fetcher (filterJust <$$> x)

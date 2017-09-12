@@ -41,11 +41,9 @@ module Garlic.View.RecipeEdit
     niMask,
 
     GarlicIngredientList,
-    ilInserted,
-    ilChanged,
-    ilDeleted,
     ilAppend,
     ilClear,
+    ilFetch,
 
     EditorIngredient(..)
 )
@@ -64,7 +62,6 @@ import Garlic.Types
 import Garlic.View.IngredientEditor
 import Garlic.Data.Units
 import Reactive.Banana.GI.Gtk
-import Reactive.Banana (stepper)
 import Reactive.Banana.Frameworks (mapEventIO, MomentIO, reactimate)
 import Text.Printf
 import Text.Markdown (Markdown (..))
@@ -258,11 +255,9 @@ data EditorIngredient = EditorIngredient
     deriving (Eq, Show)
 
 data GarlicIngredientList = GarlicIngredientList
-    { _ilInserted :: Event (Int, EditorIngredient)
-    , _ilChanged  :: Event (Int, EditorIngredient)
-    , _ilDeleted  :: Event Int
-    , _ilAppend   :: Consumer [EditorIngredient]
-    , _ilClear    :: Consumer ()
+    { _ilAppend  :: Consumer [EditorIngredient]
+    , _ilClear   :: Consumer ()
+    , _ilFetch   :: Fetcher () [EditorIngredient]
     }
 
 ingredientList :: TreeView -> ListStore -> Button -> Garlic GarlicIngredientList
@@ -335,12 +330,9 @@ ingredientList view model delButton = do
     mapM_ (treeViewAppendColumn view) [ amntC, unitC, nameC, dispC, optiC ]
 
     lift $ GarlicIngredientList 
-       <$> signalEN model #rowInserted (\h p i -> fetch p i >>= h)
-       <*> signalEN model #rowChanged (\h p i -> fetch p i >>= h)
-       <*> signalEN model #rowDeleted 
-               (\h p -> treePathToString p >>= h . parseNum)
-       <*> pure (ioConsumer (mapM_ append))
+       <$> pure (ioConsumer (mapM_ append))
        <*> pure (ioConsumer (\_ -> listStoreClear model))
+       <*> pure (ioFetcher $ const fetchAll)
 
     where append :: MonadIO m => EditorIngredient -> m ()
           append EditorIngredient{..} = do
@@ -356,18 +348,25 @@ ingredientList view model delButton = do
               i  <- listStoreAppend model
               listStoreSet model i [0..4] [amnt, unit, name, disp, opt]
 
-          fetch :: MonadIO m => TreePath -> TreeIter 
-                -> m (Int, EditorIngredient)
-          fetch p i = do
-              idx         <- parseNum <$> treePathToString p
+          fetchAll :: MonadIO m => m [EditorIngredient]
+          fetchAll = do
+              (b0, i) <- treeModelGetIterFirst model
+              let go = do
+                      x <- fetch i
+                      b <- treeModelIterNext model i
+                      if b then (x :) <$> go
+                           else pure [x]
+              if b0 then go else pure []
+
+          fetch :: MonadIO m => TreeIter -> m EditorIngredient
+          fetch i = do
               [a,b,c,d,e] <- mapM (treeModelGetValue model i) [0..4]
-              x <- liftIO $ EditorIngredient 
-               <$> (maybe 0 parseNum <$> fromGValue a)
-               <*> (maybe Gram (parseUnit @Text) <$> fromGValue b)
-               <*> (fromMaybe "" <$> fromGValue c) 
-               <*> fromGValue d
-               <*> fromGValue e
-              pure (idx,x)
+              liftIO $ EditorIngredient 
+                   <$> (maybe 0 parseNum <$> fromGValue a)
+                   <*> (maybe Gram (parseUnit @Text) <$> fromGValue b)
+                   <*> (fromMaybe "" <$> fromGValue c) 
+                   <*> fromGValue d
+                   <*> fromGValue e
 
 unitStore :: MonadIO m => m ListStore
 unitStore = do

@@ -9,6 +9,7 @@ module Garlic.Presenter.RecipeEdit
 )
 where
 
+import Control.Category
 import Control.Lens
 import Data.Maybe
 import Data.Monoid
@@ -27,6 +28,8 @@ import Garlic.View.RecipeDisplay
 import Garlic.View.RecipeEdit
 import Garlic.View.IngredientEditor
 import Garlic.Presenter.IngredientEditor
+
+import Prelude hiding ((.), id)
 
 import qualified Data.Sequence as S
 
@@ -64,13 +67,13 @@ recipeEditP app selected = do
 
     -- Recipe Entity, only Just when there is also a previous selection
     let recipeEntity = getCompose $ 
-            (,) <$> (Entity <$> Compose key 
-                            <*> Compose (Just <$> recipe))
-                <*> Compose (Just <$> ingredients)
+            (Entity <$> Compose key 
+                    <*> Compose (Just <$> recipe))
     
     -- Save on Store Click, or do nothing when there was no selection
-    let storeE :: Event (Entity Recipe, [WeighedIngredient])
-        storeE = filterJust (recipeEntity <@ app ^. appRecipeEdit . editStore)
+    storeE <- fetch (fetchThrough ingredients) 
+            $ filterJust 
+            $ recipeEntity <@ app ^. appRecipeEdit . editStore
     updateRecipe `consume` storeE
 
     -- Show Display on Abort Click
@@ -152,7 +155,7 @@ ingredientList
     :: GarlicIngredientList 
     -> Event [WeighedIngredient] 
     -> Event (Entity Ingredient)
-    -> Garlic (Behavior [WeighedIngredient])
+    -> Garlic (Fetcher a [WeighedIngredient])
 ingredientList ilist selected new = mdo
     let fromWI w = EditorIngredient
                        (view wingrAmount w)
@@ -160,13 +163,14 @@ ingredientList ilist selected new = mdo
                        (view (wingrIngr . to entityVal . to ingredientName) w)
                        (view wingrDisp w)
                        (view wingrOptional w)
+
+        toWI e i = WeighedIngredient
+                       (eiAmount e)
+                       (eiUnit e)
+                       (eiOptional e)
+                       (eiDisplay e)
+                       i
         
-        toWI i = updWI i . fromIngredient
-
-        updWI EditorIngredient{..} = 
-            set wingrOptional eiOptional . set wingrDisp eiDisplay 
-          . set wingrUnit eiUnit . set wingrAmount eiAmount
-
     -- Replace ingredient list on new selection
     ((() >$ ilist ^. ilClear) <> ilist ^. ilAppend) `consume` 
         map fromWI <$> selected
@@ -174,44 +178,6 @@ ingredientList ilist selected new = mdo
     -- Insert new ingredients
     ilist ^. ilAppend `consume` (pure . fromWI . fromIngredient) <$> new
 
-    -- Events that can affect the managed list of ingredients
-    let clearE   = const [] <$ selected
-        appendE  = (flip (++) . pure) . fromIngredient <$> new
-        deleteE  = delete' <$> ilist ^. ilDeleted
-        changedE = (\(i,x) xs -> modify' i xs (updWI x))
-               <$> whenE (not . null <$> is) (ilist ^. ilChanged)
-
-    insertE <- do
-        r  <- spread $ zip [0..] <$> selected
-        let x = ilist ^. ilInserted
-            f (i,a) b = (i, toWI a b)
-        xB <- stepper (error "insertE: empty stepper") $ x
-        e  <- fetch ingredientByName $ view (_2 . to eiName) <$> x
-        pure $ uncurry (flip . insert') <$> ((f <$> xB <@> e) <:> r)
-
-    is <- accumB [] $ unions [ deleteE, clearE, changedE, insertE, appendE ]
-    pure is
-
--- | Modify a list element at the specified index
-modify' :: Int -> [a] -> (a -> a) -> [a]
-modify' _ [] _ = []
-modify' n xs f =
-    case splitAt n xs of
-        (l,[])  -> l
-        (l,x:r) -> l ++ [f x] ++ r
-
--- | Insert element into list by index
-insert' :: Int -> [a] -> a -> [a]
-insert' 0 xs y = y : xs
-insert' n xs y =
-    case xs of
-        []      -> pure y
-        (x:xs') -> x : insert' (pred n) xs' y
-
--- | Delete element from list by index
-delete' :: Int -> [a] -> [a]
-delete' 0 xs = drop 1 xs
-delete' n xs =
-    case xs of
-        [] -> []
-        (x:xs') -> x : delete' (pred n) xs'
+    pure $ rmap (uncurry (zipWith toWI)) 
+         $ fetchThrough (lmap (map eiName) ingredientsByName)
+         . lmap (const ()) (ilist ^. ilFetch)
