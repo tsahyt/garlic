@@ -11,6 +11,7 @@ module Garlic.View.IngredientEditor
     ieStore,
     ieEnter,
     ieMask,
+    ieClear,
 
     ingredientMask,
     GarlicIngredientMask,
@@ -59,6 +60,7 @@ data GarlicIngredientEditor = GarlicIngredientEditor
     , _ieStore  :: Event ()
     , _ieEnter  :: Event Text
     , _ieMask   :: GarlicIngredientMask
+    , _ieClear  :: Consumer ()
     }
 
 ingredientEditor 
@@ -93,6 +95,7 @@ ingredientEditor win newCompl = do
                 h t
             )
         <*> pure mask
+        <*> pure (ioConsumer $ \_ -> entrySetText search "")
 
 data GarlicIngredientMask = GarlicIngredientMask
     { _imClearAll    :: Consumer ()
@@ -140,7 +143,7 @@ ingredientMask box = do
 
     let clearAll = mapM_ (flip setEntryText "")
             [ name, comment, amount, protein, carbs, sugar, fibre
-            , fat, satFat, polyFat, monoFat, transFat ]
+            , fat, satFat, polyFat, monoFat, transFat, sodium, chlstrl ]
 
         load i = do
             mapM_ (uncurry setEntryText)

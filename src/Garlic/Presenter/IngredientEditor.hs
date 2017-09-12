@@ -27,7 +27,10 @@ ingredientEditorP app = do
     editor ^. ieMask . imLoad `consume` entityVal <$> load
 
     -- Deletion
-    deleteIngredient `consume` filterJust (loaded <@ editor ^. ieDelete)
+    let deleteE = filterJust $ loaded <@ editor ^. ieDelete
+    deleteIngredient `consume` deleteE
+    editor ^. ieClear `consume` () <$ deleteE
+    editor ^. ieMask . imClearAll `consume` () <$ deleteE
 
     -- Store
     let editing = getCompose $ 
