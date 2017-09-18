@@ -1,6 +1,7 @@
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE LambdaCase #-}
 module Garlic.Presenter.RecipeDisplay
 (
     recipeDisplayP
@@ -10,13 +11,15 @@ where
 import Control.Lens
 import Control.Monad
 import Data.FileEmbed
+import Data.List (sortBy)
 import Data.Monoid
+import Data.Ord
 import Data.Text (Text)
 import Data.Text.Encoding (decodeUtf8)
 import Database.Persist.Sql
+import Numeric (showFFloatAlt)
 import Reactive.Banana
 import Text.Printf
-import Numeric (showFFloatAlt)
 
 import Garlic.Data.Duration
 import Garlic.Data.Nutrition
@@ -116,19 +119,43 @@ recipeHead Recipe{..} = H.div ! A.class_ "recipe-head" $ H.dl $ do
                        Nothing -> text s
                        Just u -> H.a ! A.href (textValue u) $ text s
 
+data IngredientListing
+    = GroupHead Text
+    | Back
+    | Entry WeighedIngredient
+
+makeListing :: [WeighedIngredient] -> [IngredientListing]
+makeListing = 
+    reverse . snd . foldr go (Nothing, []) . sortBy (comparing _wingrGroup)
+    where go w (Nothing, xs) = 
+              case view wingrGroup w of
+                  Nothing -> (Nothing, Entry w : xs)
+                  Just g  -> (Just g, Entry w : GroupHead g : xs)
+          go w (Just g, xs) =
+              case view wingrGroup w of
+                  Nothing -> (Nothing, Entry w : Back : xs)
+                  Just g' -> 
+                      if g == g' 
+                      then (Just g, Entry w : xs)
+                      else (Just g', Entry w : GroupHead g' : xs)
+
 ingredientList :: [WeighedIngredient] -> Html
 ingredientList is = H.ul ! A.id "ingredients" $
-    forM_ is $ \i -> do
-        let a = i ^. wingrAmount
-            u = i ^. wingrUnit
-            o = i ^. wingrOptional
-            n = case i ^. wingrDisp of
-                    Nothing -> abbreviateName 2 $ 
-                        i ^. wingrIngr . to entityVal . to ingredientName
-                    Just x  -> x
-        H.li $ do
-            text $ (prettyFloat 2 a) <> " " <> (prettyUnit u) <> " " <> n
-            when o $ H.span ! A.class_ "opt-ingr" $ " (optional)"
+    forM_ (makeListing is) $ \case
+        Back -> pure ()
+        GroupHead t ->
+            H.li ! A.class_ "group-head" $ text t
+        Entry i -> do
+            let a = i ^. wingrAmount
+                u = i ^. wingrUnit
+                o = i ^. wingrOptional
+                n = case i ^. wingrDisp of
+                        Nothing -> abbreviateName 2 $ 
+                            i ^. wingrIngr . to entityVal . to ingredientName
+                        Just x  -> x
+            H.li $ do
+                text $ (prettyFloat 2 a) <> " " <> (prettyUnit u) <> " " <> n
+                when o $ H.span ! A.class_ "opt-ingr" $ " (optional)"
 
 -- | Prettier float rendering. Will give at most @d@ digits of precision after
 -- the decimal point, but will omit the decimal point if not needed, and not

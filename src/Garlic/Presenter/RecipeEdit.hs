@@ -162,6 +162,7 @@ ingredientList ilist selected new = mdo
                        (view wingrUnit w)
                        (view (wingrIngr . to entityVal . to ingredientName) w)
                        (view wingrDisp w)
+                       (view wingrGroup w)
                        (view wingrOptional w)
 
         toWI e i = WeighedIngredient
@@ -169,6 +170,7 @@ ingredientList ilist selected new = mdo
                        (eiUnit e)
                        (eiOptional e)
                        (eiDisplay e)
+                       (eiGroup e)
                        i
         
     -- Replace ingredient list on new selection

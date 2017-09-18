@@ -12,6 +12,7 @@ module Garlic.Model.Queries
     wingrIngr,
     wingrOptional,
     wingrDisp,
+    wingrGroup,
     allIngredientNames,
     ingredientByName,
     ingredientsByName,
@@ -45,6 +46,7 @@ data WeighedIngredient = WeighedIngredient
     , _wingrUnit     :: Unit
     , _wingrOptional :: Bool
     , _wingrDisp     :: Maybe Text
+    , _wingrGroup    :: Maybe Text
     , _wingrIngr     :: Entity Ingredient
     }
     deriving Show
@@ -55,6 +57,7 @@ fromIngredient e@(Entity _ v) =
         (ingredientBasicAmount v)
         (ingredientBasicUnit v)
         False
+        Nothing
         Nothing
         e
 
@@ -81,13 +84,12 @@ ingredientsFor = dbFetcher $ \recipe -> do
                 where_ (h ^. RecipeHasRecipe ==. val recipe
                     &&. i ^. IngredientId ==. h ^. RecipeHasIngredient)
 
-                return (h ^. RecipeHasAmount, h ^. RecipeHasUnit
-                       ,h ^. RecipeHasOptional, h ^. RecipeHasDisplay, i)
+                return (h, i)
 
     pure $ map 
-        (\(a,b,c,d,e) -> 
-            WeighedIngredient (unValue a) (unValue b) (unValue c) (unValue d) e
-        ) 
+        (\(Entity _ (RecipeHas{..}), i) ->
+            WeighedIngredient recipeHasAmount recipeHasUnit recipeHasOptional recipeHasDisplay recipeHasGroup i
+        )
         xs
 
 -- | Select all ingredient names in the DB
@@ -117,7 +119,7 @@ updateRecipe = dbConsumer $ \(Entity k r, is) -> do
     -- insert new ones
     P.insertMany_ $
         [ RecipeHas k (entityKey _wingrIngr) _wingrAmount 
-                    _wingrUnit _wingrOptional _wingrDisp
+                    _wingrUnit _wingrOptional _wingrDisp _wingrGroup
         | WeighedIngredient{..} <- is ]
 
 newRecipe :: Fetcher () (Entity Recipe)

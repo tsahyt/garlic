@@ -53,5 +53,6 @@ share [mkPersist sqlSettings, mkMigrate "migrateAll"] [persistLowerCase|
         unit Unit
         optional Bool
         display Text Maybe
+        group Text Maybe
         deriving Show
  |]

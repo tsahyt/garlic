@@ -71,6 +71,10 @@ details {
     list-style-type: none;
 }
 
+.group-head {
+    font-weight: 600;
+}
+
 span.opt-ingr {
     font-style: oblique;
     color: #444;

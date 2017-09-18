@@ -250,6 +250,7 @@ data EditorIngredient = EditorIngredient
     , eiUnit     :: Unit
     , eiName     :: Text
     , eiDisplay  :: Maybe Text
+    , eiGroup    :: Maybe Text
     , eiOptional :: Bool
     }
     deriving (Eq, Show)
@@ -262,7 +263,8 @@ data GarlicIngredientList = GarlicIngredientList
 
 ingredientList :: TreeView -> ListStore -> Button -> Garlic GarlicIngredientList
 ingredientList view model delButton = do
-    units <- unitStore
+    units  <- unitStore
+    groups <- groupStore
 
     -- Deletion to model
     _ <- on delButton #clicked $ do
@@ -310,6 +312,20 @@ ingredientList view model delButton = do
             x' <- toGValue . not =<< fromGValue x
             listStoreSetValue model iter 4 x'
 
+    groupR <- new CellRendererCombo  [ #editable    := True
+                                     , #hasEntry    := True
+                                     , #model       := groups
+                                     , #textColumn  := 0 ]
+    _ <- on groupR #edited $ \path txt -> do
+        path' <- treePathNewFromString path
+        (b, iter) <- treeModelGetIter model path'
+
+        when b $ do
+            txt' <- toGValue (Just txt)
+            listStoreSetValue model iter 5 txt'
+
+        groupStoreAppend groups txt
+
     -- Columns
     amntC <- new TreeViewColumn [ #title := "Amount", #resizable := True]
     treeViewColumnPackStart amntC amntR False
@@ -326,16 +342,20 @@ ingredientList view model delButton = do
     optiC <- new TreeViewColumn [ #title := "Optional" ]
     treeViewColumnPackStart optiC optiR False
     treeViewColumnAddAttribute optiC optiR "active" 4
+    groupC <- new TreeViewColumn [ #title := "Group", #resizable := True]
+    treeViewColumnPackStart groupC groupR False
+    treeViewColumnAddAttribute groupC groupR "text" 5
 
-    mapM_ (treeViewAppendColumn view) [ amntC, unitC, nameC, dispC, optiC ]
+    mapM_ (treeViewAppendColumn view) 
+        [ amntC, unitC, nameC, dispC, groupC, optiC ]
 
     lift $ GarlicIngredientList 
-       <$> pure (ioConsumer (mapM_ append))
+       <$> pure (ioConsumer (mapM_ (append groups)))
        <*> pure (ioConsumer (\_ -> listStoreClear model))
        <*> pure (ioFetcher $ const fetchAll)
 
-    where append :: MonadIO m => EditorIngredient -> m ()
-          append EditorIngredient{..} = do
+    where append :: MonadIO m => ListStore -> EditorIngredient -> m ()
+          append groups EditorIngredient{..} = do
               let astr = printf "%.2f" eiAmount :: String
                   utxt = prettyUnit eiUnit :: Text
 
@@ -343,10 +363,13 @@ ingredientList view model delButton = do
               unit <- liftIO $ toGValue . Just $ utxt
               name <- liftIO $ toGValue . Just $ eiName
               disp <- liftIO $ toGValue eiDisplay
+              grp  <- liftIO $ toGValue eiGroup
               opt  <- liftIO $ toGValue eiOptional
 
+              maybe (return ()) (groupStoreAppend groups) eiGroup
+
               i  <- listStoreAppend model
-              listStoreSet model i [0..4] [amnt, unit, name, disp, opt]
+              listStoreSet model i [0..5] [amnt, unit, name, disp, opt, grp]
 
           fetchAll :: MonadIO m => m [EditorIngredient]
           fetchAll = do
@@ -360,12 +383,13 @@ ingredientList view model delButton = do
 
           fetch :: MonadIO m => TreeIter -> m EditorIngredient
           fetch i = do
-              [a,b,c,d,e] <- mapM (treeModelGetValue model i) [0..4]
+              [a,b,c,d,e,f] <- mapM (treeModelGetValue model i) [0..5]
               liftIO $ EditorIngredient 
                    <$> (maybe 0 parseNum <$> fromGValue a)
                    <*> (maybe Gram (parseUnit @Text) <$> fromGValue b)
                    <*> (fromMaybe "" <$> fromGValue c) 
                    <*> fromGValue d
+                   <*> fromGValue f
                    <*> fromGValue e
 
 unitStore :: MonadIO m => m ListStore
@@ -373,6 +397,31 @@ unitStore = do
     units <- listStoreNew [ gtypeString ]
     mapM_ (appendOne units . prettyUnit) allUnits
     return units
+
+groupStore :: MonadIO m => m ListStore
+groupStore = do
+    groups <- listStoreNew [ gtypeString ]
+    appendOne groups "<none>"
+    return groups
+
+groupStoreHas :: MonadIO m => ListStore -> Text -> m Bool
+groupStoreHas model txt = do
+    (b0, i) <- treeModelGetIterFirst model
+
+    let go = do
+            x  <- treeModelGetValue model i 0
+            b  <- treeModelIterNext model i
+            x' <- liftIO $ fromGValue x
+            if x' == Just txt 
+                then pure True 
+                else if b then go else pure False
+
+    if b0 then go else pure False
+
+groupStoreAppend :: MonadIO m => ListStore -> Text -> m ()
+groupStoreAppend model txt = do
+    b <- not <$> groupStoreHas model txt
+    when b $ appendOne model txt
 
 -- LENSES
 makeGetters ''GarlicRecipeEdit
