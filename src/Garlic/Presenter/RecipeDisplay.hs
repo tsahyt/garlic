@@ -126,7 +126,9 @@ data IngredientListing
 
 makeListing :: [WeighedIngredient] -> [IngredientListing]
 makeListing = 
-    reverse . snd . foldr go (Nothing, []) . sortBy (comparing _wingrGroup)
+    reverse . snd 
+            . foldr go (Nothing, []) 
+            . sortBy (comparing _wingrGroup) . reverse
     where go w (Nothing, xs) = 
               case view wingrGroup w of
                   Nothing -> (Nothing, Entry w : xs)
