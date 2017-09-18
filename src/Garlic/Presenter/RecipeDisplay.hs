@@ -142,7 +142,7 @@ makeListing =
 ingredientList :: [WeighedIngredient] -> Html
 ingredientList is = H.ul ! A.id "ingredients" $
     forM_ (makeListing is) $ \case
-        Back -> pure ()
+        Back -> H.li H.br
         GroupHead t ->
             H.li ! A.class_ "group-head" $ text t
         Entry i -> do
