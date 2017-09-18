@@ -43,11 +43,12 @@ presenter app' = mdo
     rcps   <- do
         let refetch = search <:> ("" <$ app ^. appStartup) <:> ("" <$ newKey)
         refetched <- fmap const <$> fetch recipes refetch
-        accumB mempty $ unions [ refetched , editChange ]
+        accumB mempty $ unions [ refetched , fst <$> editChange ]
     
     -- Selection Event holding current recipe entity
     let selected = (S.index <$> rcps) <@> app ^. appRecipeList . recipeSelected
                <:> newKey
+               <:> (snd <$> editChange)
 
     -- AppMenu
     app ^. appIngredientEd . ieRun `consume` app ^. appAppMenu . amIngEditor

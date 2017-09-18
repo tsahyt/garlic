@@ -36,7 +36,8 @@ import qualified Data.Sequence as S
 recipeEditP
     :: GarlicApp
     -> Event (Entity Recipe)
-    -> Garlic (Event (Seq (Entity Recipe) -> Seq (Entity Recipe)))
+    -> Garlic (Event (Seq (Entity Recipe) -> Seq (Entity Recipe), 
+               Entity Recipe))
 recipeEditP app selected = do
     key <- stepper Nothing (Just . entityKey <$> selected)
 
@@ -84,10 +85,15 @@ recipeEditP app selected = do
     deleteRecipe `consume` deleteE
     revertDisplay app deleteE
 
-    pure $ unions
-        [ (\x -> S.filter ((/= x) . entityKey)) <$> deleteE 
-        , (\x -> fmap (\e -> if entityKey e == entityKey x then x else e)) 
-        . fst <$> storeE ]
+    let change = unions
+            [ (\x -> S.filter ((/= x) . entityKey)) <$> deleteE 
+            , (\x -> fmap (\e -> if entityKey e == entityKey x then x else e)) 
+            . fst <$> storeE ]
+
+    let zipR = go <$> recipeEntity
+            where go Nothing  _ = Nothing 
+                  go (Just b) a = Just (a,b)
+     in pure . filterJust $ zipR <@> change
 
 revertDisplay :: GarlicApp -> Event a -> Garlic ()
 revertDisplay app e = do
