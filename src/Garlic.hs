@@ -7,15 +7,18 @@ module Garlic
 where
 
 import Control.Exception (catch, finally)
-import Control.Monad.Reader
 import Control.Monad (void)
-import Data.Text (unpack)
+import Control.Monad.Reader
+import Data.Text (pack, unpack)
 import Database.Persist.Sqlite hiding (Connection)
 import Database.Sqlite
-import GI.Gtk
 import GI.Gio (applicationRun)
+import GI.Gtk
 import Prelude hiding (init)
 import Reactive.Banana.Frameworks
+import System.FilePath.Posix
+import System.Environment (getEnv)
+import System.Directory
 
 import Garlic.Presenter
 
@@ -29,9 +32,18 @@ runGtk backend = void $ do
     compile (runReaderT (presenter app) backend) >>= actuate
     applicationRun app Nothing
 
+-- | Get DB location at @~/.local/share/garlic/garlic.db@. If the directory
+-- does not exist, create it
+dbLocation :: IO FilePath
+dbLocation = do
+    home <- getEnv "HOME"
+    let dir = home </> ".local" </> "share" </> "garlic"
+    createDirectoryIfMissing True dir
+    pure $ dir </> "garlic.db"
+
 garlic :: IO ()
 garlic = do
-    connection <- open "/tmp/garlic.db"
+    connection <- open . pack =<< dbLocation
     backend <- wrapConnection connection noLog
     runGtk backend
         `catch` (\(e :: GError) -> gerrorMessage e >>= putStrLn . unpack)

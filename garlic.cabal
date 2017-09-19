@@ -63,6 +63,8 @@ library
                      , csv-conduit
                      , conduit
                      , conduit-extra
+                     , filepath
+                     , directory
   default-language:    Haskell2010
 
 executable garlic-exe
