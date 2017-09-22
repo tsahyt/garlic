@@ -44,8 +44,8 @@ data GarlicHeader = GarlicHeader
 
 -- | Creates a new 'GarlicHeader' and sets the HeaderBar of the supplied
 -- application window.
-headerBar :: ApplicationWindow -> Garlic GarlicHeader
-headerBar win = do
+headerBar :: ApplicationWindow -> Stack -> Garlic GarlicHeader
+headerBar win stack = do
     b <- builderNew
     _ <- builderAddFromString b uiHeaderBar (-1)
 
@@ -57,9 +57,13 @@ headerBar win = do
     editButton      <- castB b "editButton" Button
     yieldSpinner    <- castB b "yieldSpinner" SpinButton
     yieldAdjustment <- castB b "yieldAdjustment" Adjustment
+    switcher        <- castB b "switcher" StackSwitcher
 
     -- Set the window title to the 'HeaderBar'
     windowSetTitlebar win (Just hb)
+
+    -- Connect Stack
+    stackSwitcherSetStack switcher (Just stack)
 
     lift $ GarlicHeader
        <$> signalE0 backButton #clicked

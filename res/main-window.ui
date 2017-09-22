@@ -98,6 +98,7 @@
           <object class="GtkStack" id="mainStack">
             <property name="visible">True</property>
             <property name="can_focus">False</property>
+            <property name="transition_type">slide-right</property>
             <child>
               <placeholder/>
             </child>
