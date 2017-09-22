@@ -71,6 +71,9 @@ import qualified GI.Gio as Gio
 uiMainWindow :: Text
 uiMainWindow = decodeUtf8 $(embedFile "res/main-window.ui")
 
+uiViewRecipes :: Text
+uiViewRecipes = decodeUtf8 $(embedFile "res/view-recipes.ui")
+
 uiRecipeEntry :: Text
 uiRecipeEntry = decodeUtf8 $(embedFile "res/recipe-entry.ui")
 
@@ -102,21 +105,20 @@ application app = do
 
     -- Widgets
     win         <- castB b "applicationWindow" ApplicationWindow
-    rlist       <- castB b "recipeList" ListBox
-    rstack      <- castB b "recipeStack" Stack
     searchBar   <- castB b "searchBar" SearchBar
     searchEntry <- castB b "searchEntry" SearchEntry
     infoBar     <- castB b "infoBar" InfoBar
     infoLabel   <- castB b "infoLabel" Label
+    mainStack   <- castB b "mainStack" Stack
 
     -- Ingredient Completion
     (newCompl, replaceCompl) <- ingredientCompletion
 
+    -- Views
+    vRecipes <- viewRecipes newCompl mainStack
+
     -- Sub elements
     hb   <- headerBar win
-    rdis <- recipeDisplay rstack
-    redt <- recipeEdit rstack newCompl
-    recs <- recipes rlist
 
     -- App Menu
     menu <- appMenu app win
@@ -136,9 +138,9 @@ application app = do
 
     lift $ GarlicApp 
        <$> pure hb                          -- HeaderBar
-       <*> pure rdis                        -- Recipe Display
-       <*> pure redt                        -- Recipe Editor
-       <*> pure recs                        -- Recipe List
+       <*> pure (vrRecipeDisplay vRecipes)  -- Recipe Display
+       <*> pure (vrRecipeEdit vRecipes)     -- Recipe Editor
+       <*> pure (vrRecipeList vRecipes)     -- Recipe List
        <*> pure menu
        <*> pure editor
        <*> pure (searchToggle searchBar)    -- Search Toggle
@@ -163,6 +165,28 @@ about appWin = do
     windowSetTransientFor dialog (Just appWin)
 
     void $ dialogRun dialog
+
+data GarlicViewRecipes = GarlicViewRecipes
+    { vrRecipeDisplay :: GarlicRecipeDisplay
+    , vrRecipeEdit    :: GarlicRecipeEdit
+    , vrRecipeList    :: GarlicRecipes
+    }
+
+viewRecipes :: (Garlic EntryCompletion) -> Stack -> Garlic GarlicViewRecipes
+viewRecipes newCompl stack = do
+    b <- builderNew
+    _ <- builderAddFromString b uiViewRecipes (-1)
+
+    container <- castB b "paned" Paned
+    rlist <- castB b "recipeList" ListBox
+    rstack <- castB b "recipeStack" Stack
+    rdis <- recipeDisplay rstack
+    redt <- recipeEdit rstack newCompl
+    recs <- recipes rlist
+
+    stackAddTitled stack container "view-recipes" "Recipes"
+
+    pure $ GarlicViewRecipes rdis redt recs
 
 data GarlicAppMenu = GarlicAppMenu
     { _amIngEditor :: Event ()
