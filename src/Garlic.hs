@@ -17,7 +17,7 @@ import GI.Gtk
 import Prelude hiding (init)
 import Reactive.Banana.Frameworks
 import System.FilePath.Posix
-import System.Environment (getEnv)
+import System.Environment (lookupEnv, getEnv)
 import System.Directory
 
 import Garlic.Presenter
@@ -36,10 +36,15 @@ runGtk backend = void $ do
 -- does not exist, create it
 dbLocation :: IO FilePath
 dbLocation = do
-    home <- getEnv "HOME"
-    let dir = home </> ".local" </> "share" </> "garlic"
-    createDirectoryIfMissing True dir
-    pure $ dir </> "garlic.db"
+    env <- lookupEnv "GARLIC_ENV"
+    case env of
+        Just "production" -> do
+            home <- getEnv "HOME"
+            let dir = home </> ".local" </> "share" </> "garlic"
+            createDirectoryIfMissing True dir
+            pure $ dir </> "garlic.db"
+
+        _ -> pure "/tmp/garlic.db"
 
 garlic :: IO ()
 garlic = do
