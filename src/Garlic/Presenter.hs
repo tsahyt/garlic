@@ -14,10 +14,12 @@ import Reactive.Banana
 import Garlic.Model
 import Garlic.Model.CSV
 import Garlic.Model.Queries
-import Garlic.Presenter.RecipeDisplay
-import Garlic.Presenter.RecipeEdit
+import Garlic.Presenter.Recipe.Display
+import Garlic.Presenter.Recipe.Edit
 import Garlic.Presenter.IngredientEditor
 import Garlic.View
+import Garlic.View.Recipe
+import Garlic.View.Recipe.Display
 import Garlic.View.HeaderBar
 import Garlic.View.IngredientEditor (ieRun)
 
@@ -46,7 +48,8 @@ presenter app' = mdo
         accumB mempty $ unions [ refetched , fst <$> editChange ]
     
     -- Selection Event holding current recipe entity
-    let selected = (S.index <$> rcps) <@> app ^. appRecipeList . recipeSelected
+    let selected = (S.index <$> rcps) <@> app ^. appVRecipes 
+                                        . vrRecipeList . recipeSelected
                <:> newKey
                <:> (snd <$> editChange)
 
@@ -80,8 +83,8 @@ recipeList app rcps = do
 -- | Consumer to populate the recipe list.
 listRecipes :: GarlicApp -> Consumer (Seq Recipe)
 listRecipes app = mconcat
-    [ app ^. appRecipeList ^. clearRecipes $< ()
-    , fmap mklr >$< app ^. appRecipeList ^. addRecipes ]
+    [ app ^. appVRecipes . vrRecipeList ^. clearRecipes $< ()
+    , fmap mklr >$< app ^. appVRecipes . vrRecipeList ^. addRecipes ]
     where mklr :: Recipe -> ListRecipe
           mklr Recipe{..} = 
               ListRecipe recipeRating recipeDuration recipeName recipeCuisine

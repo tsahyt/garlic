@@ -2,7 +2,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE LambdaCase #-}
-module Garlic.Presenter.RecipeDisplay
+module Garlic.Presenter.Recipe.Display
 (
     recipeDisplayP
 )
@@ -29,7 +29,8 @@ import Garlic.Model.Queries
 import Garlic.Types
 import Garlic.View
 import Garlic.View.HeaderBar
-import Garlic.View.RecipeDisplay
+import Garlic.View.Recipe
+import Garlic.View.Recipe.Display
 import Text.Blaze.Html
 
 import qualified Text.Blaze.Html5 as H
@@ -45,7 +46,7 @@ recipeDisplayP
     -> Event (Entity Recipe)
     -> Garlic ()
 recipeDisplayP app selected = do
-    let disp = app ^. appRecipeDisplay
+    let disp = app ^. appVRecipes . vrRecipeDisplay
 
     -- Ingredients
     selected' <- fetch (fetchThrough (lmap entityKey ingredientsFor)) selected

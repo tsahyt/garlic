@@ -9,9 +9,7 @@ module Garlic.View
     -- * Application Window
     GarlicApp,
     appHeader,
-    appRecipeEdit,
-    appRecipeDisplay,
-    appRecipeList,
+    appVRecipes,
     appAppMenu,
     appIngredientEd,
     appEnableSearch,
@@ -31,18 +29,6 @@ module Garlic.View
     amIngImport,
     amAbout,
     amQuit,
-
-    -- * Recipe List
-    GarlicRecipes,
-    addRecipes,
-    clearRecipes,
-    recipeSelected,
-
-    ListRecipe (..),
-    lrRating,
-    lrDuration,
-    lrName,
-    lrCuisine,
 )
 where
 
@@ -62,9 +48,8 @@ import Text.Printf
 
 import Garlic.Data.Duration
 import Garlic.View.HeaderBar
-import Garlic.View.RecipeDisplay
-import Garlic.View.RecipeEdit
 import Garlic.View.IngredientEditor
+import Garlic.View.Recipe
 import Garlic.View.Tracking
 
 import qualified GI.Gio as Gio
@@ -72,20 +57,12 @@ import qualified GI.Gio as Gio
 uiMainWindow :: Text
 uiMainWindow = decodeUtf8 $(embedFile "res/main-window.ui")
 
-uiViewRecipes :: Text
-uiViewRecipes = decodeUtf8 $(embedFile "res/view-recipes.ui")
-
-uiRecipeEntry :: Text
-uiRecipeEntry = decodeUtf8 $(embedFile "res/recipe-entry.ui")
-
 uiAboutDialog :: Text
 uiAboutDialog = decodeUtf8 $(embedFile "res/about-dialog.ui")
 
 data GarlicApp = GarlicApp
     { _appHeader        :: GarlicHeader
-    , _appRecipeDisplay :: GarlicRecipeDisplay
-    , _appRecipeEdit    :: GarlicRecipeEdit
-    , _appRecipeList    :: GarlicRecipes
+    , _appVRecipes      :: GarlicViewRecipes
     , _appAppMenu       :: GarlicAppMenu
     , _appIngredientEd  :: GarlicIngredientEditor
     , _appEnableSearch  :: Consumer ()
@@ -140,9 +117,7 @@ application app = do
 
     lift $ GarlicApp 
        <$> pure hb                          -- HeaderBar
-       <*> pure (vrRecipeDisplay vRecipes)  -- Recipe Display
-       <*> pure (vrRecipeEdit vRecipes)     -- Recipe Editor
-       <*> pure (vrRecipeList vRecipes)     -- Recipe List
+       <*> pure vRecipes
        <*> pure menu
        <*> pure editor
        <*> pure (searchToggle searchBar)    -- Search Toggle
@@ -167,28 +142,6 @@ about appWin = do
     windowSetTransientFor dialog (Just appWin)
 
     void $ dialogRun dialog
-
-data GarlicViewRecipes = GarlicViewRecipes
-    { vrRecipeDisplay :: GarlicRecipeDisplay
-    , vrRecipeEdit    :: GarlicRecipeEdit
-    , vrRecipeList    :: GarlicRecipes
-    }
-
-viewRecipes :: (Garlic EntryCompletion) -> Stack -> Garlic GarlicViewRecipes
-viewRecipes newCompl stack = do
-    b <- builderNew
-    _ <- builderAddFromString b uiViewRecipes (-1)
-
-    container <- castB b "paned" Paned
-    rlist <- castB b "recipeList" ListBox
-    rstack <- castB b "recipeStack" Stack
-    rdis <- recipeDisplay rstack
-    redt <- recipeEdit rstack newCompl
-    recs <- recipes rlist
-
-    stackAddTitled stack container "view-recipes" "Recipes"
-
-    pure $ GarlicViewRecipes rdis redt recs
 
 data GarlicAppMenu = GarlicAppMenu
     { _amIngEditor :: Event ()
@@ -239,57 +192,7 @@ searchToggle s = ioConsumer $ \_ -> do
     x <- get s #searchModeEnabled
     set s [ #searchModeEnabled := not x ]
 
--- | Used by 'addRecipes' in 'GarlicRecipes' to add new recipes to the list
-data ListRecipe = ListRecipe 
-    { _lrRating   :: Int
-    , _lrDuration :: Int
-    , _lrName     :: Text
-    , _lrCuisine  :: Text
-    }
 
-data GarlicRecipes = GarlicRecipes
-    { _clearRecipes   :: Consumer ()
-    , _addRecipes     :: Consumer (Seq ListRecipe)
-    , _recipeSelected :: Event Int
-    }
-
-recipes :: ListBox -> Garlic GarlicRecipes
-recipes rlist = 
-    lift $ GarlicRecipes
-       <$> pure (ioConsumer $ \_ -> clearList rlist)
-       <*> pure (ioConsumer $ mapM_ append)
-       <*> (mapEventIO (fmap fromIntegral . listBoxRowGetIndex) 
-                =<< signalE1 rlist #rowActivated)
-    
-    where clearList l = 
-              containerGetChildren l >>= mapM_ (containerRemove l)
-          append (ListRecipe a b d e) = 
-              recipeEntry a b d e >>= \x -> listBoxInsert rlist x (-1)
-
--- | Build a new ListBoxRow for a recipe entry in the recipe sidebar/list.
-recipeEntry 
-    :: MonadIO m 
-    => Int          -- ^ Rating
-    -> Int          -- ^ Time Required
-    -> Text         -- ^ Name
-    -> Text         -- ^ Cuisine
-    -> m ListBoxRow
-recipeEntry rate time name cuisine = do
-    b <- builderNew
-    _ <- builderAddFromString b uiRecipeEntry (-1)
-    
-    nameL <- castB b "recipeName" Label
-    infoL <- castB b "recipeInfo" Label
-
-    let info  = pack $ printf "%s —  %s — %s" rating cuisine time'
-
-    set nameL [ #label := name ]
-    set infoL [ #label := info ]
-
-    castB b "recipeEntry" ListBoxRow
-
-    where rating = ratingString rate
-          time'  = durationString time 
 
 importIngredients :: ApplicationWindow -> Event () -> Garlic (Event FilePath)
 importIngredients win = lift . fmap filterJust . mapEventIO (const go)
@@ -341,7 +244,5 @@ appendOne model str = do
     listStoreSet model i [0] [x]
 
 -- LENSES --
-makeLenses ''ListRecipe
 makeGetters ''GarlicApp
-makeGetters ''GarlicRecipes
 makeGetters ''GarlicAppMenu

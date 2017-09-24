@@ -3,7 +3,7 @@
 {-# LANGUAGE RecursiveDo #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TupleSections #-}
-module Garlic.Presenter.RecipeEdit
+module Garlic.Presenter.Recipe.Edit
 (
     recipeEditP
 )
@@ -21,13 +21,14 @@ import Reactive.Banana
 import Garlic.Data.Duration
 import Garlic.Model
 import Garlic.Model.Queries
+import Garlic.Presenter.IngredientEditor
 import Garlic.Types
 import Garlic.View
 import Garlic.View.HeaderBar
-import Garlic.View.RecipeDisplay
-import Garlic.View.RecipeEdit
 import Garlic.View.IngredientEditor
-import Garlic.Presenter.IngredientEditor
+import Garlic.View.Recipe
+import Garlic.View.Recipe.Display
+import Garlic.View.Recipe.Edit
 
 import Prelude hiding ((.), id)
 
@@ -44,7 +45,7 @@ recipeEditP app selected = do
     -- Show Editor on Edit or Add Click, hide Edit Button and yield
     let click = app ^. appHeader . editClick
             <:> app ^. appHeader . addClick
-     in do app ^. appRecipeEdit . showEditor `consume` click
+     in do app ^. appVRecipes . vrRecipeEdit . showEditor `consume` click
            app ^. appHeader . yieldToggle `consume` click
            app ^. appHeader . editToggle `consume` click
            app ^. appHeader . addToggle `consume` click
@@ -59,10 +60,10 @@ recipeEditP app selected = do
     app ^. appReplaceIngr `consume` completion
 
     entered <- fetch ingredientByName 
-        $ app ^. appRecipeEdit . editEnterIngredient
+        $ app ^. appVRecipes . vrRecipeEdit . editEnterIngredient
 
     ingredients <- ingredientList 
-        (app ^. appRecipeEdit . editIngredients) 
+        (app ^. appVRecipes . vrRecipeEdit . editIngredients) 
         selectedIngredients
         (new <:> entered)
 
@@ -74,14 +75,15 @@ recipeEditP app selected = do
     -- Save on Store Click, or do nothing when there was no selection
     storeE <- fetch (fetchThrough ingredients) 
             $ filterJust 
-            $ recipeEntity <@ app ^. appRecipeEdit . editStore
+            $ recipeEntity <@ app ^. appVRecipes . vrRecipeEdit . editStore
     updateRecipe `consume` storeE
 
     -- Show Display on Abort Click
     revertDisplay app $ app ^. appHeader . backClick
 
     -- Delete Selected Recipe on Delete, revert to display view
-    let deleteE = filterJust (key <@ app ^. appRecipeEdit . editDelete)
+    let deleteE = filterJust 
+            (key <@ app ^. appVRecipes . vrRecipeEdit . editDelete)
     deleteRecipe `consume` deleteE
     revertDisplay app deleteE
 
@@ -97,7 +99,7 @@ recipeEditP app selected = do
 
 revertDisplay :: GarlicApp -> Event a -> Garlic ()
 revertDisplay app e = do
-    app ^. appRecipeDisplay . showDisplay `consume` () <$ e
+    app ^. appVRecipes . vrRecipeDisplay . showDisplay `consume` () <$ e
     app ^. appHeader . yieldToggle `consume` () <$ e
     app ^. appHeader . editToggle `consume` () <$ e
     app ^. appHeader . addToggle  `consume` () <$ e
@@ -109,7 +111,7 @@ loadRecipe
     -> Event (Entity Recipe) 
     -> Garlic (Event [WeighedIngredient])
 loadRecipe app selected = do
-    let masks = app ^. appRecipeEdit . editMasks
+    let masks = app ^. appVRecipes . vrRecipeEdit . editMasks
         rcp   = entityVal <$> selected
     masks ^. editSetName `consume` recipeName <$> rcp
     masks ^. editSetCuisine `consume` recipeCuisine <$> rcp
@@ -120,7 +122,7 @@ loadRecipe app selected = do
     masks ^. editSetURL `consume` fromMaybe "" . recipeUrl <$> rcp
     masks ^. editSetRating `consume` recipeRating <$> rcp
 
-    app ^. appRecipeEdit . editSetInstructions 
+    app ^. appVRecipes . vrRecipeEdit . editSetInstructions 
         `consume` recipeInstructions <$> rcp
 
     fetch ingredientsFor (entityKey <$> selected)
@@ -128,12 +130,13 @@ loadRecipe app selected = do
 -- | The currently edited recipe
 currentRecipe :: GarlicApp -> Garlic (Behavior Recipe)
 currentRecipe app = do
-    let masks = app ^. appRecipeEdit . editMasks
+    let masks = app ^. appVRecipes . vrRecipeEdit . editMasks
         r     = Recipe 
             <$> masks ^. editName
             <*> masks ^. editCuisine
             <*> masks ^. editRating
-            <*> fmap (fromMaybe "") (app ^. appRecipeEdit . editInstructions)
+            <*> fmap (fromMaybe "") 
+                    (app ^. appVRecipes . vrRecipeEdit . editInstructions)
             <*> fmap (fromMaybe 0 . parseDuration) (masks ^. editDuration)
             <*> masks ^. editYield
             <*> masks ^. editYieldUnit
@@ -144,7 +147,7 @@ currentRecipe app = do
 -- | Network describing the new ingredient dialog
 newIngredientPopover :: GarlicApp -> Garlic (Event (Entity Ingredient))
 newIngredientPopover app = do
-    let ni = app ^. appRecipeEdit . editNewIngredient
+    let ni = app ^. appVRecipes . vrRecipeEdit . editNewIngredient
 
     ni ^. niMask ^. imClearAll `consume` ni ^. niClearClick
     ni ^. niMask ^. imClearAll `consume` ni ^. niOkClick

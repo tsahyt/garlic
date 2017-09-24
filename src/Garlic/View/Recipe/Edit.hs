@@ -3,7 +3,7 @@
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE TypeApplications #-}
-module Garlic.View.RecipeEdit
+module Garlic.View.Recipe.Edit
 (
     GarlicRecipeEdit,
     showEditor,

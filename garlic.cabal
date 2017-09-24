@@ -28,13 +28,14 @@ library
                        Garlic.Types
                        Garlic.View
                        Garlic.View.HeaderBar
-                       Garlic.View.RecipeDisplay
-                       Garlic.View.RecipeEdit
+                       Garlic.View.Recipe
+                       Garlic.View.Recipe.Display
+                       Garlic.View.Recipe.Edit
                        Garlic.View.IngredientEditor
                        Garlic.View.Tracking
                        Garlic.Presenter
-                       Garlic.Presenter.RecipeDisplay
-                       Garlic.Presenter.RecipeEdit
+                       Garlic.Presenter.Recipe.Display
+                       Garlic.Presenter.Recipe.Edit
                        Garlic.Presenter.IngredientEditor
                        Text.Markdown.Persist
   ghc-options:         -Wall

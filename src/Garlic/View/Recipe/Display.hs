@@ -1,7 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE OverloadedLabels #-}
 {-# LANGUAGE TemplateHaskell #-}
-module Garlic.View.RecipeDisplay
+module Garlic.View.Recipe.Display
 (
     GarlicRecipeDisplay,
     showDisplay,
