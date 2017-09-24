@@ -55,4 +55,11 @@ share [mkPersist sqlSettings, mkMigrate "migrateAll"] [persistLowerCase|
         display Text Maybe
         group Text Maybe
         deriving Show
+
+    NutritionGoal
+        kcal Double
+        protein Double
+        carbs Double
+        sugar Double
+        fat Double
  |]

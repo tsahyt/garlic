@@ -12,6 +12,7 @@ import Garlic.Model
 import Garlic.Model.CSV
 import Garlic.Model.Queries
 import Garlic.Presenter.Recipe
+import Garlic.Presenter.Tracking
 import Garlic.Presenter.IngredientEditor
 import Garlic.View
 import Garlic.View.HeaderBar
@@ -44,6 +45,7 @@ presenter app' = mdo
 
     -- Subsystems
     recipeP app newKey search
+    trackingP app
     ingredientEditorP app
 
     return ()

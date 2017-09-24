@@ -2,63 +2,63 @@
 <!-- Generated with glade 3.20.0 -->
 <interface>
   <requires lib="gtk+" version="3.20"/>
-  <object class="GtkAdjustment" id="carbAdjustment">
+  <object class="GtkAdjustment" id="goalCarbsAdjustment">
     <property name="upper">100</property>
     <property name="value">35</property>
     <property name="step_increment">1</property>
     <property name="page_increment">10</property>
   </object>
-  <object class="GtkAdjustment" id="cholesterolAdjustment">
+  <object class="GtkAdjustment" id="goalCholesterolAdjustment">
     <property name="upper">50000</property>
     <property name="value">500</property>
     <property name="step_increment">10</property>
     <property name="page_increment">100</property>
   </object>
-  <object class="GtkAdjustment" id="fatAdjustment">
+  <object class="GtkAdjustment" id="goalFatAdjustment">
     <property name="upper">100</property>
     <property name="value">35</property>
+    <property name="step_increment">1</property>
+    <property name="page_increment">10</property>
+  </object>
+  <object class="GtkAdjustment" id="goalKcalAdjustment">
+    <property name="upper">50000</property>
+    <property name="value">2000</property>
+    <property name="step_increment">10</property>
+    <property name="page_increment">100</property>
+  </object>
+  <object class="GtkAdjustment" id="goalMonoPolyAdjustment">
+    <property name="upper">100</property>
+    <property name="value">35</property>
+    <property name="step_increment">1</property>
+    <property name="page_increment">10</property>
+  </object>
+  <object class="GtkAdjustment" id="goalProteinAdjustment">
+    <property name="upper">100</property>
+    <property name="value">30</property>
+    <property name="step_increment">1</property>
+    <property name="page_increment">10</property>
+  </object>
+  <object class="GtkAdjustment" id="goalSatUnsatAdjustment">
+    <property name="upper">100</property>
+    <property name="value">35</property>
+    <property name="step_increment">1</property>
+    <property name="page_increment">10</property>
+  </object>
+  <object class="GtkAdjustment" id="goalSodiumAdjustment">
+    <property name="upper">50000</property>
+    <property name="value">2000</property>
+    <property name="step_increment">10</property>
+    <property name="page_increment">100</property>
+  </object>
+  <object class="GtkAdjustment" id="goalSugarsAdjustment">
+    <property name="upper">100</property>
+    <property name="value">30</property>
     <property name="step_increment">1</property>
     <property name="page_increment">10</property>
   </object>
   <object class="GtkAdjustment" id="goalWeightAdjustment">
     <property name="upper">1000</property>
     <property name="step_increment">0.5</property>
-    <property name="page_increment">10</property>
-  </object>
-  <object class="GtkAdjustment" id="kcalAdjustment">
-    <property name="upper">50000</property>
-    <property name="value">2000</property>
-    <property name="step_increment">10</property>
-    <property name="page_increment">100</property>
-  </object>
-  <object class="GtkAdjustment" id="monoPolyAdjustment">
-    <property name="upper">100</property>
-    <property name="value">35</property>
-    <property name="step_increment">1</property>
-    <property name="page_increment">10</property>
-  </object>
-  <object class="GtkAdjustment" id="proteinAdjustment">
-    <property name="upper">100</property>
-    <property name="value">30</property>
-    <property name="step_increment">1</property>
-    <property name="page_increment">10</property>
-  </object>
-  <object class="GtkAdjustment" id="satUnsatAdjustment">
-    <property name="upper">100</property>
-    <property name="value">35</property>
-    <property name="step_increment">1</property>
-    <property name="page_increment">10</property>
-  </object>
-  <object class="GtkAdjustment" id="sodiumAdjustment">
-    <property name="upper">50000</property>
-    <property name="value">2000</property>
-    <property name="step_increment">10</property>
-    <property name="page_increment">100</property>
-  </object>
-  <object class="GtkAdjustment" id="sugarsAdjustment">
-    <property name="upper">100</property>
-    <property name="value">30</property>
-    <property name="step_increment">1</property>
     <property name="page_increment">10</property>
   </object>
   <object class="GtkBox" id="mainBox">
@@ -1056,13 +1056,13 @@
                           </packing>
                         </child>
                         <child>
-                          <object class="GtkSpinButton">
+                          <object class="GtkSpinButton" id="goalKcalSpin">
                             <property name="visible">True</property>
                             <property name="can_focus">True</property>
                             <property name="width_chars">5</property>
                             <property name="text" translatable="yes">0</property>
                             <property name="input_purpose">digits</property>
-                            <property name="adjustment">kcalAdjustment</property>
+                            <property name="adjustment">goalKcalAdjustment</property>
                             <property name="snap_to_ticks">True</property>
                             <property name="numeric">True</property>
                           </object>
@@ -1134,10 +1134,10 @@
                           </packing>
                         </child>
                         <child>
-                          <object class="GtkScale">
+                          <object class="GtkScale" id="goalProteinScale">
                             <property name="visible">True</property>
                             <property name="can_focus">True</property>
-                            <property name="adjustment">proteinAdjustment</property>
+                            <property name="adjustment">goalProteinAdjustment</property>
                             <property name="round_digits">0</property>
                             <property name="digits">0</property>
                             <property name="value_pos">right</property>
@@ -1148,10 +1148,10 @@
                           </packing>
                         </child>
                         <child>
-                          <object class="GtkScale">
+                          <object class="GtkScale" id="goalCarbsScale">
                             <property name="visible">True</property>
                             <property name="can_focus">True</property>
-                            <property name="adjustment">carbAdjustment</property>
+                            <property name="adjustment">goalCarbsAdjustment</property>
                             <property name="round_digits">0</property>
                             <property name="digits">0</property>
                             <property name="value_pos">right</property>
@@ -1162,12 +1162,12 @@
                           </packing>
                         </child>
                         <child>
-                          <object class="GtkScale">
+                          <object class="GtkScale" id="goalFatScale">
                             <property name="width_request">500</property>
                             <property name="visible">True</property>
                             <property name="can_focus">True</property>
                             <property name="halign">start</property>
-                            <property name="adjustment">fatAdjustment</property>
+                            <property name="adjustment">goalFatAdjustment</property>
                             <property name="round_digits">0</property>
                             <property name="digits">0</property>
                             <property name="value_pos">right</property>
@@ -1225,10 +1225,10 @@
                           </packing>
                         </child>
                         <child>
-                          <object class="GtkScale">
+                          <object class="GtkScale" id="goalSugarsScale">
                             <property name="visible">True</property>
                             <property name="can_focus">True</property>
-                            <property name="adjustment">sugarsAdjustment</property>
+                            <property name="adjustment">goalSugarsAdjustment</property>
                             <property name="round_digits">0</property>
                             <property name="digits">0</property>
                             <property name="value_pos">right</property>
@@ -1327,7 +1327,7 @@
                           <object class="GtkScale">
                             <property name="visible">True</property>
                             <property name="can_focus">True</property>
-                            <property name="adjustment">satUnsatAdjustment</property>
+                            <property name="adjustment">goalSatUnsatAdjustment</property>
                             <property name="round_digits">0</property>
                             <property name="digits">0</property>
                           </object>
@@ -1340,7 +1340,7 @@
                           <object class="GtkScale">
                             <property name="visible">True</property>
                             <property name="can_focus">True</property>
-                            <property name="adjustment">monoPolyAdjustment</property>
+                            <property name="adjustment">goalMonoPolyAdjustment</property>
                             <property name="round_digits">0</property>
                             <property name="digits">0</property>
                           </object>
@@ -1426,7 +1426,7 @@
                           <object class="GtkSpinButton">
                             <property name="visible">True</property>
                             <property name="can_focus">True</property>
-                            <property name="adjustment">sodiumAdjustment</property>
+                            <property name="adjustment">goalSodiumAdjustment</property>
                           </object>
                           <packing>
                             <property name="left_attach">1</property>
@@ -1437,7 +1437,7 @@
                           <object class="GtkSpinButton">
                             <property name="visible">True</property>
                             <property name="can_focus">True</property>
-                            <property name="adjustment">cholesterolAdjustment</property>
+                            <property name="adjustment">goalCholesterolAdjustment</property>
                           </object>
                           <packing>
                             <property name="left_attach">1</property>
