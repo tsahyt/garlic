@@ -34,6 +34,7 @@ library
                        Garlic.View.IngredientEditor
                        Garlic.View.Tracking
                        Garlic.Presenter
+                       Garlic.Presenter.Recipe
                        Garlic.Presenter.Recipe.Display
                        Garlic.Presenter.Recipe.Edit
                        Garlic.Presenter.IngredientEditor

@@ -24,7 +24,6 @@ module Garlic.View.Recipe
 where
 
 import Control.Lens.TH
-import Control.Monad
 import Control.Monad.Trans
 import Data.FileEmbed
 import Data.Sequence (Seq)
@@ -33,7 +32,6 @@ import Data.Text.Encoding (decodeUtf8)
 import GI.Gtk
 import Garlic.Types
 import Reactive.Banana.Frameworks (mapEventIO)
-import Reactive.Banana (filterJust)
 import Reactive.Banana.GI.Gtk
 import Text.Printf
 

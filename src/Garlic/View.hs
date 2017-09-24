@@ -10,6 +10,7 @@ module Garlic.View
     GarlicApp,
     appHeader,
     appVRecipes,
+    appVTracking,
     appAppMenu,
     appIngredientEd,
     appEnableSearch,
@@ -32,21 +33,17 @@ module Garlic.View
 )
 where
 
-import Control.Lens.TH
 import Control.Monad
 import Control.Monad.Trans
 import Data.FileEmbed
-import Data.Sequence (Seq)
-import Data.Text (Text, pack)
+import Data.Text (Text)
 import Data.Text.Encoding (decodeUtf8)
 import GI.Gtk
 import Garlic.Types
 import Reactive.Banana.Frameworks (mapEventIO)
 import Reactive.Banana (filterJust)
 import Reactive.Banana.GI.Gtk
-import Text.Printf
 
-import Garlic.Data.Duration
 import Garlic.View.HeaderBar
 import Garlic.View.IngredientEditor
 import Garlic.View.Recipe
@@ -63,6 +60,7 @@ uiAboutDialog = decodeUtf8 $(embedFile "res/about-dialog.ui")
 data GarlicApp = GarlicApp
     { _appHeader        :: GarlicHeader
     , _appVRecipes      :: GarlicViewRecipes
+    , _appVTracking     :: GarlicViewTracking
     , _appAppMenu       :: GarlicAppMenu
     , _appIngredientEd  :: GarlicIngredientEditor
     , _appEnableSearch  :: Consumer ()
@@ -118,6 +116,7 @@ application app = do
     lift $ GarlicApp 
        <$> pure hb                          -- HeaderBar
        <*> pure vRecipes
+       <*> pure vTracking
        <*> pure menu
        <*> pure editor
        <*> pure (searchToggle searchBar)    -- Search Toggle

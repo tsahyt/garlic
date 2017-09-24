@@ -3,21 +3,21 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Garlic.View.Tracking 
 (
-    GarlicTracking,
+    GarlicViewTracking,
     trackingFoodLog,
     trackingWeightLog,
     trackingNutrition,
     trackingGoals,
+    trackingSwitch,
     viewTracking,
 
-    GarlicTrackingView (..),
+    GarlicTrackingStack (..),
 ) 
 where
 
 import Control.Monad.Trans
-import Control.Monad.IO.Class
 import Data.FileEmbed
-import Data.Text (Text, pack)
+import Data.Text (Text)
 import Data.Text.Encoding (decodeUtf8)
 import GI.Gtk
 import Reactive.Banana.GI.Gtk
@@ -29,22 +29,22 @@ import Garlic.Types
 uiViewTracking :: Text
 uiViewTracking = decodeUtf8 $(embedFile "res/view-tracking.ui")
 
-data GarlicTrackingView
+data GarlicTrackingStack
     = FoodLog
     | WeightLog
     | Nutrition
     | Goals
     deriving (Eq, Show)
 
-data GarlicTracking = GarlicTracking
+data GarlicViewTracking = GarlicViewTracking
     { _trackingFoodLog   :: GarlicFoodLog
     , _trackingWeightLog :: GarlicWeightLog
     , _trackingNutrition :: GarlicNutrition
     , _trackingGoals     :: GarlicGoals 
-    , _trackingSwitch    :: Event GarlicTrackingView
+    , _trackingSwitch    :: Event GarlicTrackingStack
     }
 
-viewTracking :: Stack -> Garlic GarlicTracking
+viewTracking :: Stack -> Garlic GarlicViewTracking
 viewTracking stack = do
     b <- builderNew
     _ <- builderAddFromString b uiViewTracking (-1)
@@ -55,14 +55,14 @@ viewTracking stack = do
 
     switched <- viewSwitch b
 
-    pure $ GarlicTracking
+    pure $ GarlicViewTracking
         GarlicFoodLog
         GarlicWeightLog
         GarlicNutrition
         GarlicGoals
         switched
 
-viewSwitch :: Builder -> Garlic (Event GarlicTrackingView)
+viewSwitch :: Builder -> Garlic (Event GarlicTrackingStack)
 viewSwitch b = do
     sidebar <- castB b "sidebar" StackSidebar
     stack   <- castB b "trackingStack" Stack
@@ -86,4 +86,4 @@ data GarlicNutrition = GarlicNutrition
 data GarlicGoals = GarlicGoals
 
 -- LENSES
-makeGetters ''GarlicTracking
+makeGetters ''GarlicViewTracking

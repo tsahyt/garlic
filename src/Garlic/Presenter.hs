@@ -4,27 +4,20 @@
 module Garlic.Presenter where
 
 import Control.Lens
-import Data.Functor.Contravariant
-import Data.Sequence (Seq)
 import Database.Persist.Sql
 import GI.Gtk (Application)
 import Garlic.Types
-import Reactive.Banana
 
 import Garlic.Model
 import Garlic.Model.CSV
 import Garlic.Model.Queries
-import Garlic.Presenter.Recipe.Display
-import Garlic.Presenter.Recipe.Edit
+import Garlic.Presenter.Recipe
 import Garlic.Presenter.IngredientEditor
 import Garlic.View
-import Garlic.View.Recipe
-import Garlic.View.Recipe.Display
 import Garlic.View.HeaderBar
 import Garlic.View.IngredientEditor (ieRun)
 
 import qualified Data.Text as T
-import qualified Data.Sequence as S
 
 presenter :: Application -> Garlic ()
 presenter app' = mdo
@@ -34,24 +27,14 @@ presenter app' = mdo
     -- New Recipe
     newKey <- fetch newRecipe $ app ^. appHeader . addClick
 
+    -- Search Event
+    search <- searchBar app
+
     -- Ingredient Completion
     completion <- fetch allIngredientNames $
             app ^. appStartup 
         <:> (() <$ app ^. appAppMenu . amIngImport)
     app ^. appReplaceIngr `consume` completion
-
-    -- Search
-    search <- searchBar app
-    rcps   <- do
-        let refetch = search <:> ("" <$ app ^. appStartup) <:> ("" <$ newKey)
-        refetched <- fmap const <$> fetch recipes refetch
-        accumB mempty $ unions [ refetched , fst <$> editChange ]
-    
-    -- Selection Event holding current recipe entity
-    let selected = (S.index <$> rcps) <@> app ^. appVRecipes 
-                                        . vrRecipeList . recipeSelected
-               <:> newKey
-               <:> (snd <$> editChange)
 
     -- AppMenu
     app ^. appIngredientEd . ieRun `consume` app ^. appAppMenu . amIngEditor
@@ -60,9 +43,7 @@ presenter app' = mdo
     app ^. appAbout `consume` app ^. appAppMenu . amAbout
 
     -- Subsystems
-    editChange <- recipeEditP app selected
-    recipeDisplayP app selected
-    recipeList app rcps
+    recipeP app newKey search
     ingredientEditorP app
 
     return ()
@@ -74,17 +55,3 @@ searchBar app = do
     let toggle = app ^. appHeader . searchToggled
     app ^. appEnableSearch `consume` toggle
     pure $ app ^. appSearchChange
-
-recipeList :: GarlicApp -> Behavior (Seq (Entity Recipe)) -> Garlic ()
-recipeList app rcps = do
-    update' <- plainChanges rcps
-    listRecipes app `consume` fmap entityVal <$> update'
-
--- | Consumer to populate the recipe list.
-listRecipes :: GarlicApp -> Consumer (Seq Recipe)
-listRecipes app = mconcat
-    [ app ^. appVRecipes . vrRecipeList ^. clearRecipes $< ()
-    , fmap mklr >$< app ^. appVRecipes . vrRecipeList ^. addRecipes ]
-    where mklr :: Recipe -> ListRecipe
-          mklr Recipe{..} = 
-              ListRecipe recipeRating recipeDuration recipeName recipeCuisine
