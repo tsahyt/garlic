@@ -65,6 +65,7 @@ import Garlic.View.HeaderBar
 import Garlic.View.RecipeDisplay
 import Garlic.View.RecipeEdit
 import Garlic.View.IngredientEditor
+import Garlic.View.Tracking
 
 import qualified GI.Gio as Gio
 
@@ -73,9 +74,6 @@ uiMainWindow = decodeUtf8 $(embedFile "res/main-window.ui")
 
 uiViewRecipes :: Text
 uiViewRecipes = decodeUtf8 $(embedFile "res/view-recipes.ui")
-
-uiViewTracking :: Text
-uiViewTracking = decodeUtf8 $(embedFile "res/view-tracking.ui")
 
 uiRecipeEntry :: Text
 uiRecipeEntry = decodeUtf8 $(embedFile "res/recipe-entry.ui")
@@ -191,15 +189,6 @@ viewRecipes newCompl stack = do
     stackAddTitled stack container "view-recipes" "Recipes"
 
     pure $ GarlicViewRecipes rdis redt recs
-
-viewTracking :: MonadIO m => Stack -> m ()
-viewTracking stack = do
-    b <- builderNew
-    _ <- builderAddFromString b uiViewTracking (-1)
-
-    box <- castB b "mainBox" Box
-
-    stackAddTitled stack box "view-tracking" "Tracking"
 
 data GarlicAppMenu = GarlicAppMenu
     { _amIngEditor :: Event ()

@@ -70,7 +70,7 @@
         <property name="can_focus">False</property>
         <property name="orientation">vertical</property>
         <child>
-          <object class="GtkStackSidebar">
+          <object class="GtkStackSidebar" id="sidebar">
             <property name="visible">True</property>
             <property name="can_focus">False</property>
             <property name="stack">trackingStack</property>
@@ -234,7 +234,7 @@
             <property name="can_focus">False</property>
             <property name="transition_type">crossfade</property>
             <child>
-              <object class="GtkBox">
+              <object class="GtkBox" id="foodLogBox">
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
                 <property name="orientation">vertical</property>
@@ -286,7 +286,7 @@
               </packing>
             </child>
             <child>
-              <object class="GtkBox">
+              <object class="GtkBox" id="weightLogBox">
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
                 <property name="orientation">vertical</property>
@@ -492,7 +492,7 @@
               </packing>
             </child>
             <child>
-              <object class="GtkBox">
+              <object class="GtkBox" id="nutritionBox">
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
                 <property name="margin_left">8</property>
@@ -1023,7 +1023,7 @@
               </packing>
             </child>
             <child>
-              <object class="GtkBox">
+              <object class="GtkBox" id="goalsBox">
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
                 <property name="orientation">vertical</property>
