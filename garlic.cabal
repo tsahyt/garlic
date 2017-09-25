@@ -34,6 +34,7 @@ library
                        Garlic.View.IngredientEditor
                        Garlic.View.Tracking
                        Garlic.View.Tracking.Goals
+                       Garlic.View.Tracking.WeightLog
                        Garlic.Presenter
                        Garlic.Presenter.Recipe
                        Garlic.Presenter.Recipe.Display
@@ -42,6 +43,7 @@ library
                        Garlic.Presenter.Tracking.Goals
                        Garlic.Presenter.IngredientEditor
                        Text.Markdown.Persist
+                       Graphics.Rendering.Cairo.GI
   ghc-options:         -Wall
   build-depends:       base >= 4.7 && < 5
                      , mtl
@@ -53,6 +55,8 @@ library
                      , gi-gio
                      , gi-webkit2
                      , gi-gtksource
+                     , gi-cairo
+                     , haskell-gi-base
                      , reactive-banana
                      , reactive-banana-gi-gtk
                      , lens
@@ -71,6 +75,7 @@ library
                      , conduit-extra
                      , filepath
                      , directory
+                     , cairo
   default-language:    Haskell2010
 
 executable garlic-exe

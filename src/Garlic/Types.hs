@@ -28,9 +28,11 @@ module Garlic.Types
     (<:>),
     plainChanges,
     (<$$>),
+    (<$$),
     mtext,
     parseNum,
-    spread
+    spread,
+    unionl
 )
 where
 
@@ -155,6 +157,9 @@ plainChanges b = lift $ do
 (<$$>) :: (Functor f, Functor g) => (a -> b) -> f (g a) -> f (g b)
 f <$$> x = getCompose . fmap f . Compose $ x
 
+(<$$) :: (Functor f, Functor g) => b -> f (g a) -> f (g b)
+f <$$ x = getCompose . (f <$) . Compose $ x
+
 mtext :: Text -> Maybe (Text)
 mtext x  = if T.null x then Nothing else Just x
 
@@ -169,3 +174,7 @@ spread evs = lift $ do
     (e, handle) <- newEvent 
     reactimate $ (mapM_ handle) <$> evs
     pure e
+
+-- | Left-biased event union
+unionl :: [Event a] -> Event a
+unionl = foldr (<:>) never

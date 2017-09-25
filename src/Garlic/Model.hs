@@ -76,4 +76,10 @@ share [mkPersist sqlSettings, mkMigrate "migrateAll"] [persistLowerCase|
         weight Double
         unit Unit
         deriving Show
+
+    WeightMeasurement
+        timestamp UTCTime
+        weight Double
+        unit Unit
+        deriving Show
  |]
