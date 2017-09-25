@@ -38,6 +38,8 @@ library
                        Garlic.Presenter.Recipe
                        Garlic.Presenter.Recipe.Display
                        Garlic.Presenter.Recipe.Edit
+                       Garlic.Presenter.Tracking
+                       Garlic.Presenter.Tracking.Goals
                        Garlic.Presenter.IngredientEditor
                        Text.Markdown.Persist
   ghc-options:         -Wall

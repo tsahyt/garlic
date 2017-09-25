@@ -13,6 +13,7 @@ import Database.Persist.TH
 import Text.Markdown
 import Text.Markdown.Persist ()
 import Garlic.Data.Units
+import Data.Time.Clock
 
 share [mkPersist sqlSettings, mkMigrate "migrateAll"] [persistLowerCase|
     Recipe
@@ -57,9 +58,22 @@ share [mkPersist sqlSettings, mkMigrate "migrateAll"] [persistLowerCase|
         deriving Show
 
     NutritionGoal
+        timestamp UTCTime
         kcal Double
         protein Double
         carbs Double
         sugar Double
         fat Double
+        satFat Double
+        monoFat Double
+        polyFat Double
+        sodium Double
+        cholesterol Double
+        deriving Show
+
+    WeightGoal
+        timestamp UTCTime
+        weight Double
+        unit Unit
+        deriving Show
  |]

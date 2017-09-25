@@ -201,7 +201,7 @@
                 <property name="label" translatable="yes">146</property>
                 <attributes>
                   <attribute name="scale" value="1.5"/>
-                  <attribute name="foreground" value="#4e4e9a9a0606"/>
+                  <attribute name="foreground" value="#a4a400000000"/>
                 </attributes>
               </object>
               <packing>
@@ -1273,14 +1273,11 @@
                           </packing>
                         </child>
                         <child>
-                          <object class="GtkLabel">
+                          <object class="GtkLabel" id="goalMacroSumPct">
                             <property name="visible">True</property>
                             <property name="can_focus">False</property>
-                            <property name="label" translatable="yes">100 %</property>
-                            <attributes>
-                              <attribute name="weight" value="bold"/>
-                              <attribute name="foreground" value="#4e4e9a9a0606"/>
-                            </attributes>
+                            <property name="label" translatable="yes">&lt;span weight="bold" color="#4e4e9a9a0606"&gt;100 %&lt;/span&gt;</property>
+                            <property name="use_markup">True</property>
                           </object>
                           <packing>
                             <property name="left_attach">1</property>
@@ -1288,7 +1285,7 @@
                           </packing>
                         </child>
                         <child>
-                          <object class="GtkLabel">
+                          <object class="GtkLabel" id="goalMacroSumVal">
                             <property name="visible">True</property>
                             <property name="can_focus">False</property>
                             <property name="label" translatable="yes">0g</property>
@@ -1508,9 +1505,10 @@
                           <object class="GtkSpinButton">
                             <property name="visible">True</property>
                             <property name="can_focus">True</property>
+                            <property name="width_chars">5</property>
                             <property name="text" translatable="yes">0</property>
-                            <property name="input_purpose">digits</property>
                             <property name="adjustment">goalWeightAdjustment</property>
+                            <property name="digits">1</property>
                             <property name="snap_to_ticks">True</property>
                             <property name="numeric">True</property>
                           </object>
@@ -1521,7 +1519,7 @@
                           </packing>
                         </child>
                         <child>
-                          <object class="GtkComboBoxText">
+                          <object class="GtkComboBoxText" id="goalWeightUnit">
                             <property name="visible">True</property>
                             <property name="can_focus">False</property>
                             <property name="active">0</property>
