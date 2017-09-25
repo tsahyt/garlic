@@ -24,7 +24,11 @@ module Garlic.View.Tracking.Goals
     GarlicTrackingGoalsLabels,
     Legality (..),
     tglSetMacroSumPct,
-    tglSetMacroSumVal
+    tglSetMacroSumVal,
+    tglSetProteinGrams,
+    tglSetCarbsGrams,
+    tglSetSugarsGrams,
+    tglSetFatsGrams,
 )
 where
 
@@ -109,19 +113,36 @@ legalLabelText bold content legal =
         content
 
 data GarlicTrackingGoalsLabels = GarlicTrackingGoalsLabels
-    { _tglSetMacroSumPct :: Consumer (Legality, Text)
-    , _tglSetMacroSumVal :: Consumer Text
+    { _tglSetMacroSumPct  :: Consumer (Legality, Text)
+    , _tglSetMacroSumVal  :: Consumer Double
+    , _tglSetProteinGrams :: Consumer Double
+    , _tglSetCarbsGrams   :: Consumer Double
+    , _tglSetSugarsGrams  :: Consumer Double
+    , _tglSetFatsGrams    :: Consumer Double
     }
 
 labels :: Builder -> Garlic GarlicTrackingGoalsLabels
 labels b = do
-    macroSumPct <- castB b "goalMacroSumPct" Label
-    macroSumVal <- castB b "goalMacroSumVal" Label
+    macroSumPct  <- castB b "goalMacroSumPct" Label
+    macroSumVal  <- castB b "goalMacroSumVal" Label
+    proteinGrams <- castB b "goalProteinGrams" Label
+    carbsGrams   <- castB b "goalCarbsGrams" Label
+    sugarsGrams  <- castB b "goalSugarsGrams" Label
+    fatGrams     <- castB b "goalFatGrams" Label
 
-    GarlicTrackingGoalsLabels 
-        <$> pure (ioConsumer $ \(l,t) -> 
+    pure $ GarlicTrackingGoalsLabels 
+               (ioConsumer $ \(l,t) -> 
                     labelSetMarkup macroSumPct (legalLabelText True t l))
-        <*> pure (ioConsumer $ labelSetText macroSumVal)
+               (ioConsumer $ setGrams macroSumVal)
+               (ioConsumer $ setGrams proteinGrams)
+               (ioConsumer $ setGrams carbsGrams)
+               (ioConsumer $ setGrams sugarsGrams)
+               (ioConsumer $ setGrams fatGrams)
+
+setGrams :: Label -> Double -> IO ()
+setGrams l g =
+    let t = pack $ printf "%.1fg" g
+     in labelSetText l t
 
 -- LENSES
 makeGetters ''GarlicTrackingGoals

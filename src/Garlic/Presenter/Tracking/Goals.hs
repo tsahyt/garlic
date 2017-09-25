@@ -17,13 +17,30 @@ import Control.Lens
 
 goalsP :: GarlicTrackingGoals -> Garlic ()
 goalsP gs = do
+    let lbls = gs ^. tgLabels
+
+    -- TODO: proper time from calendar
     time <- pure <$> liftIO getCurrentTime
+
+    -- Input data
     let nutrient = nutrientGoal gs time
         weight   = weightGoal gs time
 
+    -- Set grams for percentages
+    consume (lbls ^. tglSetProteinGrams) . fmap nutritionGoalProtein 
+        =<< plainChanges nutrient
+    consume (lbls ^. tglSetCarbsGrams) . fmap nutritionGoalCarbs 
+        =<< plainChanges nutrient
+    consume (lbls ^. tglSetSugarsGrams) . fmap nutritionGoalSugar 
+        =<< plainChanges nutrient
+    consume (lbls ^. tglSetFatsGrams) . fmap nutritionGoalFat 
+        =<< plainChanges nutrient
+    consume (lbls ^. tglSetMacroSumVal) . fmap macroSum
+        =<< plainChanges nutrient
+
     -- Legality
-    sumChanged <- plainChanges $ macroSum gs
-    gs ^. tgLabels . tglSetMacroSumPct `consume` macroSumPctText <$> sumChanged
+    sumChanged <- plainChanges $ macroPctSum gs
+    lbls ^. tglSetMacroSumPct `consume` macroSumPctText <$> sumChanged
 
     return ()
 
@@ -47,8 +64,11 @@ nutrientGoal gs time =
   where
     macro f k p = k * p / f
 
-macroSum :: GarlicTrackingGoals -> Behavior Int
-macroSum gs =
+macroSum :: NutritionGoal -> Double
+macroSum g = nutritionGoalProtein g + nutritionGoalCarbs g + nutritionGoalFat g
+
+macroPctSum :: GarlicTrackingGoals -> Behavior Int
+macroPctSum gs =
     let macros = sequenceA [gs ^. tgProtein, gs ^. tgCarbs, gs ^. tgFat]
     in sum . map (truncate . (* 100)) <$> macros
 

@@ -1178,7 +1178,7 @@
                           </packing>
                         </child>
                         <child>
-                          <object class="GtkLabel" id="proteinGrams">
+                          <object class="GtkLabel" id="goalProteinGrams">
                             <property name="visible">True</property>
                             <property name="can_focus">False</property>
                             <property name="label" translatable="yes">0g</property>
@@ -1189,7 +1189,7 @@
                           </packing>
                         </child>
                         <child>
-                          <object class="GtkLabel" id="carbsGrams">
+                          <object class="GtkLabel" id="goalCarbsGrams">
                             <property name="visible">True</property>
                             <property name="can_focus">False</property>
                             <property name="label" translatable="yes">0g</property>
@@ -1200,7 +1200,7 @@
                           </packing>
                         </child>
                         <child>
-                          <object class="GtkLabel" id="sugarsGrams">
+                          <object class="GtkLabel" id="goalSugarsGrams">
                             <property name="visible">True</property>
                             <property name="can_focus">False</property>
                             <property name="label" translatable="yes">0g</property>
@@ -1239,7 +1239,7 @@
                           </packing>
                         </child>
                         <child>
-                          <object class="GtkLabel" id="fatGrams">
+                          <object class="GtkLabel" id="goalFatGrams">
                             <property name="visible">True</property>
                             <property name="can_focus">False</property>
                             <property name="label" translatable="yes">0g</property>
