@@ -27,6 +27,7 @@ import Reactive.Banana.Frameworks
 import Garlic.Types
 import Garlic.View.Tracking.Goals
 import Garlic.View.Tracking.WeightLog
+import Garlic.View.Tracking.Nutrition
 
 uiViewTracking :: Text
 uiViewTracking = decodeUtf8 $(embedFile "res/view-tracking.ui")
@@ -41,7 +42,7 @@ data GarlicTrackingStack
 data GarlicViewTracking = GarlicViewTracking
     { _trackingFoodLog   :: GarlicFoodLog
     , _trackingWeightLog :: GarlicTrackingWeightLog
-    , _trackingNutrition :: GarlicNutrition
+    , _trackingNutrition :: GarlicTrackingNutrition
     , _trackingGoals     :: GarlicTrackingGoals 
     , _trackingSwitch    :: Event GarlicTrackingStack
     }
@@ -60,7 +61,7 @@ viewTracking stack = do
     GarlicViewTracking
         <$> pure GarlicFoodLog
         <*> weightLog b
-        <*> pure GarlicNutrition
+        <*> nutrition b
         <*> goals b
         <*> pure switched
 

@@ -36,6 +36,7 @@ library
                        Garlic.View.Tracking
                        Garlic.View.Tracking.Goals
                        Garlic.View.Tracking.WeightLog
+                       Garlic.View.Tracking.Nutrition
                        Garlic.Presenter
                        Garlic.Presenter.Recipe
                        Garlic.Presenter.Recipe.Display

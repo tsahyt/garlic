@@ -638,7 +638,7 @@
                           </packing>
                         </child>
                         <child>
-                          <object class="GtkLevelBar" id="proteinLevel">
+                          <object class="GtkLevelBar" id="nutritionProteinLevel">
                             <property name="width_request">256</property>
                             <property name="visible">True</property>
                             <property name="can_focus">False</property>
@@ -649,7 +649,7 @@
                           </packing>
                         </child>
                         <child>
-                          <object class="GtkLevelBar" id="carbsLevel">
+                          <object class="GtkLevelBar" id="nutritionCarbsLevel">
                             <property name="visible">True</property>
                             <property name="can_focus">False</property>
                           </object>
@@ -659,7 +659,7 @@
                           </packing>
                         </child>
                         <child>
-                          <object class="GtkLevelBar" id="sugarLevel">
+                          <object class="GtkLevelBar" id="nutritionSugarLevel">
                             <property name="visible">True</property>
                             <property name="can_focus">False</property>
                           </object>
@@ -669,17 +669,7 @@
                           </packing>
                         </child>
                         <child>
-                          <object class="GtkLevelBar" id="fibreLevel">
-                            <property name="visible">True</property>
-                            <property name="can_focus">False</property>
-                          </object>
-                          <packing>
-                            <property name="left_attach">1</property>
-                            <property name="top_attach">3</property>
-                          </packing>
-                        </child>
-                        <child>
-                          <object class="GtkLevelBar" id="fatLevel">
+                          <object class="GtkLevelBar" id="nutritionFatLevel">
                             <property name="visible">True</property>
                             <property name="can_focus">False</property>
                           </object>
@@ -689,7 +679,7 @@
                           </packing>
                         </child>
                         <child>
-                          <object class="GtkLevelBar" id="satFatLevel">
+                          <object class="GtkLevelBar" id="nutritionSatFatLevel">
                             <property name="visible">True</property>
                             <property name="can_focus">False</property>
                           </object>
@@ -699,7 +689,7 @@
                           </packing>
                         </child>
                         <child>
-                          <object class="GtkLevelBar" id="polyFatLevel">
+                          <object class="GtkLevelBar" id="nutritionPolyFatLevel">
                             <property name="visible">True</property>
                             <property name="can_focus">False</property>
                           </object>
@@ -709,7 +699,7 @@
                           </packing>
                         </child>
                         <child>
-                          <object class="GtkLevelBar" id="monoFatLevel">
+                          <object class="GtkLevelBar" id="nutritionMonoFatLevel">
                             <property name="visible">True</property>
                             <property name="can_focus">False</property>
                           </object>
@@ -719,7 +709,7 @@
                           </packing>
                         </child>
                         <child>
-                          <object class="GtkLabel" id="proteinValue">
+                          <object class="GtkLabel" id="nutritionProteinValue">
                             <property name="visible">True</property>
                             <property name="can_focus">False</property>
                             <property name="label" translatable="yes">label</property>
@@ -730,7 +720,7 @@
                           </packing>
                         </child>
                         <child>
-                          <object class="GtkLabel" id="carbsValue">
+                          <object class="GtkLabel" id="nutritionCarbsValue">
                             <property name="visible">True</property>
                             <property name="can_focus">False</property>
                             <property name="label" translatable="yes">label</property>
@@ -741,7 +731,7 @@
                           </packing>
                         </child>
                         <child>
-                          <object class="GtkLabel" id="sugarValue">
+                          <object class="GtkLabel" id="nutritionSugarValue">
                             <property name="visible">True</property>
                             <property name="can_focus">False</property>
                             <property name="label" translatable="yes">label</property>
@@ -752,7 +742,7 @@
                           </packing>
                         </child>
                         <child>
-                          <object class="GtkLabel" id="fibreValue">
+                          <object class="GtkLabel" id="nutritionFibreValue">
                             <property name="visible">True</property>
                             <property name="can_focus">False</property>
                             <property name="label" translatable="yes">label</property>
@@ -763,7 +753,7 @@
                           </packing>
                         </child>
                         <child>
-                          <object class="GtkLabel" id="fatValue">
+                          <object class="GtkLabel" id="nutritionFatValue">
                             <property name="visible">True</property>
                             <property name="can_focus">False</property>
                             <property name="label" translatable="yes">label</property>
@@ -774,7 +764,7 @@
                           </packing>
                         </child>
                         <child>
-                          <object class="GtkLabel" id="satFatValue">
+                          <object class="GtkLabel" id="nutritionSatFatValue">
                             <property name="visible">True</property>
                             <property name="can_focus">False</property>
                             <property name="label" translatable="yes">label</property>
@@ -785,7 +775,7 @@
                           </packing>
                         </child>
                         <child>
-                          <object class="GtkLabel" id="polyFatValue">
+                          <object class="GtkLabel" id="nutritionPolyFatValue">
                             <property name="visible">True</property>
                             <property name="can_focus">False</property>
                             <property name="label" translatable="yes">label</property>
@@ -796,7 +786,7 @@
                           </packing>
                         </child>
                         <child>
-                          <object class="GtkLabel" id="monoFatValue">
+                          <object class="GtkLabel" id="nutritionMonoFatValue">
                             <property name="visible">True</property>
                             <property name="can_focus">False</property>
                             <property name="label" translatable="yes">label</property>
@@ -843,7 +833,7 @@
                           </packing>
                         </child>
                         <child>
-                          <object class="GtkLabel" id="transFatValue">
+                          <object class="GtkLabel" id="nutritionTransFatValue">
                             <property name="visible">True</property>
                             <property name="can_focus">False</property>
                             <property name="label" translatable="yes">label</property>
@@ -854,7 +844,7 @@
                           </packing>
                         </child>
                         <child>
-                          <object class="GtkLabel" id="sodiumValue">
+                          <object class="GtkLabel" id="nutritionSodiumValue">
                             <property name="visible">True</property>
                             <property name="can_focus">False</property>
                             <property name="label" translatable="yes">label</property>
@@ -865,7 +855,7 @@
                           </packing>
                         </child>
                         <child>
-                          <object class="GtkLabel" id="cholesterolValue">
+                          <object class="GtkLabel" id="nutritionCholesterolValue">
                             <property name="visible">True</property>
                             <property name="can_focus">False</property>
                             <property name="label" translatable="yes">label</property>
@@ -876,33 +866,43 @@
                           </packing>
                         </child>
                         <child>
-                          <object class="GtkLevelBar" id="transFatLevel">
+                          <object class="GtkLevelBar" id="nutritionCholesterolLevel">
+                            <property name="visible">True</property>
+                            <property name="can_focus">False</property>
+                          </object>
+                          <packing>
+                            <property name="left_attach">1</property>
+                            <property name="top_attach">9</property>
+                          </packing>
+                        </child>
+                        <child>
+                          <object class="GtkLevelBar" id="nutritionSodiumLevel">
+                            <property name="visible">True</property>
+                            <property name="can_focus">False</property>
+                          </object>
+                          <packing>
+                            <property name="left_attach">1</property>
+                            <property name="top_attach">10</property>
+                          </packing>
+                        </child>
+                        <child>
+                          <object class="GtkLabel">
+                            <property name="visible">True</property>
+                            <property name="can_focus">False</property>
+                          </object>
+                          <packing>
+                            <property name="left_attach">1</property>
+                            <property name="top_attach">3</property>
+                          </packing>
+                        </child>
+                        <child>
+                          <object class="GtkLabel">
                             <property name="visible">True</property>
                             <property name="can_focus">False</property>
                           </object>
                           <packing>
                             <property name="left_attach">1</property>
                             <property name="top_attach">8</property>
-                          </packing>
-                        </child>
-                        <child>
-                          <object class="GtkLevelBar" id="cholesterolLevel">
-                            <property name="visible">True</property>
-                            <property name="can_focus">False</property>
-                          </object>
-                          <packing>
-                            <property name="left_attach">1</property>
-                            <property name="top_attach">9</property>
-                          </packing>
-                        </child>
-                        <child>
-                          <object class="GtkLevelBar" id="sodiumLevel">
-                            <property name="visible">True</property>
-                            <property name="can_focus">False</property>
-                          </object>
-                          <packing>
-                            <property name="left_attach">1</property>
-                            <property name="top_attach">10</property>
                           </packing>
                         </child>
                       </object>
@@ -916,6 +916,7 @@
                       <object class="GtkDrawingArea" id="nutrientPie">
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
+                        <property name="margin_left">8</property>
                       </object>
                       <packing>
                         <property name="expand">True</property>
@@ -953,14 +954,6 @@
                       <packing>
                         <property name="index">-1</property>
                       </packing>
-                    </child>
-                    <child type="overlay">
-                      <object class="GtkSpinButton" id="nutrientPastSpinner">
-                        <property name="visible">True</property>
-                        <property name="can_focus">True</property>
-                        <property name="halign">center</property>
-                        <property name="valign">end</property>
-                      </object>
                     </child>
                     <child type="overlay">
                       <object class="GtkButtonBox">

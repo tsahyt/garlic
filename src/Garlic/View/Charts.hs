@@ -1,7 +1,8 @@
 module Garlic.View.Charts
 (
     runCairo,
-    chartWeight
+    chartWeight,
+    chartMacros
 )
 where
 
@@ -24,10 +25,21 @@ measurement u tz m =
 
 chartWeight :: [WeightMeasurement] -> EC (Layout LocalTime Double) ()
 chartWeight xs = do
+    layout_background . fill_color .= transparent
     setColors [opaque orange, opaque red]
     plot $ line "weight" [map (measurement Kilogram utc) xs]
     plot $ points "weight" (map (measurement Kilogram utc) xs)
     return ()
+
+chartMacros :: Double -> Double -> Double -> EC PieLayout ()
+chartMacros protein carbs fat = do
+    pie_background . fill_color .= transparent
+    setColors [opaque blue, opaque green, opaque red]
+    pie_plot . pie_data .=
+        map pitem [("Protein", protein), ("Carbs", carbs), ("Fat", fat)]
+    return ()
+  where
+    pitem (l, v) = pitem_value .~ v $ pitem_label .~ l $ def
 
 runCairo :: ToRenderable r => (Double, Double) -> r -> Render ()
 runCairo ext ec =
