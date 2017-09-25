@@ -18,9 +18,12 @@ import GI.Gtk hiding (Unit)
 import Reactive.Banana
 import Reactive.Banana.GI.Gtk
 import Garlic.Model (WeightMeasurement (..))
+import Garlic.View.Charts
 
 import Graphics.Rendering.Cairo
 import Graphics.Rendering.Cairo.GI
+
+import Data.Time
 
 data TimeFrame
     = TimeAll
@@ -80,11 +83,11 @@ weightChart :: MonadIO m => DrawingArea -> m (IORef [WeightMeasurement])
 weightChart da = do
     ref <- liftIO $ newIORef []
     _ <- on da #draw $ \ctx -> do
-            renderWithContext ctx $ do
-                setSourceRGB 0 0 0
-                moveTo 0 0
-                lineTo 150 150
-                stroke
+            w <- fromIntegral <$> widgetGetAllocatedWidth da
+            h <- fromIntegral <$> widgetGetAllocatedHeight da
+            dat <- readIORef ref
+            renderWithContext ctx $
+                runCairo (w,h) (chartWeight dat)
             pure False
 
     pure ref

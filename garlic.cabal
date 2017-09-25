@@ -27,6 +27,7 @@ library
                        Garlic.Data.Duration
                        Garlic.Types
                        Garlic.View
+                       Garlic.View.Charts
                        Garlic.View.HeaderBar
                        Garlic.View.Recipe
                        Garlic.View.Recipe.Display
@@ -76,6 +77,8 @@ library
                      , filepath
                      , directory
                      , cairo
+                     , Chart
+                     , Chart-cairo
   default-language:    Haskell2010
 
 executable garlic-exe
