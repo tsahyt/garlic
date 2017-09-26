@@ -55,8 +55,6 @@ data GarlicTrackingNutrition = GarlicTrackingNutrition
 
 nutrition :: Builder -> Garlic GarlicTrackingNutrition
 nutrition b = do
-    summary <- liftIO $ newIORef Nothing
-
     proteinValue <- castB b "nutritionProteinValue" Label
     carbsValue <- castB b "nutritionCarbsValue" Label
     sugarsValue <- castB b "nutritionSugarValue" Label
@@ -104,7 +102,10 @@ nutrition b = do
                     , (sodiumLevel, nsumSodium / nutritionGoalSodium) ]
 
     pieDA <- castB b "nutrientPie" DrawingArea
-    pieChart pieDA summary
+    summary <- pieChart pieDA
+
+    historyDA <- castB b "nutrientPast" DrawingArea
+    history <- historyChart historyDA
 
     pure $ GarlicTrackingNutrition
             (ioConsumer $ \x -> writeIORef summary (Just x) >> loadValues x >> loadLevels x)
@@ -116,8 +117,9 @@ setGrams l g =
     let t = pack $ printf "%.1fg" g
      in labelSetText l t
 
-pieChart :: MonadIO m => DrawingArea -> IORef (Maybe NutritionSummary) -> m ()
-pieChart da ref = do
+pieChart :: MonadIO m => DrawingArea -> m (IORef (Maybe NutritionSummary))
+pieChart da = do
+    ref <- liftIO $ newIORef Nothing
     _ <- on da #draw $ \ctx -> do
             w <- fromIntegral <$> widgetGetAllocatedWidth da
             h <- fromIntegral <$> widgetGetAllocatedHeight da
@@ -131,7 +133,21 @@ pieChart da ref = do
                 runCairo (w,h) (chartMacros p c f)
             pure False
 
-    pure ()
+    pure ref
+
+historyChart :: MonadIO m => DrawingArea -> m (IORef [(UTCTime, Double)])
+historyChart da = do
+    ref <- liftIO $ newIORef []
+    _ <- on da #draw $ \ctx -> do
+            w <- fromIntegral <$> widgetGetAllocatedWidth da
+            h <- fromIntegral <$> widgetGetAllocatedHeight da
+            dat <- readIORef ref
+
+            renderWithContext ctx $
+                runCairo (w,h) (chartPastIntake dat)
+            pure False
+
+    pure ref
 
 -- LENSES
 makeGetters ''GarlicTrackingNutrition

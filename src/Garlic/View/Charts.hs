@@ -2,7 +2,8 @@ module Garlic.View.Charts
 (
     runCairo,
     chartWeight,
-    chartMacros
+    chartMacros,
+    chartPastIntake
 )
 where
 
@@ -40,6 +41,16 @@ chartMacros protein carbs fat = do
     return ()
   where
     pitem (l, v) = pitem_value .~ v $ pitem_label .~ l $ def
+
+chartPastIntake :: [(UTCTime, Double)] -> EC (Layout LocalTime Double) ()
+chartPastIntake xs = do
+    layout_legend .= Nothing
+    layout_background . fill_color .= transparent
+    setColors [opaque orange]
+    plot $ fmap plotBars $ bars ["kcal"] (map go xs)
+    return ()
+  where
+    go (t, v) = (utcToLocalTime utc t, [v])
 
 runCairo :: ToRenderable r => (Double, Double) -> r -> Render ()
 runCairo ext ec =
