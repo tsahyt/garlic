@@ -963,7 +963,7 @@
                         <property name="valign">start</property>
                         <property name="layout_style">expand</property>
                         <child>
-                          <object class="GtkRadioButton" id="kcalRadio">
+                          <object class="GtkRadioButton" id="pastKcalRadio">
                             <property name="label" translatable="yes">kcal</property>
                             <property name="visible">True</property>
                             <property name="can_focus">True</property>
@@ -978,14 +978,14 @@
                           </packing>
                         </child>
                         <child>
-                          <object class="GtkRadioButton" id="proteinRadio">
+                          <object class="GtkRadioButton" id="pastProteinRadio">
                             <property name="label" translatable="yes">Protein</property>
                             <property name="visible">True</property>
                             <property name="can_focus">True</property>
                             <property name="receives_default">False</property>
                             <property name="active">True</property>
                             <property name="draw_indicator">False</property>
-                            <property name="group">kcalRadio</property>
+                            <property name="group">pastKcalRadio</property>
                           </object>
                           <packing>
                             <property name="expand">True</property>
@@ -994,14 +994,14 @@
                           </packing>
                         </child>
                         <child>
-                          <object class="GtkRadioButton" id="carbsRadio">
+                          <object class="GtkRadioButton" id="pastCarbsRadio">
                             <property name="label" translatable="yes">Carbs</property>
                             <property name="visible">True</property>
                             <property name="can_focus">True</property>
                             <property name="receives_default">False</property>
                             <property name="active">True</property>
                             <property name="draw_indicator">False</property>
-                            <property name="group">kcalRadio</property>
+                            <property name="group">pastKcalRadio</property>
                           </object>
                           <packing>
                             <property name="expand">True</property>
@@ -1010,14 +1010,14 @@
                           </packing>
                         </child>
                         <child>
-                          <object class="GtkRadioButton" id="fatRadio">
+                          <object class="GtkRadioButton" id="pastFatRadio">
                             <property name="label" translatable="yes">Fat</property>
                             <property name="visible">True</property>
                             <property name="can_focus">True</property>
                             <property name="receives_default">False</property>
                             <property name="active">True</property>
                             <property name="draw_indicator">False</property>
-                            <property name="group">kcalRadio</property>
+                            <property name="group">pastKcalRadio</property>
                           </object>
                           <packing>
                             <property name="expand">True</property>

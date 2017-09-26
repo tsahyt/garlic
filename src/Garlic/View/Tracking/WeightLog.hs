@@ -5,6 +5,11 @@ module Garlic.View.Tracking.WeightLog
 (
     TimeFrame (..),
     GarlicTrackingWeightLog,
+    wlReloadMeasurements,
+    wlShowTime,
+    wlInput,
+    wlDelete,
+    wlOk,
     weightLog
 ) 
 where
@@ -20,10 +25,7 @@ import Reactive.Banana.GI.Gtk
 import Garlic.Model (WeightMeasurement (..))
 import Garlic.View.Charts
 
-import Graphics.Rendering.Cairo
 import Graphics.Rendering.Cairo.GI
-
-import Data.Time
 
 data TimeFrame
     = TimeAll

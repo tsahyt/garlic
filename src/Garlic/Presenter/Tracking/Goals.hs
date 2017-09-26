@@ -6,10 +6,8 @@ module Garlic.Presenter.Tracking.Goals
 where
 
 import Control.Monad.IO.Class
-import Control.Applicative
 import Garlic.View.Tracking.Goals
 import Data.Text (pack, Text)
-import Garlic.View
 import Garlic.Types
 import Data.Time
 import Garlic.Model

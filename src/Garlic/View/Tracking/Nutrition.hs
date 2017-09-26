@@ -9,6 +9,7 @@ module Garlic.View.Tracking.Nutrition
     nLoadNutrition,
     nLoadPast,
     nLoadGoals,
+    nPastSelect,
     nutrition,
 ) 
 where
@@ -16,18 +17,14 @@ where
 import Control.Monad.IO.Class
 import Control.Monad.Trans
 import Data.IORef
-import Data.Maybe
-import Garlic.Types
-import Garlic.Data.Units
 import Data.Text (pack)
-import Text.Printf
 import GI.Gtk hiding (Unit)
-import Reactive.Banana
-import Reactive.Banana.GI.Gtk
-import Garlic.Model (NutritionGoal (..))
+import Garlic.Model (NutritionGoal(..))
+import Garlic.Types
 import Garlic.View.Charts
+import Reactive.Banana.GI.Gtk
+import Text.Printf
 
-import Graphics.Rendering.Cairo
 import Graphics.Rendering.Cairo.GI
 
 import Data.Time
@@ -47,14 +44,61 @@ data NutritionSummary = NutritionSummary
     , nsumSodium :: Double
     } deriving (Show, Eq)
 
+data PastCategory
+    = PastKcal
+    | PastProtein
+    | PastCarbs
+    | PastFat
+    deriving (Show, Eq, Ord, Read)
+
 data GarlicTrackingNutrition = GarlicTrackingNutrition
     { _nLoadNutrition :: Consumer NutritionSummary
     , _nLoadGoals :: Consumer NutritionGoal
-    , _nLoadPast :: Consumer [NutritionSummary]
+    , _nLoadPast :: Consumer [(UTCTime, Double)]
+    , _nPastSelect :: Event PastCategory
     }
 
 nutrition :: Builder -> Garlic GarlicTrackingNutrition
 nutrition b = do
+    goals <- liftIO $ newIORef Nothing
+    loadValues <- values b
+    loadLevels <- levels b goals
+    -- pie chart
+    pieDA <- castB b "nutrientPie" DrawingArea
+    summary <- pieChart pieDA
+    -- history chart
+    historyDA <- castB b "nutrientPast" DrawingArea
+    history <- historyChart historyDA
+    past <- pastSelect b
+    pure $
+        GarlicTrackingNutrition
+            (ioConsumer $ \x ->
+                 writeIORef summary (Just x) >> loadValues x >> loadLevels x)
+            (ioConsumer $ writeIORef goals . Just)
+            (ioConsumer $ writeIORef history)
+            past
+
+pastSelect :: Builder -> Garlic (Event PastCategory)
+pastSelect b = do
+    kcal <- castB b "pastKcalRadio" RadioButton
+    protein <- castB b "pastProteinRadio" RadioButton
+    carbs <- castB b "pastCarbsRadio" RadioButton
+    fat <- castB b "pastFatRadio" RadioButton
+    unionl <$>
+        sequence
+            [ PastKcal <$$ lift (signalE0 kcal #toggled)
+            , PastProtein <$$ lift (signalE0 protein #toggled)
+            , PastCarbs <$$ lift (signalE0 carbs #toggled)
+            , PastFat <$$ lift (signalE0 fat #toggled)
+            ]
+
+setGrams :: Label -> Double -> IO ()
+setGrams l g =
+    let t = pack $ printf "%.1fg" g
+    in labelSetText l t
+
+values :: MonadIO m => Builder -> m (NutritionSummary -> IO ())
+values b = do
     proteinValue <- castB b "nutritionProteinValue" Label
     carbsValue <- castB b "nutritionCarbsValue" Label
     sugarsValue <- castB b "nutritionSugarValue" Label
@@ -66,16 +110,28 @@ nutrition b = do
     transFatValue <- castB b "nutritionTransFatValue" Label
     cholesterolValue <- castB b "nutritionCholesterolValue" Label
     sodiumValue <- castB b "nutritionSodiumValue" Label
-
-    let loadValues NutritionSummary{..} = mapM_ (uncurry setGrams)
+    pure $ \NutritionSummary {..} ->
+        mapM_
+            (uncurry setGrams)
             [ (proteinValue, nsumProtein)
-            , (carbsValue, nsumCarbs), (sugarsValue, nsumSugars)
-            , (fibreValue, nsumFibre), (fatValue, nsumFat)
-            , (satFatValue, nsumSatFat), (polyFatValue, nsumPolyFat)
-            , (monoFatValue, nsumPolyFat), (transFatValue, nsumTransFat)
-            , (cholesterolValue, nsumCholesterol), (sodiumValue, nsumSodium) ]
+            , (carbsValue, nsumCarbs)
+            , (sugarsValue, nsumSugars)
+            , (fibreValue, nsumFibre)
+            , (fatValue, nsumFat)
+            , (satFatValue, nsumSatFat)
+            , (polyFatValue, nsumPolyFat)
+            , (monoFatValue, nsumPolyFat)
+            , (transFatValue, nsumTransFat)
+            , (cholesterolValue, nsumCholesterol)
+            , (sodiumValue, nsumSodium)
+            ]
 
-    goals <- liftIO $ newIORef Nothing
+levels ::
+       MonadIO m
+    => Builder
+    -> IORef (Maybe NutritionGoal)
+    -> m (NutritionSummary -> IO ())
+levels b goals = do
     proteinLevel <- castB b "nutritionProteinLevel" LevelBar
     carbsLevel <- castB b "nutritionCarbsLevel" LevelBar
     sugarsLevel <- castB b "nutritionSugarLevel" LevelBar
@@ -85,12 +141,13 @@ nutrition b = do
     monoFatLevel <- castB b "nutritionMonoFatLevel" LevelBar
     cholesterolLevel <- castB b "nutritionCholesterolLevel" LevelBar
     sodiumLevel <- castB b "nutritionSodiumLevel" LevelBar
-
-    let loadLevels NutritionSummary{..} = do
-            r <- readIORef goals
-            case r of
-                Nothing -> return ()
-                Just NutritionGoal{..} -> mapM_ (uncurry levelBarSetValue)
+    pure $ \NutritionSummary {..} -> do
+        r <- readIORef goals
+        case r of
+            Nothing -> return ()
+            Just NutritionGoal {..} ->
+                mapM_
+                    (uncurry levelBarSetValue)
                     [ (proteinLevel, nsumProtein / nutritionGoalProtein)
                     , (carbsLevel, nsumCarbs / nutritionGoalCarbs)
                     , (sugarsLevel, nsumSugars / nutritionGoalSugar)
@@ -98,55 +155,36 @@ nutrition b = do
                     , (satFatLevel, nsumSatFat / nutritionGoalFat)
                     , (polyFatLevel, nsumPolyFat / nutritionGoalPolyFat)
                     , (monoFatLevel, nsumMonoFat / nutritionGoalMonoFat)
-                    , (cholesterolLevel, nsumCholesterol / nutritionGoalCholesterol)
-                    , (sodiumLevel, nsumSodium / nutritionGoalSodium) ]
-
-    pieDA <- castB b "nutrientPie" DrawingArea
-    summary <- pieChart pieDA
-
-    historyDA <- castB b "nutrientPast" DrawingArea
-    history <- historyChart historyDA
-
-    pure $ GarlicTrackingNutrition
-            (ioConsumer $ \x -> writeIORef summary (Just x) >> loadValues x >> loadLevels x)
-            (ioConsumer $ writeIORef goals . Just)
-            (ioConsumer $ \_ -> return ()) -- TODO: Chart
-
-setGrams :: Label -> Double -> IO ()
-setGrams l g =
-    let t = pack $ printf "%.1fg" g
-     in labelSetText l t
+                    , ( cholesterolLevel
+                      , nsumCholesterol / nutritionGoalCholesterol)
+                    , (sodiumLevel, nsumSodium / nutritionGoalSodium)
+                    ]
 
 pieChart :: MonadIO m => DrawingArea -> m (IORef (Maybe NutritionSummary))
 pieChart da = do
     ref <- liftIO $ newIORef Nothing
-    _ <- on da #draw $ \ctx -> do
+    _ <-
+        on da #draw $ \ctx -> do
             w <- fromIntegral <$> widgetGetAllocatedWidth da
             h <- fromIntegral <$> widgetGetAllocatedHeight da
             dat <- readIORef ref
-
             let p = maybe 30 nsumProtein dat
                 c = maybe 35 nsumCarbs dat
                 f = maybe 20 nsumFat dat
-
-            renderWithContext ctx $
-                runCairo (w,h) (chartMacros p c f)
+            renderWithContext ctx $ runCairo (w, h) (chartMacros p c f)
             pure False
-
     pure ref
 
 historyChart :: MonadIO m => DrawingArea -> m (IORef [(UTCTime, Double)])
 historyChart da = do
     ref <- liftIO $ newIORef []
-    _ <- on da #draw $ \ctx -> do
+    _ <-
+        on da #draw $ \ctx -> do
             w <- fromIntegral <$> widgetGetAllocatedWidth da
             h <- fromIntegral <$> widgetGetAllocatedHeight da
             dat <- readIORef ref
-
-            renderWithContext ctx $
-                runCairo (w,h) (chartPastIntake dat)
+            renderWithContext ctx $ runCairo (w, h) (chartPastIntake dat)
             pure False
-
     pure ref
 
 -- LENSES

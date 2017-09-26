@@ -5,12 +5,9 @@ module Garlic.Presenter.Tracking
 where
 
 import Control.Lens
-import Reactive.Banana
 
 import Garlic.View
 import Garlic.View.Tracking
-import Garlic.View.Tracking.Goals
-
 import Garlic.Presenter.Tracking.Goals
 
 import Garlic.Types

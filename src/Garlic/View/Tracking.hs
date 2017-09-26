@@ -84,7 +84,6 @@ viewSwitch b = do
     pure $ e
 
 data GarlicFoodLog = GarlicFoodLog
-data GarlicNutrition = GarlicNutrition
 
 -- LENSES
 makeGetters ''GarlicViewTracking
