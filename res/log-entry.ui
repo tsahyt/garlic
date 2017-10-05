@@ -2,15 +2,15 @@
 <!-- Generated with glade 3.20.0 -->
 <interface>
   <requires lib="gtk+" version="3.20"/>
-  <object class="GtkListBoxRow">
+  <object class="GtkListBoxRow" id="box">
     <property name="visible">True</property>
     <property name="can_focus">True</property>
     <child>
-      <object class="GtkBox" id="recipeName">
+      <object class="GtkBox">
         <property name="visible">True</property>
         <property name="can_focus">False</property>
         <child>
-          <object class="GtkLabel">
+          <object class="GtkLabel" id="name">
             <property name="visible">True</property>
             <property name="can_focus">False</property>
             <property name="halign">start</property>
@@ -33,9 +33,9 @@
             <property name="margin_bottom">4</property>
             <child>
               <object class="GtkLabel" id="kcal">
+                <property name="width_request">35</property>
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
-                <property name="halign">end</property>
                 <property name="label" translatable="yes">435</property>
                 <attributes>
                   <attribute name="weight" value="semilight"/>
@@ -49,9 +49,9 @@
             </child>
             <child>
               <object class="GtkLabel" id="protein">
+                <property name="width_request">35</property>
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
-                <property name="halign">end</property>
                 <property name="label" translatable="yes">35.3g</property>
                 <attributes>
                   <attribute name="weight" value="semilight"/>
@@ -65,9 +65,9 @@
             </child>
             <child>
               <object class="GtkLabel" id="carbs">
+                <property name="width_request">35</property>
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
-                <property name="halign">end</property>
                 <property name="label" translatable="yes">30.0g</property>
                 <attributes>
                   <attribute name="weight" value="semilight"/>
@@ -81,9 +81,9 @@
             </child>
             <child>
               <object class="GtkLabel" id="fat">
+                <property name="width_request">35</property>
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
-                <property name="halign">end</property>
                 <property name="label" translatable="yes">16.0g</property>
                 <attributes>
                   <attribute name="weight" value="light"/>

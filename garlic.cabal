@@ -25,6 +25,7 @@ library
                        Garlic.Data.Units
                        Garlic.Data.Nutrition
                        Garlic.Data.Duration
+                       Garlic.Data.Meal
                        Garlic.Types
                        Garlic.View
                        Garlic.View.Charts
@@ -37,6 +38,7 @@ library
                        Garlic.View.Tracking.Goals
                        Garlic.View.Tracking.WeightLog
                        Garlic.View.Tracking.Nutrition
+                       Garlic.View.Tracking.FoodLog
                        Garlic.Presenter
                        Garlic.Presenter.Recipe
                        Garlic.Presenter.Recipe.Display

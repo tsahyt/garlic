@@ -13,5 +13,7 @@ import Garlic.Presenter.Tracking.Goals
 import Garlic.Types
 
 trackingP :: GarlicApp -> Garlic ()
-trackingP app =
+trackingP app = do
     goalsP (app ^. appVTracking . trackingGoals)
+
+    consume stdout . fmap show =<< plainChanges (app ^. appVTracking . trackingDate)

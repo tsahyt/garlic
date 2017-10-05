@@ -87,7 +87,7 @@
           </packing>
         </child>
         <child>
-          <object class="GtkCalendar">
+          <object class="GtkCalendar" id="calendar">
             <property name="visible">True</property>
             <property name="can_focus">True</property>
             <property name="year">2017</property>
@@ -244,7 +244,7 @@
                 <property name="can_focus">False</property>
                 <property name="orientation">vertical</property>
                 <child>
-                  <object class="GtkListBox">
+                  <object class="GtkListBox" id="foodLogList">
                     <property name="visible">True</property>
                     <property name="can_focus">False</property>
                   </object>
@@ -265,6 +265,12 @@
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
                         <property name="receives_default">True</property>
+                        <property name="halign">end</property>
+                        <property name="valign">center</property>
+                        <property name="margin_left">8</property>
+                        <property name="margin_right">8</property>
+                        <property name="margin_top">8</property>
+                        <property name="margin_bottom">8</property>
                         <property name="use_stock">True</property>
                         <style>
                           <class name="destructive-action"/>

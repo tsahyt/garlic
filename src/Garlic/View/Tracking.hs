@@ -9,6 +9,7 @@ module Garlic.View.Tracking
     trackingNutrition,
     trackingGoals,
     trackingSwitch,
+    trackingDate,
     viewTracking,
 
     GarlicTrackingStack (..),
@@ -27,7 +28,11 @@ import Reactive.Banana.Frameworks
 import Garlic.Types
 import Garlic.View.Tracking.Goals
 import Garlic.View.Tracking.WeightLog
+import Garlic.View.Tracking.FoodLog
 import Garlic.View.Tracking.Nutrition
+
+import Data.Time.Calendar
+import Data.Time.Clock
 
 uiViewTracking :: Text
 uiViewTracking = decodeUtf8 $(embedFile "res/view-tracking.ui")
@@ -40,11 +45,12 @@ data GarlicTrackingStack
     deriving (Eq, Show)
 
 data GarlicViewTracking = GarlicViewTracking
-    { _trackingFoodLog   :: GarlicFoodLog
+    { _trackingFoodLog   :: GarlicTrackingFoodLog
     , _trackingWeightLog :: GarlicTrackingWeightLog
     , _trackingNutrition :: GarlicTrackingNutrition
     , _trackingGoals     :: GarlicTrackingGoals 
     , _trackingSwitch    :: Event GarlicTrackingStack
+    , _trackingDate      :: Behavior Day
     }
 
 viewTracking :: Stack -> Garlic GarlicViewTracking
@@ -59,11 +65,12 @@ viewTracking stack = do
     switched <- viewSwitch b
 
     GarlicViewTracking
-        <$> pure GarlicFoodLog
+        <$> foodLog b
         <*> weightLog b
         <*> nutrition b
         <*> goals b
         <*> pure switched
+        <*> calendar b
 
 viewSwitch :: Builder -> Garlic (Event GarlicTrackingStack)
 viewSwitch b = do
@@ -83,7 +90,16 @@ viewSwitch b = do
 
     pure $ e
 
-data GarlicFoodLog = GarlicFoodLog
+calendar :: Builder -> Garlic (Behavior Day)
+calendar b = do
+    cal <- castB b "calendar" Calendar
 
+    now <- liftIO (utctDay <$> getCurrentTime)
+    sel <- lift $ signalEN cal #daySelected $ \h -> do
+                    (y,m,d) <- calendarGetDate cal
+                    h (fromIntegral y, fromIntegral m, fromIntegral d)
+
+    stepper now $ (\(y,m,d) -> fromGregorian y m d) <$> sel
+    
 -- LENSES
 makeGetters ''GarlicViewTracking
