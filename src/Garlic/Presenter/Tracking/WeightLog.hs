@@ -37,6 +37,10 @@ weightLogP wl startup day = do
     deleteWeightMeasurement `consume`
         dayStamp day <@ wl ^. wlDelete
 
+    -- calendar marks
+    let entries = (utctDay . weightMeasurementTimestamp . entityVal) <$$> measurements
+    pure ()
+
 currentMeasurement ::
        Behavior Day -> Behavior (Double, Unit) -> Behavior WeightMeasurement
 currentMeasurement day input =

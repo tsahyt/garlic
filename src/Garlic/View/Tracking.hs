@@ -20,6 +20,7 @@ import Control.Monad.Trans
 import Data.FileEmbed
 import Data.Text (Text)
 import Data.Text.Encoding (decodeUtf8)
+import Data.IORef
 import GI.Gtk
 import Reactive.Banana.GI.Gtk
 import Reactive.Banana
@@ -51,6 +52,7 @@ data GarlicViewTracking = GarlicViewTracking
     , _trackingGoals     :: GarlicTrackingGoals 
     , _trackingSwitch    :: Event GarlicTrackingStack
     , _trackingDate      :: Behavior Day
+    , _trackingMarks     :: Consumer [Day]
     }
 
 viewTracking :: Stack -> Garlic GarlicViewTracking
@@ -71,6 +73,7 @@ viewTracking stack = do
         <*> goals b
         <*> pure switched
         <*> calendar b
+        <*> marks b
 
 viewSwitch :: Builder -> Garlic (Event GarlicTrackingStack)
 viewSwitch b = do
@@ -100,6 +103,14 @@ calendar b = do
                     h (fromIntegral y, fromIntegral m + 1, fromIntegral d)
 
     stepper now $ (\(y,m,d) -> fromGregorian y m d) <$> sel
+
+marks :: Builder -> Garlic (Consumer [Day])
+marks b = do
+    cal  <- castB b "calendar" Calendar
+    days <- liftIO $ newIORef []
+    
+    pure $ ioConsumer $ \xs -> do
+        writeIORef days xs
     
 -- LENSES
 makeGetters ''GarlicViewTracking
