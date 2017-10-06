@@ -45,6 +45,7 @@ library
                        Garlic.Presenter.Recipe.Edit
                        Garlic.Presenter.Tracking
                        Garlic.Presenter.Tracking.Goals
+                       Garlic.Presenter.Tracking.WeightLog
                        Garlic.Presenter.IngredientEditor
                        Text.Markdown.Persist
                        Graphics.Rendering.Cairo.GI

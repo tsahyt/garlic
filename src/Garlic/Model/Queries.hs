@@ -13,17 +13,24 @@ module Garlic.Model.Queries
     wingrOptional,
     wingrDisp,
     wingrGroup,
-    allIngredientNames,
-    ingredientByName,
-    ingredientsByName,
 
-    -- * Updates
+    -- * Recipes
     newRecipe,
     updateRecipe,
     deleteRecipe,
+
+    -- * Ingredients
+    allIngredientNames,
+    ingredientByName,
+    ingredientsByName,
     newIngredient,
     deleteIngredient,
-    updateIngredient
+    updateIngredient,
+
+    -- * Weight Measurements
+    getWeightMeasurements,
+    addWeightMeasurement,
+    deleteWeightMeasurement
 )
 where
 
@@ -31,6 +38,9 @@ import Control.Lens.TH
 import Garlic.Data.Units
 import Garlic.Model
 import Garlic.Types
+import Data.List (sortBy)
+import Data.Time.Clock
+import Data.Ord
 import Data.Maybe (catMaybes)
 import Database.Esqueleto
 import Data.Text (Text)
@@ -150,3 +160,23 @@ deleteIngredient = dbConsumer $ \k -> do
 
 updateIngredient :: Consumer (Key Ingredient, Ingredient)
 updateIngredient = dbConsumer $ \(k,i) -> P.repsert k i
+
+getWeightMeasurements :: Fetcher () [Entity WeightMeasurement]
+getWeightMeasurements = dbFetcher $ \_ ->
+    sortBy (comparing (weightMeasurementTimestamp . entityVal)) <$> P.selectList [] []
+
+addWeightMeasurement :: Consumer WeightMeasurement
+addWeightMeasurement =
+    dbConsumer $ \m -> do
+        x <-
+            P.selectFirst
+                [WeightMeasurementTimestamp P.==. weightMeasurementTimestamp m]
+                []
+        case x of
+            Just e -> P.replace (entityKey e) m
+            Nothing -> P.insert_ m
+
+deleteWeightMeasurement :: Consumer UTCTime
+deleteWeightMeasurement =
+    dbConsumer $ \t -> do
+        P.deleteWhere [ WeightMeasurementTimestamp P.==. t ]

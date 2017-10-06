@@ -97,7 +97,7 @@ calendar b = do
     now <- liftIO (utctDay <$> getCurrentTime)
     sel <- lift $ signalEN cal #daySelected $ \h -> do
                     (y,m,d) <- calendarGetDate cal
-                    h (fromIntegral y, fromIntegral m, fromIntegral d)
+                    h (fromIntegral y, fromIntegral m + 1, fromIntegral d)
 
     stepper now $ (\(y,m,d) -> fromGregorian y m d) <$> sel
     

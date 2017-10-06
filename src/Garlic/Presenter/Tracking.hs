@@ -9,11 +9,14 @@ import Control.Lens
 import Garlic.View
 import Garlic.View.Tracking
 import Garlic.Presenter.Tracking.Goals
+import Garlic.Presenter.Tracking.WeightLog
 
 import Garlic.Types
 
 trackingP :: GarlicApp -> Garlic ()
 trackingP app = do
     goalsP (app ^. appVTracking . trackingGoals)
-
-    consume stdout . fmap show =<< plainChanges (app ^. appVTracking . trackingDate)
+    weightLogP
+        (app ^. appVTracking . trackingWeightLog)
+        (app ^. appStartup)
+        (app ^. appVTracking . trackingDate)

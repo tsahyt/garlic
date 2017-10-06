@@ -32,6 +32,7 @@ module Garlic.Types
     mtext,
     parseNum,
     spread,
+    delay,
     unionl
 )
 where
@@ -174,6 +175,9 @@ spread evs = lift $ do
     (e, handle) <- newEvent 
     reactimate $ (mapM_ handle) <$> evs
     pure e
+
+delay :: Event a -> Garlic (Event a)
+delay e = spread (pure <$> e)
 
 -- | Left-biased event union
 unionl :: [Event a] -> Event a
