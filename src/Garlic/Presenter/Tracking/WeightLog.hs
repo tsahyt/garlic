@@ -9,6 +9,7 @@ import Control.Monad.IO.Class
 import Control.Monad
 import Data.Text (Text, pack)
 import Data.Time
+import Data.Time.Clock.POSIX
 import Garlic.Model
 import Garlic.Data.Units
 import Database.Persist (entityVal)
@@ -19,8 +20,9 @@ import Garlic.View.Tracking.WeightLog
 
 weightLogP :: GarlicTrackingWeightLog -> Event () -> Behavior Day -> Garlic ()
 weightLogP wl startup day = do
-    ok' <- (delay <=< delay) $ wl ^. wlOk
-    let load = unionl [ () <$ wl ^. wlShowTime, ok', startup ]
+    now <- liftIO getCurrentTime
+    let load = 
+            timeFrameEnd now <$> unionl [ wl ^. wlShowTime, TimeAll <$ startup ]
     measurements <- fetch getWeightMeasurements load
 
     -- load data for graph
@@ -42,6 +44,12 @@ currentMeasurement day input =
         unit = snd <$> input
         timestamp = dayStamp day
     in WeightMeasurement <$> timestamp <*> weight <*> unit
+
+timeFrameEnd :: UTCTime -> TimeFrame -> UTCTime
+timeFrameEnd _ TimeAll = posixSecondsToUTCTime 0
+timeFrameEnd t Time1Y  = addUTCTime (-31557600) t
+timeFrameEnd t Time3M  = addUTCTime (-8035200) t
+timeFrameEnd t Time1M  = addUTCTime (-2678400) t
 
 dayStamp :: Behavior Day -> Behavior UTCTime
 dayStamp day = UTCTime <$> day <*> pure 0

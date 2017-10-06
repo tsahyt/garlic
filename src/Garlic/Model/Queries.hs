@@ -161,9 +161,11 @@ deleteIngredient = dbConsumer $ \k -> do
 updateIngredient :: Consumer (Key Ingredient, Ingredient)
 updateIngredient = dbConsumer $ \(k,i) -> P.repsert k i
 
-getWeightMeasurements :: Fetcher () [Entity WeightMeasurement]
-getWeightMeasurements = dbFetcher $ \_ ->
-    sortBy (comparing (weightMeasurementTimestamp . entityVal)) <$> P.selectList [] []
+getWeightMeasurements :: Fetcher UTCTime [Entity WeightMeasurement]
+getWeightMeasurements =
+    dbFetcher $ \l ->
+        sortBy (comparing (weightMeasurementTimestamp . entityVal)) <$>
+        P.selectList [WeightMeasurementTimestamp P.>=. l] []
 
 addWeightMeasurement :: Consumer WeightMeasurement
 addWeightMeasurement =
