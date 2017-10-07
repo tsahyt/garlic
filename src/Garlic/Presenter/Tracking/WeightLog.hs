@@ -18,8 +18,13 @@ import Garlic.Model.Queries
 import Garlic.Types
 import Garlic.View.Tracking.WeightLog
 
-weightLogP :: GarlicTrackingWeightLog -> Event () -> Behavior Day -> Garlic ()
-weightLogP wl startup day = do
+weightLogP ::
+       GarlicTrackingWeightLog
+    -> Event ()
+    -> Consumer [Day]
+    -> Behavior Day
+    -> Garlic ()
+weightLogP wl startup mark day = do
     now <- liftIO getCurrentTime
     let load = 
             timeFrameEnd now <$> unionl [ wl ^. wlShowTime, TimeAll <$ startup ]
@@ -39,7 +44,7 @@ weightLogP wl startup day = do
 
     -- calendar marks
     let entries = (utctDay . weightMeasurementTimestamp . entityVal) <$$> measurements
-    pure ()
+    mark `consume` entries
 
 currentMeasurement ::
        Behavior Day -> Behavior (Double, Unit) -> Behavior WeightMeasurement

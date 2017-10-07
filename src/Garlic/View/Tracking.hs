@@ -10,6 +10,7 @@ module Garlic.View.Tracking
     trackingGoals,
     trackingSwitch,
     trackingDate,
+    trackingMarks,
     viewTracking,
 
     GarlicTrackingStack (..),
@@ -108,9 +109,23 @@ marks :: Builder -> Garlic (Consumer [Day])
 marks b = do
     cal  <- castB b "calendar" Calendar
     days <- liftIO $ newIORef []
+
+    let mark = do
+            (y,m,_) <- calendarGetDate cal
+            ds <- readIORef days
+            let start = fromGregorian (fromIntegral y) (fromIntegral $ m + 1) 1
+                end   = fromGregorian (fromIntegral y) (fromIntegral $ m + 2) 1
+                ms    = [ gregorianDay x | x <- ds, start <= x, x < end ]
+            mapM_ (\d -> calendarMarkDay cal (fromIntegral d)) ms
+
+    _ <- on cal #daySelected mark
     
     pure $ ioConsumer $ \xs -> do
         writeIORef days xs
+        mark
+
+gregorianDay :: Day -> Int
+gregorianDay x = let (_,_,x') = toGregorian x in x'
     
 -- LENSES
 makeGetters ''GarlicViewTracking

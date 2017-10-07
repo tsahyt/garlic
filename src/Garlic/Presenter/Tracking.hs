@@ -19,4 +19,5 @@ trackingP app = do
     weightLogP
         (app ^. appVTracking . trackingWeightLog)
         (app ^. appStartup)
+        (app ^. appVTracking . trackingMarks)
         (app ^. appVTracking . trackingDate)
