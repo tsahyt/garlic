@@ -113,9 +113,12 @@ marks b = do
     let mark = do
             (y,m,_) <- calendarGetDate cal
             ds <- readIORef days
+            -- select relevant days in selected month/year
             let start = fromGregorian (fromIntegral y) (fromIntegral $ m + 1) 1
                 end   = fromGregorian (fromIntegral y) (fromIntegral $ m + 2) 1
                 ms    = [ gregorianDay x | x <- ds, start <= x, x < end ]
+            -- redo marks
+            calendarClearMarks cal
             mapM_ (\d -> calendarMarkDay cal (fromIntegral d)) ms
 
     _ <- on cal #daySelected mark

@@ -90,9 +90,6 @@
           <object class="GtkCalendar" id="calendar">
             <property name="visible">True</property>
             <property name="can_focus">True</property>
-            <property name="year">2017</property>
-            <property name="month">8</property>
-            <property name="day">22</property>
           </object>
           <packing>
             <property name="expand">False</property>
