@@ -10,6 +10,7 @@ import Control.Monad
 import Data.Text (Text, pack)
 import Data.Time
 import Data.Time.Clock.POSIX
+import Data.List (find)
 import Garlic.Model
 import Garlic.Data.Units
 import Database.Persist (entityVal)
@@ -43,8 +44,15 @@ weightLogP wl startup mark day = do
         dayStamp day <@ wl ^. wlDelete
 
     -- calendar marks
-    let entries = (utctDay . weightMeasurementTimestamp . entityVal) <$$> measurements
+    let entries = (utctDay . weightMeasurementTimestamp . entityVal) <$$> 
+                        measurements
     mark `consume` entries
+
+    -- set input on date select
+    dateSel <- plainChanges day
+    measurementsB <- stepper [] (map entityVal <$> measurements)
+    let select = (\x y -> measureInput (selectMeasure y x)) <$> measurementsB
+    wl ^. wlSetInput `consume` select <@> dateSel
 
 currentMeasurement ::
        Behavior Day -> Behavior (Double, Unit) -> Behavior WeightMeasurement
@@ -53,6 +61,13 @@ currentMeasurement day input =
         unit = snd <$> input
         timestamp = dayStamp day
     in WeightMeasurement <$> timestamp <*> weight <*> unit
+
+selectMeasure :: Day -> [WeightMeasurement] -> Maybe WeightMeasurement
+selectMeasure d = find (\x -> utctDay (weightMeasurementTimestamp x) == d)
+
+measureInput :: Maybe WeightMeasurement -> (Double, Unit)
+measureInput Nothing = (0, Kilogram)
+measureInput (Just x) = (weightMeasurementWeight x, weightMeasurementUnit x)
 
 timeFrameEnd :: UTCTime -> TimeFrame -> UTCTime
 timeFrameEnd _ TimeAll = posixSecondsToUTCTime 0

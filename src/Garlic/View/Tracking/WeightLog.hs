@@ -8,6 +8,7 @@ module Garlic.View.Tracking.WeightLog
     wlReloadMeasurements,
     wlShowTime,
     wlInput,
+    wlSetInput,
     wlDelete,
     wlOk,
     weightLog
@@ -38,6 +39,7 @@ data GarlicTrackingWeightLog = GarlicTrackingWeightLog
     { _wlReloadMeasurements :: Consumer [WeightMeasurement]
     , _wlShowTime           :: Event TimeFrame
     , _wlInput              :: Behavior (Double, Unit)
+    , _wlSetInput           :: Consumer (Double, Unit)
     , _wlDelete             :: Event ()
     , _wlOk                 :: Event ()
     }
@@ -61,16 +63,19 @@ weightLog b = do
     drawing <- castB b "weightChart" DrawingArea
     chart <- weightChart drawing
 
+    (input, setInput) <- measurement b
+
     GarlicTrackingWeightLog
         <$> pure (ioConsumer $ \x -> do
                       writeIORef chart x
                       widgetQueueDraw drawing)
         <*> pure tf
-        <*> measurement b
+        <*> pure input
+        <*> pure setInput
         <*> lift (signalE0 delete #clicked)
         <*> lift (signalE0 ok #clicked)
 
-measurement :: Builder -> Garlic (Behavior (Double, Unit))
+measurement :: Builder -> Garlic (Behavior (Double, Unit), Consumer (Double, Unit))
 measurement b = do
     weight <- castB b "measurementAdjustment" Adjustment
     unit <- castB b "measurementUnit" ComboBoxText
@@ -79,7 +84,11 @@ measurement b = do
         lift $
         signalEN unit #changed $ \h -> comboBoxTextGetActiveText unit >>= h
     unitB <- stepper Kilogram $ parseUnit <$> unitE
-    pure $ (,) <$> weightB <*> unitB
+    let b = (,) <$> weightB <*> unitB
+        c = ioConsumer $ \(w,u) -> do
+                adjustmentSetValue weight w
+                comboBoxSetTitle unit (prettyUnit u)
+    pure (b, c)
 
 weightChart :: MonadIO m => DrawingArea -> m (IORef [WeightMeasurement])
 weightChart da = do
