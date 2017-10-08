@@ -9,6 +9,7 @@ module Garlic.View.Tracking.WeightLog
     wlShowTime,
     wlInput,
     wlSetInput,
+    wlSetSelected,
     wlDelete,
     wlOk,
     weightLog
@@ -40,6 +41,7 @@ data GarlicTrackingWeightLog = GarlicTrackingWeightLog
     , _wlShowTime           :: Event TimeFrame
     , _wlInput              :: Behavior (Double, Unit)
     , _wlSetInput           :: Consumer (Double, Unit)
+    , _wlSetSelected        :: Consumer (Maybe WeightMeasurement)
     , _wlDelete             :: Event ()
     , _wlOk                 :: Event ()
     }
@@ -61,17 +63,20 @@ weightLog b = do
     ok <- castB b "weightOk" Button
 
     drawing <- castB b "weightChart" DrawingArea
-    chart <- weightChart drawing
+    (refPts, refSel) <- weightChart drawing
 
     (input, setInput) <- measurement b
 
     GarlicTrackingWeightLog
         <$> pure (ioConsumer $ \x -> do
-                      writeIORef chart x
+                      writeIORef refPts x
                       widgetQueueDraw drawing)
         <*> pure tf
         <*> pure input
         <*> pure setInput
+        <*> pure (ioConsumer $ \x -> do
+                      writeIORef refSel x
+                      widgetQueueDraw drawing)
         <*> lift (signalE0 delete #clicked)
         <*> lift (signalE0 ok #clicked)
 
@@ -90,18 +95,20 @@ measurement b = do
                 comboBoxSetTitle unit (prettyUnit u)
     pure (b, c)
 
-weightChart :: MonadIO m => DrawingArea -> m (IORef [WeightMeasurement])
+weightChart :: MonadIO m => DrawingArea -> m (IORef [WeightMeasurement], IORef (Maybe WeightMeasurement))
 weightChart da = do
-    ref <- liftIO $ newIORef []
+    refPts <- liftIO $ newIORef []
+    refSel <- liftIO $ newIORef Nothing
     _ <- on da #draw $ \ctx -> do
             w <- fromIntegral <$> widgetGetAllocatedWidth da
             h <- fromIntegral <$> widgetGetAllocatedHeight da
-            dat <- readIORef ref
+            pts <- readIORef refPts
+            sel <- readIORef refSel
             renderWithContext ctx $
-                runCairo (w,h) (chartWeight dat)
+                runCairo (w,h) (chartWeight sel pts)
             pure False
 
-    pure ref
+    pure (refPts, refSel)
 
 -- LENSES
 makeGetters ''GarlicTrackingWeightLog

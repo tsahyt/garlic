@@ -24,12 +24,19 @@ measurement u tz m =
         t = utcToLocalTime tz (weightMeasurementTimestamp m)
     in (t, w)
 
-chartWeight :: [WeightMeasurement] -> EC (Layout LocalTime Double) ()
-chartWeight xs = do
+chartWeight :: 
+       Maybe WeightMeasurement 
+    -> [WeightMeasurement] 
+    -> EC (Layout LocalTime Double) ()
+chartWeight sel xs = do
     layout_background . fill_color .= transparent
-    setColors [opaque orange, opaque red]
+    setColors [opaque orange, opaque red, opaque green]
     plot $ line "weight" [map (measurement Kilogram utc) xs]
     plot $ points "weight" (map (measurement Kilogram utc) xs)
+    case sel of
+        Nothing -> pure ()
+        Just sel' ->
+            plot $ points "selected" [measurement Kilogram utc sel']
     return ()
 
 chartMacros :: Double -> Double -> Double -> EC PieLayout ()
