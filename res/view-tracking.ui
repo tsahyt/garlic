@@ -450,8 +450,8 @@
                             <property name="can_focus">False</property>
                             <property name="active">0</property>
                             <items>
-                              <item translatable="yes">kg</item>
-                              <item translatable="yes">lb</item>
+                              <item id="0" translatable="yes">kg</item>
+                              <item id="1" translatable="yes">lb</item>
                             </items>
                           </object>
                           <packing>

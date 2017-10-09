@@ -6,8 +6,6 @@ where
 
 import Control.Lens
 import Control.Monad.IO.Class
-import Control.Monad
-import Data.Text (Text, pack)
 import Data.Time
 import Data.Time.Clock.POSIX
 import Data.List (find)

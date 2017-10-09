@@ -80,7 +80,8 @@ weightLog b = do
         <*> lift (signalE0 delete #clicked)
         <*> lift (signalE0 ok #clicked)
 
-measurement :: Builder -> Garlic (Behavior (Double, Unit), Consumer (Double, Unit))
+measurement ::
+       Builder -> Garlic (Behavior (Double, Unit), Consumer (Double, Unit))
 measurement b = do
     weight <- castB b "measurementAdjustment" Adjustment
     unit <- castB b "measurementUnit" ComboBoxText
@@ -89,25 +90,30 @@ measurement b = do
         lift $
         signalEN unit #changed $ \h -> comboBoxTextGetActiveText unit >>= h
     unitB <- stepper Kilogram $ parseUnit <$> unitE
-    let b = (,) <$> weightB <*> unitB
-        c = ioConsumer $ \(w,u) -> do
+    let bv = (,) <$> weightB <*> unitB
+        cs =
+            ioConsumer $ \(w, u) -> do
                 adjustmentSetValue weight w
-                comboBoxSetTitle unit (prettyUnit u)
-    pure (b, c)
+                case u of
+                    Pound -> comboBoxSetActive unit 1
+                    _ -> comboBoxSetActive unit 0
+    pure (bv, cs)
 
-weightChart :: MonadIO m => DrawingArea -> m (IORef [WeightMeasurement], IORef (Maybe WeightMeasurement))
+weightChart ::
+       MonadIO m
+    => DrawingArea
+    -> m (IORef [WeightMeasurement], IORef (Maybe WeightMeasurement))
 weightChart da = do
     refPts <- liftIO $ newIORef []
     refSel <- liftIO $ newIORef Nothing
-    _ <- on da #draw $ \ctx -> do
+    _ <-
+        on da #draw $ \ctx -> do
             w <- fromIntegral <$> widgetGetAllocatedWidth da
             h <- fromIntegral <$> widgetGetAllocatedHeight da
             pts <- readIORef refPts
             sel <- readIORef refSel
-            renderWithContext ctx $
-                runCairo (w,h) (chartWeight sel pts)
+            renderWithContext ctx $ runCairo (w, h) (chartWeight sel pts)
             pure False
-
     pure (refPts, refSel)
 
 -- LENSES
