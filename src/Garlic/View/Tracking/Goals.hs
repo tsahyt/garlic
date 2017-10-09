@@ -15,8 +15,7 @@ module Garlic.View.Tracking.Goals
     tgCholesterol,
     tgWeight,
     tgUnit,
-    tgLoadWeight,
-    tgLoadNutrients,
+    tgLoadGoal,
     tgLabels,
     tgSave,
     tgDelete,
@@ -56,8 +55,7 @@ data GarlicTrackingGoals = GarlicTrackingGoals
     , _tgCholesterol   :: Behavior Double
     , _tgWeight        :: Behavior Double
     , _tgUnit          :: Behavior Unit
-    , _tgLoadWeight    :: Consumer (Double, Unit)
-    , _tgLoadNutrients :: Consumer Goal
+    , _tgLoadGoal      :: Consumer Goal
     , _tgLabels        :: GarlicTrackingGoalsLabels
     , _tgSave          :: Event ()
     , _tgDelete        :: Event ()
@@ -91,7 +89,6 @@ goals b = do
        <*> lift (attrB cholesterol #value)
        <*> lift (attrB weight #value)
        <*> unitB unit
-       <*> pure (ioConsumer (const $ return ()))
        <*> pure (ioConsumer (const $ return ()))
        <*> labels b
        <*> lift (signalE0 save #clicked)

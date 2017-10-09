@@ -5,18 +5,19 @@ module Garlic.Presenter.Tracking.Goals
 ) 
 where
 
-import Control.Monad.IO.Class
-import Garlic.View.Tracking.Goals
-import Data.Text (pack, Text)
-import Garlic.Types
-import Garlic.Model.Queries
-import Reactive.Banana
+import Control.Lens
+import Data.Text (Text, pack)
 import Data.Time
 import Garlic.Model
-import Control.Lens
+import Garlic.Model.Queries
+import Garlic.Types
+import Garlic.View.Tracking.Goals
+import Reactive.Banana
 
-goalsP :: GarlicTrackingGoals -> Behavior Day -> Garlic ()
-goalsP gs day = do
+import qualified Data.Map as M
+
+goalsP :: GarlicTrackingGoals -> Behavior Day -> Event () -> Garlic ()
+goalsP gs day startup = do
     let lbls = gs ^. tgLabels
         time = flip UTCTime 0 <$> day
 
@@ -45,7 +46,13 @@ goalsP gs day = do
     -- Deletion
     deleteGoal `consume` time <@ gs ^. tgDelete
 
-    return ()
+    -- Load existing goal on selection
+    do
+    daySelect <- plainChanges day
+    goalsE <- fetch getGoals $ unionl [ startup ]
+    goalsB <- stepper M.empty goalsE
+    gs ^. tgLoadGoal `consume` 
+        filterJust ((flip M.lookup <$> goalsB) <@> daySelect)
 
 currentGoal ::
        GarlicTrackingGoals

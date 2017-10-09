@@ -18,6 +18,7 @@ trackingP app = do
     goalsP 
         (app ^. appVTracking . trackingGoals)
         (app ^. appVTracking . trackingDate)
+        (app ^. appStartup)
     weightLogP
         (app ^. appVTracking . trackingWeightLog)
         (app ^. appStartup)
