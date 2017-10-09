@@ -9,44 +9,49 @@ import Control.Monad.IO.Class
 import Garlic.View.Tracking.Goals
 import Data.Text (pack, Text)
 import Garlic.Types
+import Garlic.Model.Queries
+import Reactive.Banana
 import Data.Time
 import Garlic.Model
 import Control.Lens
 
-goalsP :: GarlicTrackingGoals -> Garlic ()
-goalsP gs = do
+goalsP :: GarlicTrackingGoals -> Behavior Day -> Garlic ()
+goalsP gs day = do
     let lbls = gs ^. tgLabels
-
-    -- TODO: proper time from calendar
-    time <- pure <$> liftIO getCurrentTime
+        time = flip UTCTime 0 <$> day
 
     -- Input data
-    let nutrient = nutrientGoal gs time
-        weight   = weightGoal gs time
+    let goal = currentGoal gs time
 
     -- Set grams for percentages
-    consume (lbls ^. tglSetProteinGrams) . fmap nutritionGoalProtein 
-        =<< plainChanges nutrient
-    consume (lbls ^. tglSetCarbsGrams) . fmap nutritionGoalCarbs 
-        =<< plainChanges nutrient
-    consume (lbls ^. tglSetSugarsGrams) . fmap nutritionGoalSugar 
-        =<< plainChanges nutrient
-    consume (lbls ^. tglSetFatsGrams) . fmap nutritionGoalFat 
-        =<< plainChanges nutrient
+    consume (lbls ^. tglSetProteinGrams) . fmap goalProtein 
+        =<< plainChanges goal
+    consume (lbls ^. tglSetCarbsGrams) . fmap goalCarbs 
+        =<< plainChanges goal
+    consume (lbls ^. tglSetSugarsGrams) . fmap goalSugar 
+        =<< plainChanges goal
+    consume (lbls ^. tglSetFatsGrams) . fmap goalFat 
+        =<< plainChanges goal
     consume (lbls ^. tglSetMacroSumVal) . fmap macroSum
-        =<< plainChanges nutrient
+        =<< plainChanges goal
 
     -- Legality
     sumChanged <- plainChanges $ macroPctSum gs
     lbls ^. tglSetMacroSumPct `consume` macroSumPctText <$> sumChanged
 
+    -- Saving    
+    addGoal `consume` goal <@ gs ^. tgSave
+    
+    -- Deletion
+    deleteGoal `consume` time <@ gs ^. tgDelete
+
     return ()
 
-nutrientGoal ::
+currentGoal ::
        GarlicTrackingGoals
     -> Behavior UTCTime
-    -> Behavior NutritionGoal
-nutrientGoal gs time =
+    -> Behavior Goal
+currentGoal gs time =
     let protein = macro 4 <$> gs ^. tgKcal <*> gs ^. tgProtein
         carbs = macro 4 <$> gs ^. tgKcal <*> gs ^. tgCarbs
         sugar = (*) <$> carbs <*> gs ^. tgSugars
@@ -55,15 +60,15 @@ nutrientGoal gs time =
         unsat = (-) <$> fat <*> sat
         mono = (*) <$> unsat <*> gs ^. tgMonoPoly
         poly = (-) <$> unsat <*> mono
-    in NutritionGoal 
+    in Goal 
            <$> time <*> gs ^. tgKcal <*> protein <*> carbs <*> sugar 
            <*> fat <*> sat <*> mono <*> poly <*> gs ^. tgSodium 
-           <*> gs ^. tgCholesterol
+           <*> gs ^. tgCholesterol <*> gs ^. tgWeight <*> gs ^. tgUnit
   where
     macro f k p = k * p / f
 
-macroSum :: NutritionGoal -> Double
-macroSum g = nutritionGoalProtein g + nutritionGoalCarbs g + nutritionGoalFat g
+macroSum :: Goal -> Double
+macroSum g = goalProtein g + goalCarbs g + goalFat g
 
 macroPctSum :: GarlicTrackingGoals -> Behavior Int
 macroPctSum gs =
@@ -73,6 +78,3 @@ macroPctSum gs =
 macroSumPctText :: Int -> (Legality, Text)
 macroSumPctText 100 = (Legal, "100%")
 macroSumPctText n   = (Illegal, pack (show n) `mappend` "%")
-
-weightGoal :: GarlicTrackingGoals -> Behavior UTCTime -> Behavior WeightGoal
-weightGoal gs time = WeightGoal <$> time <*> gs ^. tgWeight <*> gs ^. tgUnit

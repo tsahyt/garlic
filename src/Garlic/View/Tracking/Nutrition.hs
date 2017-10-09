@@ -19,7 +19,7 @@ import Control.Monad.Trans
 import Data.IORef
 import Data.Text (pack)
 import GI.Gtk hiding (Unit)
-import Garlic.Model (NutritionGoal(..))
+import Garlic.Model (Goal (..))
 import Garlic.Types
 import Garlic.View.Charts
 import Reactive.Banana.GI.Gtk
@@ -53,7 +53,7 @@ data PastCategory
 
 data GarlicTrackingNutrition = GarlicTrackingNutrition
     { _nLoadNutrition :: Consumer NutritionSummary
-    , _nLoadGoals :: Consumer NutritionGoal
+    , _nLoadGoals :: Consumer Goal
     , _nLoadPast :: Consumer [(UTCTime, Double)]
     , _nPastSelect :: Event PastCategory
     }
@@ -129,7 +129,7 @@ values b = do
 levels ::
        MonadIO m
     => Builder
-    -> IORef (Maybe NutritionGoal)
+    -> IORef (Maybe Goal)
     -> m (NutritionSummary -> IO ())
 levels b goals = do
     proteinLevel <- castB b "nutritionProteinLevel" LevelBar
@@ -145,19 +145,19 @@ levels b goals = do
         r <- readIORef goals
         case r of
             Nothing -> return ()
-            Just NutritionGoal {..} ->
+            Just Goal {..} ->
                 mapM_
                     (uncurry levelBarSetValue)
-                    [ (proteinLevel, nsumProtein / nutritionGoalProtein)
-                    , (carbsLevel, nsumCarbs / nutritionGoalCarbs)
-                    , (sugarsLevel, nsumSugars / nutritionGoalSugar)
-                    , (fatLevel, nsumFat / nutritionGoalFat)
-                    , (satFatLevel, nsumSatFat / nutritionGoalFat)
-                    , (polyFatLevel, nsumPolyFat / nutritionGoalPolyFat)
-                    , (monoFatLevel, nsumMonoFat / nutritionGoalMonoFat)
+                    [ (proteinLevel, nsumProtein / goalProtein)
+                    , (carbsLevel, nsumCarbs / goalCarbs)
+                    , (sugarsLevel, nsumSugars / goalSugar)
+                    , (fatLevel, nsumFat / goalFat)
+                    , (satFatLevel, nsumSatFat / goalFat)
+                    , (polyFatLevel, nsumPolyFat / goalPolyFat)
+                    , (monoFatLevel, nsumMonoFat / goalMonoFat)
                     , ( cholesterolLevel
-                      , nsumCholesterol / nutritionGoalCholesterol)
-                    , (sodiumLevel, nsumSodium / nutritionGoalSodium)
+                      , nsumCholesterol / goalCholesterol)
+                    , (sodiumLevel, nsumSodium / goalSodium)
                     ]
 
 pieChart :: MonadIO m => DrawingArea -> m (IORef (Maybe NutritionSummary))

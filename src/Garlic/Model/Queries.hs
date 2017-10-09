@@ -30,7 +30,12 @@ module Garlic.Model.Queries
     -- * Weight Measurements
     getWeightMeasurements,
     addWeightMeasurement,
-    deleteWeightMeasurement
+    deleteWeightMeasurement,
+
+    -- * Goals
+    getGoals,
+    addGoal,
+    deleteGoal
 )
 where
 
@@ -39,13 +44,16 @@ import Garlic.Data.Units
 import Garlic.Model
 import Garlic.Types
 import Data.List (sortBy)
-import Data.Time.Clock
+import Data.Foldable
+import Data.Time
 import Data.Ord
 import Data.Maybe (catMaybes)
 import Database.Esqueleto
 import Data.Text (Text)
 import Data.Sequence (Seq)
+import Data.Map (Map)
 import qualified Data.Sequence as S
+import qualified Data.Map as M
 import qualified Data.Text as T
 
 import qualified Database.Persist as P
@@ -180,5 +188,28 @@ addWeightMeasurement =
 
 deleteWeightMeasurement :: Consumer UTCTime
 deleteWeightMeasurement =
-    dbConsumer $ \t -> do
-        P.deleteWhere [ WeightMeasurementTimestamp P.==. t ]
+    dbConsumer $ \t -> do P.deleteWhere [WeightMeasurementTimestamp P.==. t]
+
+mapBy :: (Ord b, Foldable t) => (a -> b) -> t a -> Map b a
+mapBy f = foldl' (\m x -> M.insert (f x) x m) M.empty
+
+getGoals :: Fetcher () (Map Day Goal)
+getGoals =
+    dbFetcher $ \_ -> do
+        xs <- P.selectList [] []
+        pure $ mapBy (utctDay . goalTimestamp) (map entityVal xs)
+
+addGoal :: Consumer Goal
+addGoal =
+    dbConsumer $ \g -> do
+        x <-
+            P.selectFirst
+                [GoalTimestamp P.==. goalTimestamp g]
+                []
+        case x of
+            Just e -> P.replace (entityKey e) g
+            Nothing -> P.insert_ g
+
+deleteGoal :: Consumer UTCTime
+deleteGoal =
+    dbConsumer $ \t -> do P.deleteWhere [GoalTimestamp P.==. t]

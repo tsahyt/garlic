@@ -58,7 +58,7 @@ share [mkPersist sqlSettings, mkMigrate "migrateAll"] [persistLowerCase|
         group Text Maybe
         deriving Show
 
-    NutritionGoal
+    Goal
         timestamp UTCTime
         kcal Double
         protein Double
@@ -70,10 +70,6 @@ share [mkPersist sqlSettings, mkMigrate "migrateAll"] [persistLowerCase|
         polyFat Double
         sodium Double
         cholesterol Double
-        deriving Show
-
-    WeightGoal
-        timestamp UTCTime
         weight Double
         unit Unit
         deriving Show

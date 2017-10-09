@@ -15,7 +15,9 @@ import Garlic.Types
 
 trackingP :: GarlicApp -> Garlic ()
 trackingP app = do
-    goalsP (app ^. appVTracking . trackingGoals)
+    goalsP 
+        (app ^. appVTracking . trackingGoals)
+        (app ^. appVTracking . trackingDate)
     weightLogP
         (app ^. appVTracking . trackingWeightLog)
         (app ^. appStartup)

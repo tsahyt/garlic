@@ -18,6 +18,8 @@ module Garlic.View.Tracking.Goals
     tgLoadWeight,
     tgLoadNutrients,
     tgLabels,
+    tgSave,
+    tgDelete,
 
     goals,
 
@@ -38,7 +40,7 @@ import Data.Text (Text, pack)
 import Reactive.Banana.GI.Gtk
 import Reactive.Banana (stepper)
 import Garlic.Types
-import Garlic.Model (NutritionGoal (..))
+import Garlic.Model (Goal (..))
 import Garlic.Data.Units
 import Text.Printf
 
@@ -55,8 +57,10 @@ data GarlicTrackingGoals = GarlicTrackingGoals
     , _tgWeight        :: Behavior Double
     , _tgUnit          :: Behavior Unit
     , _tgLoadWeight    :: Consumer (Double, Unit)
-    , _tgLoadNutrients :: Consumer NutritionGoal
+    , _tgLoadNutrients :: Consumer Goal
     , _tgLabels        :: GarlicTrackingGoalsLabels
+    , _tgSave          :: Event ()
+    , _tgDelete        :: Event ()
     }
 
 goals :: Builder -> Garlic GarlicTrackingGoals
@@ -72,6 +76,8 @@ goals b = do
     cholesterol <- castB b "goalCholesterolAdjustment" Adjustment
     weight      <- castB b "goalWeightAdjustment" Adjustment
     unit        <- castB b "goalWeightUnit" ComboBoxText
+    save        <- castB b "goalSave" Button
+    delete      <- castB b "goalDelete" Button
 
     GarlicTrackingGoals 
        <$> lift (attrB kcal #value)
@@ -88,6 +94,8 @@ goals b = do
        <*> pure (ioConsumer (const $ return ()))
        <*> pure (ioConsumer (const $ return ()))
        <*> labels b
+       <*> lift (signalE0 save #clicked)
+       <*> lift (signalE0 delete #clicked)
 
 unitB :: ComboBoxText -> Garlic (Behavior Unit)
 unitB c = do
