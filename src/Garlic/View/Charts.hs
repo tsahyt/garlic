@@ -30,13 +30,15 @@ chartWeight ::
     -> EC (Layout LocalTime Double) ()
 chartWeight sel xs = do
     layout_background . fill_color .= transparent
+    layout_legend .= Nothing
     setColors [opaque orange, opaque red, opaque green]
     plot $ line "weight" [map (measurement Kilogram utc) xs]
     plot $ points "weight" (map (measurement Kilogram utc) xs)
     case sel of
         Nothing -> pure ()
-        Just sel' ->
-            plot $ points "selected" [measurement Kilogram utc sel']
+        Just sel' -> do
+            p <- points "selected" [measurement Kilogram utc sel']
+            plot . pure $ p & plot_points_style . point_radius .~ 10
     return ()
 
 chartMacros :: Double -> Double -> Double -> EC PieLayout ()
