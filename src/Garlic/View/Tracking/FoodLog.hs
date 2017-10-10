@@ -68,7 +68,12 @@ foodLog b = do
             name
             amount
 
-buildMeals :: ListBox -> Garlic (Event Meal, IORef (M.Map Meal Int), Behavior Text, Behavior Double)
+buildMeals ::
+       ListBox
+    -> Garlic ( Event Meal
+              , IORef (M.Map Meal Int)
+              , Behavior Text
+              , Behavior Double)
 buildMeals list = do
     b <- builderNew
     _ <- builderAddFromString b uiLogAdd (-1)
@@ -94,20 +99,28 @@ buildMeals list = do
 
     r <- liftIO . newIORef . M.fromList $ zipWith (,) allMeals (repeat 0)
 
-    adding <- lift $ signalEN okButton #clicked $ \h -> do
-                m <- readIORef popoverMeal
-                h m
+    adding <- lift $ signalEN okButton #clicked $ \h ->
+                readIORef popoverMeal >>= h
     pure (adding,r,nameB,servingsB)
 
 cleanEntries :: MonadIO m => ListBox -> IORef (M.Map Meal Int) -> m ()
 cleanEntries list ref = do
-    open <- liftIO $ M.filter (> 0) <$> readIORef ref
-    unless (M.null open) $ do
-        let x = fromIntegral . succ . fromEnum . head $ M.keys open
-        r <- listBoxGetRowAtIndex list x
-        case r of
-            Nothing -> pure ()
-            Just r' -> containerRemove list r'
+    m <- liftIO $ readIORef ref
+    m' <- go m
+    liftIO $ writeIORef ref m'
+  where
+    go m = do
+        let open = M.filter (> 0) m
+        if M.null open
+            then pure m
+            else do
+                let meal = head $ M.keys open
+                    x = fromIntegral . succ . fromEnum $ meal
+                r <- listBoxGetRowAtIndex list x
+                case r of
+                    Nothing -> pure m
+                    Just r' ->
+                        containerRemove list r' >> go (M.adjust pred meal m)
 
 addEntry ::
        MonadIO m
