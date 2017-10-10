@@ -1,6 +1,7 @@
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE OverloadedLabels #-}
+{-# LANGUAGE RecordWildCards #-}
 module Garlic.View.Tracking.Goals
 (
     GarlicTrackingGoals,
@@ -77,6 +78,23 @@ goals b = do
     save        <- castB b "goalSave" Button
     delete      <- castB b "goalDelete" Button
 
+    let unmacro f k x = (x * f / k) * 100
+        loadGoals Goal{..} = do
+            adjustmentSetValue kcal goalKcal
+            adjustmentSetValue protein $ unmacro 4 goalKcal goalProtein
+            adjustmentSetValue carbs $ unmacro 4 goalKcal goalCarbs
+            adjustmentSetValue sugars $ 100 * goalSugar / goalCarbs
+            adjustmentSetValue fat $ unmacro 9 goalKcal goalFat
+            adjustmentSetValue satUnsat $ 100 * goalSatFat / goalFat
+            adjustmentSetValue monoPoly $ 
+                100 * goalMonoFat / (goalFat - goalSatFat)
+            adjustmentSetValue sodium goalSodium
+            adjustmentSetValue cholesterol goalCholesterol
+            adjustmentSetValue weight goalWeight
+            case goalUnit of
+                Pound -> comboBoxSetActive unit 1
+                _ -> comboBoxSetActive unit 0
+
     GarlicTrackingGoals 
        <$> lift (attrB kcal #value)
        <*> lift (((/ 100) <$$> attrB protein #value))
@@ -89,7 +107,7 @@ goals b = do
        <*> lift (attrB cholesterol #value)
        <*> lift (attrB weight #value)
        <*> unitB unit
-       <*> pure (ioConsumer (const $ return ()))
+       <*> pure (ioConsumer loadGoals)
        <*> labels b
        <*> lift (signalE0 save #clicked)
        <*> lift (signalE0 delete #clicked)

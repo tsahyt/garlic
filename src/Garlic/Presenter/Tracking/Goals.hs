@@ -47,9 +47,8 @@ goalsP gs day startup = do
     deleteGoal `consume` time <@ gs ^. tgDelete
 
     -- Load existing goal on selection
-    do
     daySelect <- plainChanges day
-    goalsE <- fetch getGoals $ unionl [ startup ]
+    goalsE <- fetch getGoals $ unionl [ startup, gs ^. tgSave, gs ^. tgDelete ]
     goalsB <- stepper M.empty goalsE
     gs ^. tgLoadGoal `consume` 
         filterJust ((flip M.lookup <$> goalsB) <@> daySelect)
