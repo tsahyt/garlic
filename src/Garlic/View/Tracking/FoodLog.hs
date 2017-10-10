@@ -48,26 +48,37 @@ data LogRecipe = LogRecipe
 
 data GarlicTrackingFoodLog = GarlicTrackingFoodLog
     { _flInsert :: Consumer LogRecipe
+    , _flClean  :: Consumer ()
     , _flAdding :: Event Meal
+    , _flName   :: Behavior Text
+    , _flAmount :: Behavior Double
     }
 
 foodLog :: Builder -> Garlic GarlicTrackingFoodLog
 foodLog b = do
     list <- castB b "foodLogList" ListBox
-    (e, r) <- buildMeals list
+    (e, r, name, amount) <- buildMeals list
     pure $
         GarlicTrackingFoodLog
             (ioConsumer $ \LogRecipe {..} -> do
                  entry <- newEntry lrName lrKcal lrProtein lrCarbs lrFat
                  addEntry lrMeal entry list r)
+            (ioConsumer $ \_ -> cleanEntries list r)
             e
+            name
+            amount
 
-buildMeals :: ListBox -> Garlic (Event Meal, IORef (M.Map Meal Int))
+buildMeals :: ListBox -> Garlic (Event Meal, IORef (M.Map Meal Int), Behavior Text, Behavior Double)
 buildMeals list = do
     b <- builderNew
     _ <- builderAddFromString b uiLogAdd (-1)
 
     popover <- castB b "popover" Popover
+    name <- castB b "name" SearchEntry
+    nameB <- lift $ attrB name #text
+    servings <- castB b "servingAdjustment" Adjustment
+    servingsB <- lift $ attrB servings #value
+    okButton <- castB b "okButton" Button
 
     btns <- mapM (addHeader list) . map (pack . show) $ allMeals
 
@@ -76,11 +87,27 @@ buildMeals list = do
     forM_ (zip allMeals btns) $ \(meal, btn) ->
         on btn #clicked $ do
             writeIORef popoverMeal meal
+            entrySetText name ""
+            adjustmentSetValue servings 1.0
             popoverSetRelativeTo popover (Just btn)
             popoverPopup popover
 
-    r <- liftIO . newIORef . M.fromList $ zipWith (,) allMeals [0..]
-    pure (never,r)
+    r <- liftIO . newIORef . M.fromList $ zipWith (,) allMeals (repeat 0)
+
+    adding <- lift $ signalEN okButton #clicked $ \h -> do
+                m <- readIORef popoverMeal
+                h m
+    pure (adding,r,nameB,servingsB)
+
+cleanEntries :: MonadIO m => ListBox -> IORef (M.Map Meal Int) -> m ()
+cleanEntries list ref = do
+    open <- liftIO $ M.filter (> 0) <$> readIORef ref
+    unless (M.null open) $ do
+        let x = fromIntegral . succ . fromEnum . head $ M.keys open
+        r <- listBoxGetRowAtIndex list x
+        case r of
+            Nothing -> pure ()
+            Just r' -> containerRemove list r'
 
 addEntry ::
        MonadIO m

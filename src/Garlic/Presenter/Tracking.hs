@@ -10,6 +10,7 @@ import Garlic.View
 import Garlic.View.Tracking
 import Garlic.Presenter.Tracking.Goals
 import Garlic.Presenter.Tracking.WeightLog
+import Garlic.Presenter.Tracking.FoodLog
 import Reactive.Banana
 
 import Garlic.Types
@@ -18,6 +19,8 @@ trackingP :: GarlicApp -> Garlic ()
 trackingP app = do
     active <- stepper FoodLog $ app ^. appVTracking . trackingSwitch
 
+    foodLogP
+        (app ^. appVTracking . trackingFoodLog)
     goalsP 
         (app ^. appVTracking . trackingGoals)
         ((== Goals) <$> active)
