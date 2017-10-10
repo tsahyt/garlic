@@ -19,14 +19,18 @@ import Garlic.View.Tracking.WeightLog
 
 weightLogP ::
        GarlicTrackingWeightLog
+    -> Behavior Bool
     -> Event ()
     -> Consumer [Day]
     -> Behavior Day
     -> Garlic ()
-weightLogP wl startup mark day = do
+weightLogP wl active startup mark day = do
+    activated <- filterE (== True) <$> plainChanges active
     now <- liftIO getCurrentTime
     let load = 
-            timeFrameEnd now <$> unionl [ wl ^. wlShowTime, TimeAll <$ startup ]
+            timeFrameEnd now <$> 
+                unionl [ wl ^. wlShowTime, TimeAll <$ startup
+                       , TimeAll <$ activated ]
     measurements <- fetch getWeightMeasurements load
 
     -- load data for graph
@@ -44,7 +48,7 @@ weightLogP wl startup mark day = do
     -- calendar marks
     let entries = (utctDay . weightMeasurementTimestamp . entityVal) <$$> 
                         measurements
-    mark `consume` entries
+    mark `consume` whenE active entries
 
     -- set input on date select
     dateSel <- plainChanges day

@@ -16,8 +16,16 @@ import Reactive.Banana
 
 import qualified Data.Map as M
 
-goalsP :: GarlicTrackingGoals -> Behavior Day -> Event () -> Garlic ()
-goalsP gs day startup = do
+goalsP ::
+       GarlicTrackingGoals
+    -> Behavior Bool
+    -> Consumer [Day]
+    -> Behavior Day
+    -> Event ()
+    -> Garlic ()
+goalsP gs active mark day startup = do
+    activated <- filterE (== True) <$> plainChanges active
+
     let lbls = gs ^. tgLabels
         time = flip UTCTime 0 <$> day
 
@@ -48,10 +56,14 @@ goalsP gs day startup = do
 
     -- Load existing goal on selection
     daySelect <- plainChanges day
-    goalsE <- fetch getGoals $ unionl [ startup, gs ^. tgSave, gs ^. tgDelete ]
+    goalsE <- fetch getGoals $ unionl 
+                  [ startup, gs ^. tgSave, gs ^. tgDelete, () <$ activated ]
     goalsB <- stepper M.empty goalsE
     gs ^. tgLoadGoal `consume` 
         filterJust ((flip M.lookup <$> goalsB) <@> daySelect)
+
+    -- Load calendar marks
+    mark `consume` whenE active (M.keys <$> goalsE)
 
 currentGoal ::
        GarlicTrackingGoals
