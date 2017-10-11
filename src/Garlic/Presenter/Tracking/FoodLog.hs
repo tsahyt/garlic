@@ -17,15 +17,17 @@ import Garlic.Model
 import Garlic.Data.Meal
 import Garlic.Data.Units
 import Garlic.Data.Nutrition
-import Database.Persist (entityVal)
+import Database.Persist (Entity(..))
 import Reactive.Banana
 import Garlic.Model.Queries
 import Garlic.Types
 import Garlic.View.Tracking.FoodLog
 import Data.Foldable
 
-foodLogP :: GarlicTrackingFoodLog -> Event () -> Garlic ()
-foodLogP fl startup = do
+foodLogP :: GarlicTrackingFoodLog -> Behavior Day -> Event () -> Garlic ()
+foodLogP fl day startup = do
+    let time = UTCTime <$> day <*> pure 0
+
     -- recipe change
     rs <- fetch recipes ("" <$ startup)
 
@@ -34,20 +36,28 @@ foodLogP fl startup = do
 
     -- adding
     let zipName = (\x y -> (y,x)) <$> fl ^. flName
-    newEntry <- fetch recipeShort $ zipName <@> fl ^. flAdding
-    
-    fl ^. flInsert `consume`
-        (shortToLog <$> fl ^. flAmount) <@> filterJust newEntry
+    newEntry <- filterJust <$$> fetch recipeShort $ zipName <@> fl ^. flAdding
 
-shortToLog :: Double -> (Meal, Text, Double, [WeighedIngredient]) -> LogRecipe
-shortToLog f (m, n, y, ws) =
+    let logRecipe = (shortToLog <$> fl ^. flAmount) <@> newEntry
+        foodEntry = (shortToEntry <$> time <*> fl ^. flAmount) <@> newEntry
+    
+    fl ^. flInsert `consume` logRecipe
+    addFoodEntry `consume` foodEntry
+
+shortToLog :: Double -> (Meal, Entity Recipe, [WeighedIngredient]) -> LogRecipe
+shortToLog f (m, r, ws) =
     LogRecipe
     { lrMeal = m
-    , lrName = n
+    , lrName = recipeName . entityVal $ r
     , lrKcal = nlKcal label
     , lrProtein = nlProtein label ^. _x
     , lrCarbs = nlCarbs label ^. _x
     , lrFat = nlFat label ^. _x
     }
   where
-    label = (f / y) *^ foldMap (toLabel defaultReferencePerson) ws
+    label =
+        (f / recipeYield (entityVal r)) *^
+        foldMap (toLabel defaultReferencePerson) ws
+
+shortToEntry :: UTCTime -> Double -> (Meal, Entity Recipe, a) -> FoodEntry
+shortToEntry t amount (m, r, _) = FoodEntry t (entityKey r) amount m

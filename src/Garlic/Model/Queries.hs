@@ -38,7 +38,10 @@ module Garlic.Model.Queries
     -- * Goals
     getGoals,
     addGoal,
-    deleteGoal
+    deleteGoal,
+
+    -- * FoodLog
+    addFoodEntry
 )
 where
 
@@ -123,14 +126,16 @@ ingredientsFor' recipe = do
                      i)
             xs
 
-recipeShort :: Fetcher (Meal, Text) (Maybe (Meal, Text, Double, [WeighedIngredient]))
-recipeShort = dbFetcher $ \(m,t) -> do
-    x <- P.selectFirst [ RecipeName P.==. t ] []
-    case x of
-        Nothing -> pure Nothing
-        Just x' -> do
-            ws <- ingredientsFor' (entityKey x')
-            pure $ Just (m,t,recipeYield . entityVal $ x', ws)
+recipeShort ::
+       Fetcher (Meal, Text) (Maybe (Meal, Entity Recipe, [WeighedIngredient]))
+recipeShort =
+    dbFetcher $ \(m, t) -> do
+        x <- P.selectFirst [RecipeName P.==. t] []
+        case x of
+            Nothing -> pure Nothing
+            Just x' -> do
+                ws <- ingredientsFor' (entityKey x')
+                pure $ Just (m, x', ws)
 
 -- | Select all ingredient names in the DB
 allIngredientNames :: Fetcher () [Text]
@@ -235,3 +240,6 @@ addGoal =
 deleteGoal :: Consumer UTCTime
 deleteGoal =
     dbConsumer $ \t -> do P.deleteWhere [GoalTimestamp P.==. t]
+
+addFoodEntry :: Consumer FoodEntry
+addFoodEntry = dbConsumer $ \e -> P.insert_ e
