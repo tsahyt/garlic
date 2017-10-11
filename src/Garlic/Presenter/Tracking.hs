@@ -21,6 +21,7 @@ trackingP app = do
 
     foodLogP
         (app ^. appVTracking . trackingFoodLog)
+        (app ^. appStartup)
     goalsP 
         (app ^. appVTracking . trackingGoals)
         ((== Goals) <$> active)

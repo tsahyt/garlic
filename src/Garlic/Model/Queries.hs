@@ -3,8 +3,6 @@
 {-# LANGUAGE RecordWildCards #-}
 module Garlic.Model.Queries
 (
-    recipes,
-    ingredientsFor,
     WeighedIngredient (..),
     fromIngredient,
     wingrAmount,
@@ -15,9 +13,14 @@ module Garlic.Model.Queries
     wingrGroup,
 
     -- * Recipes
+    recipes,
+    ingredientsFor,
     newRecipe,
     updateRecipe,
     deleteRecipe,
+
+    -- * Recipes for FoodLog
+    recipeShort,
 
     -- * Ingredients
     allIngredientNames,
@@ -42,6 +45,7 @@ where
 import Control.Lens.TH
 import Garlic.Data.Units
 import Garlic.Model
+import Garlic.Data.Meal
 import Garlic.Types
 import Data.List (sortBy)
 import Data.Foldable
@@ -85,7 +89,7 @@ makeLenses ''WeighedIngredient
 -- from the database. The query is done in two steps, once for all recipes, then
 -- as a loop over those recipes, rather than joining and then collapsing by
 -- recipe.
-recipes :: Fetcher (Text) (Seq (Entity Recipe))
+recipes :: Fetcher Text (Seq (Entity Recipe))
 recipes = dbFetcher $ \str -> do
     let str' = flip T.snoc '%' . T.cons '%' $ str
     rs <- select $ 
@@ -96,7 +100,10 @@ recipes = dbFetcher $ \str -> do
 
 -- | Select all weighted ingredients for some recipe
 ingredientsFor :: Fetcher (Key Recipe) [WeighedIngredient]
-ingredientsFor = dbFetcher $ \recipe -> do
+ingredientsFor = dbFetcher ingredientsFor'
+
+ingredientsFor' :: Key Recipe -> SqlPersistT IO [WeighedIngredient]
+ingredientsFor' recipe = do
     xs <- select $
             from $ \(h,i) -> do
                 where_ (h ^. RecipeHasRecipe ==. val recipe
@@ -104,11 +111,26 @@ ingredientsFor = dbFetcher $ \recipe -> do
 
                 return (h, i)
 
-    pure $ map 
-        (\(Entity _ (RecipeHas{..}), i) ->
-            WeighedIngredient recipeHasAmount recipeHasUnit recipeHasOptional recipeHasDisplay recipeHasGroup i
-        )
-        xs
+    pure $
+        map
+            (\(Entity _ (RecipeHas {..}), i) ->
+                 WeighedIngredient
+                     recipeHasAmount
+                     recipeHasUnit
+                     recipeHasOptional
+                     recipeHasDisplay
+                     recipeHasGroup
+                     i)
+            xs
+
+recipeShort :: Fetcher (Meal, Text) (Maybe (Meal, Text, Double, [WeighedIngredient]))
+recipeShort = dbFetcher $ \(m,t) -> do
+    x <- P.selectFirst [ RecipeName P.==. t ] []
+    case x of
+        Nothing -> pure Nothing
+        Just x' -> do
+            ws <- ingredientsFor' (entityKey x')
+            pure $ Just (m,t,recipeYield . entityVal $ x', ws)
 
 -- | Select all ingredient names in the DB
 allIngredientNames :: Fetcher () [Text]

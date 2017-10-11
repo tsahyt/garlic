@@ -7,6 +7,7 @@ module Garlic.Data.Nutrition
     NVec (..),
     NutritionLabel (..),
     getNutrition,
+    toLabel,
 )
 where
 

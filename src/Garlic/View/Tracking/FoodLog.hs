@@ -3,10 +3,17 @@
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE OverloadedLabels #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 module Garlic.View.Tracking.FoodLog 
 (
     LogRecipe (..),
     GarlicTrackingFoodLog,
+    flInsert,
+    flClean,
+    flAdding,
+    flName,
+    flAmount,
+    flLoadRecipes,
     foodLog
 ) 
 where
@@ -47,17 +54,18 @@ data LogRecipe = LogRecipe
     } deriving (Eq, Show, Ord, Read)
 
 data GarlicTrackingFoodLog = GarlicTrackingFoodLog
-    { _flInsert :: Consumer LogRecipe
-    , _flClean  :: Consumer ()
-    , _flAdding :: Event Meal
-    , _flName   :: Behavior Text
-    , _flAmount :: Behavior Double
+    { _flInsert      :: Consumer LogRecipe
+    , _flClean       :: Consumer ()
+    , _flAdding      :: Event Meal
+    , _flName        :: Behavior Text
+    , _flAmount      :: Behavior Double
+    , _flLoadRecipes :: Consumer [Text]
     }
 
 foodLog :: Builder -> Garlic GarlicTrackingFoodLog
 foodLog b = do
     list <- castB b "foodLogList" ListBox
-    (e, r, name, amount) <- buildMeals list
+    (e, r, name, amount, load) <- buildMeals list
     pure $
         GarlicTrackingFoodLog
             (ioConsumer $ \LogRecipe {..} -> do
@@ -67,23 +75,27 @@ foodLog b = do
             e
             name
             amount
+            load
 
 buildMeals ::
        ListBox
     -> Garlic ( Event Meal
               , IORef (M.Map Meal Int)
               , Behavior Text
-              , Behavior Double)
+              , Behavior Double
+              , Consumer [Text] )
 buildMeals list = do
     b <- builderNew
     _ <- builderAddFromString b uiLogAdd (-1)
 
     popover <- castB b "popover" Popover
-    name <- castB b "name" SearchEntry
+    name <- castB b "name" Entry
     nameB <- lift $ attrB name #text
     servings <- castB b "servingAdjustment" Adjustment
     servingsB <- lift $ attrB servings #value
     okButton <- castB b "okButton" Button
+
+    _ <- on okButton #clicked $ popoverPopdown popover
 
     btns <- mapM (addHeader list) . map (pack . show) $ allMeals
 
@@ -101,7 +113,30 @@ buildMeals list = do
 
     adding <- lift $ signalEN okButton #clicked $ \h ->
                 readIORef popoverMeal >>= h
-    pure (adding,r,nameB,servingsB)
+
+    compl <- castB b "recipeCompletion" EntryCompletion
+    loadCompl <- completion compl
+
+    pure (adding,r,nameB,servingsB,loadCompl)
+
+completion :: EntryCompletion -> Garlic (Consumer [Text])
+completion comp = do
+    model <- listStoreNew [ gtypeString ]
+    entryCompletionSetModel comp (Just model)
+
+    trender <- new CellRendererText []
+    Just area <- get comp #cellArea
+    cellLayoutPackStart area trender True
+    cellLayoutAddAttribute area trender "text" 0
+
+    let load xs = do
+            listStoreClear model
+            forM_ xs $ \(x :: Text) -> do
+                iter <- listStoreAppend model
+                x' <- toGValue (Just x)
+                listStoreSetValue model iter 0 x'
+
+    pure $ ioConsumer load
 
 cleanEntries :: MonadIO m => ListBox -> IORef (M.Map Meal Int) -> m ()
 cleanEntries list ref = do
@@ -129,12 +164,11 @@ addEntry ::
     -> ListBox
     -> IORef (M.Map Meal Int)
     -> m ()
-addEntry m r l ref =
-    M.lookup m <$> liftIO (readIORef ref) >>= \case
-        Nothing -> pure ()
-        Just p -> do
-            listBoxInsert l r (fromIntegral p)
-            liftIO $ modifyIORef ref (M.adjust succ m)
+addEntry m r l ref = do
+    before <- takeWhile ((/= m) . fst) . M.toList <$> liftIO (readIORef ref)
+    let p = sum . map (\(_,x) -> succ x) $ before
+    listBoxInsert l r (fromIntegral p + 1)
+    liftIO $ modifyIORef ref (M.adjust succ m)
 
 addHeader :: MonadIO m => ListBox -> Text -> m Button
 addHeader list t = do
@@ -182,3 +216,6 @@ newEntry t kcal protein carbs fat = do
 
 fmtDouble :: Bool -> Double -> Text
 fmtDouble g x = pack $ printf "%.1f%s" x (if g then "g" else [])
+
+-- LENSES
+makeGetters ''GarlicTrackingFoodLog
