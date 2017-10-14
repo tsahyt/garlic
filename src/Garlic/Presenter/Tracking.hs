@@ -19,14 +19,14 @@ trackingP :: GarlicApp -> Garlic ()
 trackingP app = do
     active <- stepper FoodLog $ app ^. appVTracking . trackingSwitch
 
-    foodLogP
-        (app ^. appVTracking . trackingFoodLog)
-        (app ^. appVTracking . trackingDate)
-        (app ^. appStartup)
-    goalsP 
+    g <- goalsP 
         (app ^. appVTracking . trackingGoals)
         ((== Goals) <$> active)
         (app ^. appVTracking . trackingMarks)
+        (app ^. appVTracking . trackingDate)
+        (app ^. appStartup)
+    foodLogP
+        (app ^. appVTracking . trackingFoodLog)
         (app ^. appVTracking . trackingDate)
         (app ^. appStartup)
     weightLogP

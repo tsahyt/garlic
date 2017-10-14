@@ -8,10 +8,12 @@ where
 import Control.Lens
 import Data.Text (Text, pack)
 import Data.Time
+import Data.Time.Clock.POSIX
 import Garlic.Model
 import Garlic.Model.Queries
 import Garlic.Types
 import Garlic.View.Tracking.Goals
+import Garlic.Data.Units
 import Reactive.Banana
 
 import qualified Data.Map as M
@@ -22,7 +24,7 @@ goalsP ::
     -> Consumer [Day]
     -> Behavior Day
     -> Event ()
-    -> Garlic ()
+    -> Garlic (Behavior Goal)
 goalsP gs active mark day startup = do
     activated <- filterE (== True) <$> plainChanges active
 
@@ -64,6 +66,29 @@ goalsP gs active mark day startup = do
 
     -- Load calendar marks
     mark `consume` whenE active (M.keys <$> goalsE)
+
+    -- Determine current goal
+    pure $ goalAt <$> day <*> goalsB
+
+goalAt :: Day -> M.Map Day Goal -> Goal
+goalAt today m = maybe defaultGoal snd $ M.lookupLE today m
+  where
+    defaultGoal =
+        Goal
+        { goalTimestamp = posixSecondsToUTCTime 0
+        , goalKcal = 2000
+        , goalProtein = 150
+        , goalCarbs = 175
+        , goalSugar = 52.5
+        , goalFat = 77.8
+        , goalSatFat = 37.8
+        , goalMonoFat = 20
+        , goalPolyFat = 20
+        , goalSodium = 2000
+        , goalCholesterol = 500
+        , goalWeight = 75
+        , goalUnit = Kilogram
+        }
 
 currentGoal ::
        GarlicTrackingGoals
