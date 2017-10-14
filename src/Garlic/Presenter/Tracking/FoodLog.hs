@@ -45,6 +45,8 @@ foodLogP fl day startup = do
     fl ^. flInsert `consume` logRecipe
     addFoodEntry `consume` foodEntry
 
+    -- deletion
+    stdout `consume` show <$> fl ^. flDelete
     -- reload on day change
     reload <- fetch getFoodEntries =<< plainChanges time
     fl ^. flClean `consume` () <$ reload
