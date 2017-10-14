@@ -41,11 +41,13 @@ module Garlic.Model.Queries
     deleteGoal,
 
     -- * FoodLog
-    addFoodEntry
+    addFoodEntry,
+    getFoodEntries
 )
 where
 
 import Control.Lens.TH
+import Control.Monad
 import Garlic.Data.Units
 import Garlic.Model
 import Garlic.Data.Meal
@@ -243,3 +245,13 @@ deleteGoal =
 
 addFoodEntry :: Consumer FoodEntry
 addFoodEntry = dbConsumer $ \e -> P.insert_ e
+
+getFoodEntries :: Fetcher UTCTime [(FoodEntry, Recipe, [WeighedIngredient])]
+getFoodEntries =
+    dbFetcher $ \t -> do
+        xs <- P.selectList [FoodEntryTimestamp P.==. t] []
+        forM (map entityVal xs) $ \x -> do
+            let k = foodEntryRecipe x
+            r <- getJust k
+            is <- ingredientsFor' k
+            pure (x,r,is)
