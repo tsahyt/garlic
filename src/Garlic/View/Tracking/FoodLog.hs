@@ -33,9 +33,11 @@ import Data.Int
 import Text.Printf
 
 import qualified Data.Map as M
+import qualified Data.ListMap as L
 
 import Garlic.Types
 import Garlic.Data.Meal
+import Garlic.Model (FoodEntryId)
 
 uiLogHeader :: Text
 uiLogHeader = decodeUtf8 $(embedFile "res/log-header.ui")
@@ -53,6 +55,7 @@ data LogRecipe = LogRecipe
     , lrProtein :: Double
     , lrCarbs :: Double
     , lrFat :: Double
+    --, lrKey :: FoodEntryId
     } deriving (Eq, Show, Ord, Read)
 
 data GarlicTrackingFoodLog = GarlicTrackingFoodLog
@@ -67,10 +70,10 @@ data GarlicTrackingFoodLog = GarlicTrackingFoodLog
 
 foodLog :: Builder -> Garlic GarlicTrackingFoodLog
 foodLog b = do
-    mref <- liftIO $ newIORef M.empty
+    mref <- liftIO $ newIORef []
     list <- castB b "foodLogList" ListBox
     (e, pref, name, amount, load) <- buildMeals list
-    del <- deletion b list mref
+    del <- deletion b list pref mref
     pure $
         GarlicTrackingFoodLog
             (ioConsumer $ \lr@LogRecipe {..} -> do
@@ -86,18 +89,23 @@ foodLog b = do
 deletion ::
        Builder
     -> ListBox
-    -> IORef (M.Map Int32 LogRecipe)
+    -> IORef (M.Map Meal Int)
+    -> IORef [Either Meal LogRecipe]
     -> Garlic (Event LogRecipe)
-deletion b list mref = do
+deletion b list pref mref = do
     btn <- castB b "foodLogDelete" Button
     lift $
         signalEN btn #clicked $ \h -> do
             m <- readIORef mref
             row <- listBoxGetSelectedRow list
-            idx <- listBoxRowGetIndex row
-            case idx `M.lookup` m of
-                Nothing -> pure ()
-                Just lr -> h lr
+            idx <- fromIntegral <$> listBoxRowGetIndex row
+            case L.atMay idx m of
+                Just (Right lr) -> do
+                    containerRemove list row
+                    modifyIORef pref (M.adjust pred (lrMeal lr))
+                    modifyIORef mref (L.delete idx)
+                    h lr
+                _ -> pure ()
 
 buildMeals ::
        ListBox
@@ -164,14 +172,14 @@ cleanEntries ::
        MonadIO m
     => ListBox
     -> IORef (M.Map Meal Int)
-    -> IORef (M.Map Int32 LogRecipe)
+    -> IORef [Either Meal LogRecipe]
     -> m ()
 cleanEntries list pref mref = do
     m <- liftIO $ readIORef pref
     m' <- go m
     liftIO $ do
         writeIORef pref m'
-        writeIORef mref M.empty
+        writeIORef mref (map Left allMeals)
   where
     go m = do
         let open = M.filter (> 0) m
@@ -193,7 +201,7 @@ addEntry ::
     -> ListBoxRow
     -> ListBox
     -> IORef (M.Map Meal Int)
-    -> IORef (M.Map Int32 LogRecipe)
+    -> IORef [Either Meal LogRecipe]
     -> m ()
 addEntry lr m row l pref mref = do
     before <- takeWhile ((/= m) . fst) . M.toList <$> liftIO (readIORef pref)
@@ -201,7 +209,7 @@ addEntry lr m row l pref mref = do
     listBoxInsert l row p
     liftIO $ do
         modifyIORef pref (M.adjust succ m)
-        modifyIORef mref (M.insert p lr)
+        modifyIORef mref (L.insert (fromIntegral p) (Right lr))
 
 addHeader :: MonadIO m => ListBox -> Text -> m Button
 addHeader list t = do

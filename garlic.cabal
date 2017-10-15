@@ -18,7 +18,8 @@ cabal-version:       >=1.10
 
 library
   hs-source-dirs:      src
-  exposed-modules:     Garlic
+  exposed-modules:     Data.ListMap
+                       Garlic
                        Garlic.Model
                        Garlic.Model.CSV
                        Garlic.Model.Queries
