@@ -55,7 +55,7 @@ data LogRecipe = LogRecipe
     , lrProtein :: Double
     , lrCarbs :: Double
     , lrFat :: Double
-    --, lrKey :: FoodEntryId
+    , lrKey :: FoodEntryId
     } deriving (Eq, Show, Ord, Read)
 
 data GarlicTrackingFoodLog = GarlicTrackingFoodLog

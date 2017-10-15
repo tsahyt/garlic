@@ -42,7 +42,8 @@ module Garlic.Model.Queries
 
     -- * FoodLog
     addFoodEntry,
-    getFoodEntries
+    getFoodEntries,
+    deleteFoodEntry,
 )
 where
 
@@ -243,15 +244,24 @@ deleteGoal :: Consumer UTCTime
 deleteGoal =
     dbConsumer $ \t -> do P.deleteWhere [GoalTimestamp P.==. t]
 
-addFoodEntry :: Consumer FoodEntry
-addFoodEntry = dbConsumer $ \e -> P.insert_ e
+addFoodEntry :: Fetcher FoodEntry (Entity FoodEntry, Recipe, [WeighedIngredient])
+addFoodEntry = dbFetcher $ \e -> do
+    x <- P.insertEntity e
+    let k = foodEntryRecipe (entityVal x)
+    r <- getJust k
+    is <- ingredientsFor' k
+    pure (x, r, is)
 
-getFoodEntries :: Fetcher UTCTime [(FoodEntry, Recipe, [WeighedIngredient])]
+getFoodEntries ::
+       Fetcher UTCTime [(Entity FoodEntry, Recipe, [WeighedIngredient])]
 getFoodEntries =
     dbFetcher $ \t -> do
         xs <- P.selectList [FoodEntryTimestamp P.==. t] []
-        forM (map entityVal xs) $ \x -> do
-            let k = foodEntryRecipe x
+        forM xs $ \x -> do
+            let k = foodEntryRecipe (entityVal x)
             r <- getJust k
             is <- ingredientsFor' k
-            pure (x,r,is)
+            pure (x, r, is)
+
+deleteFoodEntry :: Consumer (Key FoodEntry)
+deleteFoodEntry = dbConsumer $ \k -> P.delete k

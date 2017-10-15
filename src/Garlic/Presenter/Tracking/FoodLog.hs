@@ -35,42 +35,39 @@ foodLogP fl day startup = do
     fl ^. flLoadRecipes `consume` (map (recipeName . entityVal) . toList) <$> rs
 
     -- adding
-    let zipName = (\x y -> (y,x)) <$> fl ^. flName
+    let zipName = (\x y -> (y, x)) <$> fl ^. flName
     newEntry <- filterJust <$$> fetch recipeShort $ zipName <@> fl ^. flAdding
-
-    let logRecipe = (shortToLog <$> fl ^. flAmount) <@> 
-                        (over _2 entityVal <$> newEntry)
-        foodEntry = (shortToEntry <$> time <*> fl ^. flAmount) <@> newEntry
-    
-    fl ^. flInsert `consume` logRecipe
-    addFoodEntry `consume` foodEntry
-
-    -- deletion
-    stdout `consume` show <$> fl ^. flDelete
+    foodEntry <-
+        fetch addFoodEntry $
+        (shortToEntry <$> time <*> fl ^. flAmount) <@> newEntry
 
     -- reload on day change
     reload <- fetch getFoodEntries =<< plainChanges time
     fl ^. flClean `consume` () <$ reload
-    consume (fl ^. flInsert) =<< (\(e,r,is) -> entryToLog e r is) <$$> 
-        spread reload
 
-shortToLog :: Double -> (Meal, Recipe, [WeighedIngredient]) -> LogRecipe
-shortToLog f (m, r, ws) =
+    -- list insertion
+    reloadIns <- spread reload
+    fl ^. flInsert `consume` (\(e, r, is) -> entryToLog r is e) <$>
+        unionl [reloadIns, foodEntry]
+
+    -- db deletion
+    deleteFoodEntry `consume` lrKey <$> fl ^. flDelete
+
+shortToEntry :: UTCTime -> Double -> (Meal, Entity Recipe, a) -> FoodEntry
+shortToEntry t amount (m, r, _) = FoodEntry t (entityKey r) amount m
+
+entryToLog :: Recipe -> [WeighedIngredient] -> Entity FoodEntry -> LogRecipe
+entryToLog r is e =
     LogRecipe
-    { lrMeal = m
+    { lrMeal = foodEntryMeal (entityVal e)
     , lrName = recipeName r
     , lrKcal = nlKcal label
     , lrProtein = nlProtein label ^. _x
     , lrCarbs = nlCarbs label ^. _x
     , lrFat = nlFat label ^. _x
+    , lrKey = entityKey e
     }
   where
     label =
-        (f / recipeYield r) *^
-        foldMap (toLabel defaultReferencePerson) ws
-
-shortToEntry :: UTCTime -> Double -> (Meal, Entity Recipe, a) -> FoodEntry
-shortToEntry t amount (m, r, _) = FoodEntry t (entityKey r) amount m
-
-entryToLog :: FoodEntry -> Recipe -> [WeighedIngredient] -> LogRecipe
-entryToLog e r is = shortToLog (foodEntryAmount e) (foodEntryMeal e, r, is) 
+        (foodEntryAmount (entityVal e) / recipeYield r) *^
+        foldMap (toLabel defaultReferencePerson) is
