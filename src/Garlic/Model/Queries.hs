@@ -44,9 +44,13 @@ module Garlic.Model.Queries
     addFoodEntry,
     getFoodEntries,
     deleteFoodEntry,
+
+    -- * Nutrition Summary
+    getNutritionSummary
 )
 where
 
+import Control.Lens (over)
 import Control.Lens.TH
 import Control.Monad
 import Garlic.Data.Units
@@ -270,5 +274,16 @@ getFoodEntries =
         xs <- P.selectList [FoodEntryTimestamp P.==. t] []
         mapM entryShort xs
 
-deleteFoodEntry :: Consumer (Key FoodEntry)
-deleteFoodEntry = dbConsumer $ \k -> P.delete k
+deleteFoodEntry :: Fetcher (Key FoodEntry) ()
+deleteFoodEntry = dbFetcher $ \k -> P.delete k >> pure ()
+
+getNutritionSummary :: Fetcher UTCTime [WeighedIngredient]
+getNutritionSummary = dbFetcher $ \t -> do
+    rs <- select $ 
+          from $ \(e `InnerJoin` r) -> do
+            on (e ^. FoodEntryRecipe ==. r ^. RecipeId)
+            where_ (e ^. FoodEntryTimestamp ==. val t)
+            pure r
+
+    is <- mapM (ingredientsFor' . entityKey) rs
+    pure []

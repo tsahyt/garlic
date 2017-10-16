@@ -11,6 +11,7 @@ import Garlic.View.Tracking
 import Garlic.Presenter.Tracking.Goals
 import Garlic.Presenter.Tracking.WeightLog
 import Garlic.Presenter.Tracking.FoodLog
+import Garlic.Presenter.Tracking.Nutrition
 import Reactive.Banana
 
 import Garlic.Types
@@ -25,7 +26,7 @@ trackingP app = do
         (app ^. appVTracking . trackingMarks)
         (app ^. appVTracking . trackingDate)
         (app ^. appStartup)
-    foodLogP
+    r <- foodLogP
         (app ^. appVTracking . trackingFoodLog)
         (app ^. appVTracking . trackingDate)
         (app ^. appStartup)
@@ -35,3 +36,7 @@ trackingP app = do
         (app ^. appStartup)
         (app ^. appVTracking . trackingMarks)
         (app ^. appVTracking . trackingDate)
+    nutritionP
+        (app ^. appVTracking . trackingNutrition)
+        r
+        g

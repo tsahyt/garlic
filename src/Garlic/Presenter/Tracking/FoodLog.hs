@@ -19,7 +19,8 @@ import Garlic.Types
 import Garlic.View.Tracking.FoodLog
 import Data.Foldable
 
-foodLogP :: GarlicTrackingFoodLog -> Behavior Day -> Event () -> Garlic ()
+foodLogP ::
+       GarlicTrackingFoodLog -> Behavior Day -> Event () -> Garlic (Event ())
 foodLogP fl day startup = do
     let time = UTCTime <$> day <*> pure 0
 
@@ -46,7 +47,10 @@ foodLogP fl day startup = do
         unionl [reloadIns, foodEntry]
 
     -- db deletion
-    deleteFoodEntry `consume` lrKey <$> fl ^. flDelete
+    deleted <- fetch deleteFoodEntry $ lrKey <$> fl ^. flDelete
+
+    -- emit changed event
+    pure $ unionl [ () <$ reload, () <$ foodEntry, deleted ]
 
 shortToEntry :: UTCTime -> Double -> (Meal, Entity Recipe, a) -> FoodEntry
 shortToEntry t amount (m, r, _) = FoodEntry t (entityKey r) amount m
