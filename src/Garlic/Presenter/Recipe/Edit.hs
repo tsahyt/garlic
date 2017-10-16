@@ -1,8 +1,6 @@
-{-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecursiveDo #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE TupleSections #-}
 module Garlic.Presenter.Recipe.Edit
 (
     recipeEditP
@@ -68,9 +66,8 @@ recipeEditP app selected = do
         (new <:> entered)
 
     -- Recipe Entity, only Just when there is also a previous selection
-    let recipeEntity = getCompose $ 
-            (Entity <$> Compose key 
-                    <*> Compose (Just <$> recipe))
+    let recipeEntity =
+            getCompose (Entity <$> Compose key <*> Compose (Just <$> recipe))
     
     -- Save on Store Click, or do nothing when there was no selection
     storeE <- fetch (fetchThrough ingredients) 
@@ -174,13 +171,12 @@ ingredientList ilist selected new = mdo
                        (view wingrGroup w)
                        (view wingrOptional w)
 
-        toWI e i = WeighedIngredient
+        toWI e   = WeighedIngredient
                        (eiAmount e)
                        (eiUnit e)
                        (eiOptional e)
                        (eiDisplay e)
                        (eiGroup e)
-                       i
         
     -- Replace ingredient list on new selection
     ((() >$ ilist ^. ilClear) <> ilist ^. ilAppend) `consume` 

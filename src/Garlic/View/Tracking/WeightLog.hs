@@ -108,8 +108,7 @@ weightChart da = do
     refSel <- liftIO $ newIORef Nothing
     _ <-
         on da #draw $ \ctx -> do
-            w <- fromIntegral <$> widgetGetAllocatedWidth da
-            h <- fromIntegral <$> widgetGetAllocatedHeight da
+            (w,h) <- dimensions da
             pts <- readIORef refPts
             sel <- readIORef refSel
             renderWithContext ctx $ runCairo (w, h) (chartWeight sel pts)

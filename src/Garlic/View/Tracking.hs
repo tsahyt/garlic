@@ -80,7 +80,7 @@ viewSwitch :: Builder -> Garlic (Event GarlicTrackingStack)
 viewSwitch b = do
     sidebar <- castB b "sidebar" StackSidebar
     stack   <- castB b "trackingStack" Stack
-    (e, h) <- lift $ newEvent
+    (e, h) <- lift newEvent
 
     _ <- on sidebar #buttonReleaseEvent $ \_ -> do
             name <- stackGetVisibleChildName stack
@@ -92,7 +92,7 @@ viewSwitch b = do
                 _ -> pure ()
             return True
 
-    pure $ e
+    pure e
 
 calendar :: Builder -> Garlic (Behavior Day)
 calendar b = do
@@ -119,7 +119,7 @@ marks b = do
                 ms    = [ gregorianDay x | x <- ds, start <= x, x < end ]
             -- redo marks
             calendarClearMarks cal
-            mapM_ (\d -> calendarMarkDay cal (fromIntegral d)) ms
+            mapM_ (calendarMarkDay cal . fromIntegral) ms
 
     _ <- on cal #daySelected mark
     

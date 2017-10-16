@@ -12,6 +12,7 @@ import Control.Lens
 import Control.Monad
 import Data.FileEmbed
 import Data.List (sortBy)
+import Data.Maybe (fromMaybe)
 import Data.Monoid
 import Data.Ord
 import Data.Text (Text)
@@ -71,7 +72,7 @@ recipeDisplayP app selected = do
     -- Display on changes
     consume (disp ^. loadInstructions) .
         fmap ((uncurry . uncurry) fullInstructions 
-            . (over (_1 . _1) entityVal)) =<< plainChanges display
+            . over (_1 . _1) entityVal) =<< plainChanges display
     
     where fromSel (a,b) = 
               let n = getNutrition defaultReferencePerson (entityVal a) b
@@ -87,7 +88,7 @@ fullInstructions
     -> [WeighedIngredient] 
     -> Html
 fullInstructions r lbl is = do
-    H.style (text $ recipeStyle)
+    H.style (text recipeStyle)
     H.div ! A.class_ "main" $ do
         H.h1 (text $ recipeName r)
         recipeHead r
@@ -143,21 +144,21 @@ makeListing =
                       else (Just g', Entry w : GroupHead g' : xs)
 
 ingredientList :: [WeighedIngredient] -> Html
-ingredientList is = H.ul ! A.id "ingredients" $
-    forM_ (makeListing is) $ \case
+ingredientList is =
+    H.ul ! A.id "ingredients" $ forM_ (makeListing is) $ \case
         Back -> H.li H.br
-        GroupHead t ->
-            H.li ! A.class_ "group-head" $ text t
+        GroupHead t -> H.li ! A.class_ "group-head" $ text t
         Entry i -> do
             let a = i ^. wingrAmount
                 u = i ^. wingrUnit
                 o = i ^. wingrOptional
-                n = case i ^. wingrDisp of
-                        Nothing -> abbreviateName 2 $ 
-                            i ^. wingrIngr . to entityVal . to ingredientName
-                        Just x  -> x
+                n =
+                    fromMaybe
+                        (abbreviateName 2 $ i ^. wingrIngr . to entityVal .
+                         to ingredientName)
+                        (i ^. wingrDisp)
             H.li $ do
-                text $ (prettyFloat 2 a) <> " " <> (prettyUnit u) <> " " <> n
+                text $ prettyFloat 2 a <> " " <> prettyUnit u <> " " <> n
                 when o $ H.span ! A.class_ "opt-ingr" $ " (optional)"
 
 -- | Prettier float rendering. Will give at most @d@ digits of precision after

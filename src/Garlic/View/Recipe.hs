@@ -51,7 +51,7 @@ data GarlicViewRecipes = GarlicViewRecipes
     , _vrRecipeList    :: GarlicRecipes
     }
 
-viewRecipes :: (Garlic EntryCompletion) -> Stack -> Garlic GarlicViewRecipes
+viewRecipes :: Garlic EntryCompletion -> Stack -> Garlic GarlicViewRecipes
 viewRecipes newCompl stack = do
     b <- builderNew
     _ <- builderAddFromString b uiViewRecipes (-1)

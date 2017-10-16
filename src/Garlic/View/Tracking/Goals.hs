@@ -97,12 +97,12 @@ goals b = do
 
     GarlicTrackingGoals 
        <$> lift (attrB kcal #value)
-       <*> lift (((/ 100) <$$> attrB protein #value))
-       <*> lift (((/ 100) <$$> attrB carbs #value))
-       <*> lift (((/ 100) <$$> attrB sugars #value))
-       <*> lift (((/ 100) <$$> attrB fat #value))
-       <*> lift (((/ 100) <$$> attrB satUnsat #value))
-       <*> lift (((/ 100) <$$> attrB monoPoly #value))
+       <*> lift ((/ 100) <$$> attrB protein #value)
+       <*> lift ((/ 100) <$$> attrB carbs #value)
+       <*> lift ((/ 100) <$$> attrB sugars #value)
+       <*> lift ((/ 100) <$$> attrB fat #value)
+       <*> lift ((/ 100) <$$> attrB satUnsat #value)
+       <*> lift ((/ 100) <$$> attrB monoPoly #value)
        <*> lift (attrB sodium #value)
        <*> lift (attrB cholesterol #value)
        <*> lift (attrB weight #value)

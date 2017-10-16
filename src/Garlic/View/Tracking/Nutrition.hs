@@ -165,8 +165,7 @@ pieChart da = do
     ref <- liftIO $ newIORef Nothing
     _ <-
         on da #draw $ \ctx -> do
-            w <- fromIntegral <$> widgetGetAllocatedWidth da
-            h <- fromIntegral <$> widgetGetAllocatedHeight da
+            (w,h) <- dimensions da
             dat <- readIORef ref
             let p = maybe 30 nsumProtein dat
                 c = maybe 35 nsumCarbs dat
@@ -180,8 +179,7 @@ historyChart da = do
     ref <- liftIO $ newIORef []
     _ <-
         on da #draw $ \ctx -> do
-            w <- fromIntegral <$> widgetGetAllocatedWidth da
-            h <- fromIntegral <$> widgetGetAllocatedHeight da
+            (w,h) <- dimensions da
             dat <- readIORef ref
             renderWithContext ctx $ runCairo (w, h) (chartPastIntake dat)
             pure False

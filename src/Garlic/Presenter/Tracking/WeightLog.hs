@@ -53,7 +53,7 @@ weightLogP wl active startup mark day = do
     -- set input on date select
     dateSel <- plainChanges day
     measurementsB <- stepper [] (map entityVal <$> measurements)
-    let select = (\x y -> selectMeasure y x) <$> measurementsB
+    let select = flip selectMeasure <$> measurementsB
         selected = select <@> dateSel
     wl ^. wlSetInput `consume` measureInput <$> selected
     wl ^. wlSetSelected `consume` selected

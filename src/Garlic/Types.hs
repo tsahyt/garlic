@@ -1,5 +1,3 @@
-{-# LANGUAGE GeneralizedNewtypeDeriving #-}
-{-# LANGUAGE TupleSections #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 {-# OPTIONS_GHC -fno-warn-missing-signatures #-}
 module Garlic.Types
@@ -115,7 +113,7 @@ instance Profunctor Fetcher where
          in g <$$> fetch k b
 
 instance Category Fetcher where
-    id = Fetcher $ pure
+    id = Fetcher pure
     a . b = Fetcher $ fetch a <=< fetch b
 
 -- | Can be used to register new handlers/events dynamically in a fetcher.
@@ -145,14 +143,14 @@ makeGetters = makeLensesWith (set generateUpdateableOptics False lensRules)
 
 -- | Left-biased union
 (<:>) :: Event a -> Event a -> Event a
-a <:> b = unionWith (\x _ -> x) a b
+a <:> b = unionWith const a b
 infixr 2 <:>
 
 plainChanges :: Behavior a -> Garlic (Event a)
 plainChanges b = lift $ do
     (e, handle) <- newEvent
     eb <- changes b
-    reactimate' $ (fmap handle) <$> eb
+    reactimate' $ fmap handle <$> eb
     return e
 
 (<$$>) :: (Functor f, Functor g) => (a -> b) -> f (g a) -> f (g b)
@@ -161,7 +159,7 @@ f <$$> x = getCompose . fmap f . Compose $ x
 (<$$) :: (Functor f, Functor g) => b -> f (g a) -> f (g b)
 f <$$ x = getCompose . (f <$) . Compose $ x
 
-mtext :: Text -> Maybe (Text)
+mtext :: Text -> Maybe Text
 mtext x  = if T.null x then Nothing else Just x
 
 parseNum :: (Num a, Read a) => Text -> a
@@ -173,7 +171,7 @@ parseNum = fromMaybe 0 . readMaybe . T.unpack
 spread :: Event [a] -> Garlic (Event a)
 spread evs = lift $ do
     (e, handle) <- newEvent 
-    reactimate $ (mapM_ handle) <$> evs
+    reactimate $ mapM_ handle <$> evs
     pure e
 
 delay :: Event a -> Garlic (Event a)

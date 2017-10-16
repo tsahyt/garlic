@@ -56,7 +56,7 @@ chartPastIntake xs = do
     layout_legend .= Nothing
     layout_background . fill_color .= transparent
     setColors [opaque orange]
-    plot $ fmap plotBars $ bars ["kcal"] (map go xs)
+    plot $ plotBars <$> bars ["kcal"] (map go xs)
     return ()
   where
     go (t, v) = (utcToLocalTime utc t, [v])

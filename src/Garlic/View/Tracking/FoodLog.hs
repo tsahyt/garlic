@@ -29,7 +29,6 @@ import Data.Text (Text, pack)
 import Data.IORef
 import Data.Text.Encoding (decodeUtf8)
 import Data.FileEmbed
-import Data.Int
 import Text.Printf
 
 import qualified Data.Map as M
@@ -127,7 +126,7 @@ buildMeals list = do
 
     _ <- on okButton #clicked $ popoverPopdown popover
 
-    btns <- mapM (addHeader list) . map (pack . show) $ allMeals
+    btns <- mapM (addHeader list . pack . show) allMeals
 
     popoverMeal <- liftIO $ newIORef Breakfast
 
@@ -139,7 +138,7 @@ buildMeals list = do
             popoverSetRelativeTo popover (Just btn)
             popoverPopup popover
 
-    r <- liftIO . newIORef . M.fromList $ zipWith (,) allMeals (repeat 0)
+    r <- liftIO . newIORef . M.fromList . map (\x -> (x,0)) $ allMeals
 
     adding <- lift $ signalEN okButton #clicked $ \h ->
                 readIORef popoverMeal >>= h

@@ -24,7 +24,7 @@ toIngredient = C.mapMaybe $ \x -> do
           , fat, satFat, polyFat, monoFat, transFat, sodium, cholesterol ] 
           <- pure x
 
-    pure $ Ingredient 
+    pure Ingredient 
         { ingredientName        = name
         , ingredientComment     = comment
         , ingredientBasicUnit   = read . unpack $ unit

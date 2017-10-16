@@ -40,15 +40,15 @@ data NutritionLabel a = NutritionLabel
     { nlServing     :: !Text
     , nlKcal        :: a
     , nlKcalFat     :: a
-    , nlFat         :: (NVec a)
-    , nlSatFat      :: (NVec a)
-    , nlTransFat    :: (NVec a)
-    , nlCholesterol :: (NVec a)
-    , nlSodium      :: (NVec a)
-    , nlCarbs       :: (NVec a)
-    , nlFibre       :: (NVec a)
-    , nlSugars      :: (NVec a)
-    , nlProtein     :: (NVec a)
+    , nlFat         :: NVec a
+    , nlSatFat      :: NVec a
+    , nlTransFat    :: NVec a
+    , nlCholesterol :: NVec a
+    , nlSodium      :: NVec a
+    , nlCarbs       :: NVec a
+    , nlFibre       :: NVec a
+    , nlSugars      :: NVec a
+    , nlProtein     :: NVec a
     }
     deriving (Show, Eq, Functor)
 
@@ -98,7 +98,7 @@ getNutrition
     -> t WeighedIngredient
     -> NutritionLabel Double
 getNutrition ref r is = 
-    let x = (recip $ recipeYield r) *^ foldMap (toLabel ref) is
+    let x = recip (recipeYield r) *^ foldMap (toLabel ref) is
      in x { nlServing = recipeYieldUnit r }
 
 toLabel :: ReferencePerson -> WeighedIngredient -> NutritionLabel Double

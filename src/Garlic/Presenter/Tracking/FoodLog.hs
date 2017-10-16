@@ -1,21 +1,16 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Garlic.Presenter.Tracking.FoodLog
 (
-	foodLogP
-) 
+    foodLogP
+)
 where
 
 import Control.Lens
-import Control.Monad.IO.Class
 import Data.Time
-import Data.Text (Text)
-import Data.Time.Clock.POSIX
 import Linear.Vector
 import Linear.V2
-import Data.List (find)
 import Garlic.Model
 import Garlic.Data.Meal
-import Garlic.Data.Units
 import Garlic.Data.Nutrition
 import Database.Persist (Entity(..))
 import Reactive.Banana

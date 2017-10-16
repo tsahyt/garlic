@@ -119,7 +119,7 @@ ingredientsFor' recipe = do
 
     pure $
         map
-            (\(Entity _ (RecipeHas {..}), i) ->
+            (\(Entity _ RecipeHas{..}, i) ->
                  WeighedIngredient
                      recipeHasAmount
                      recipeHasUnit
@@ -155,20 +155,25 @@ ingredientsByName = dbFetcher $ \names -> do
     pure $ catMaybes xs
 
 updateRecipe :: Consumer (Entity Recipe, [WeighedIngredient])
-updateRecipe = dbConsumer $ \(Entity k r, is) -> do
+updateRecipe =
+    dbConsumer $ \(Entity k r, is)
     -- update the recipe entry
-    P.repsert k r
-
+     -> do
+        P.repsert k r
     -- remove all old associations to ingredients
-    delete $
-        from $ \h ->
-        where_ (h ^. RecipeHasRecipe ==. val k)
-
+        delete $ from $ \h -> where_ (h ^. RecipeHasRecipe ==. val k)
     -- insert new ones
-    P.insertMany_ $
-        [ RecipeHas k (entityKey _wingrIngr) _wingrAmount 
-                    _wingrUnit _wingrOptional _wingrDisp _wingrGroup
-        | WeighedIngredient{..} <- is ]
+        P.insertMany_
+            [ RecipeHas
+                k
+                (entityKey _wingrIngr)
+                _wingrAmount
+                _wingrUnit
+                _wingrOptional
+                _wingrDisp
+                _wingrGroup
+            | WeighedIngredient {..} <- is
+            ]
 
 newRecipe :: Fetcher () (Entity Recipe)
 newRecipe = dbFetcher $ \_ ->
@@ -197,7 +202,7 @@ deleteIngredient = dbConsumer $ \k -> do
     P.delete k
 
 updateIngredient :: Consumer (Key Ingredient, Ingredient)
-updateIngredient = dbConsumer $ \(k,i) -> P.repsert k i
+updateIngredient = dbConsumer $ uncurry P.repsert
 
 getWeightMeasurements :: Fetcher UTCTime [Entity WeightMeasurement]
 getWeightMeasurements =
@@ -218,7 +223,7 @@ addWeightMeasurement =
 
 deleteWeightMeasurement :: Consumer UTCTime
 deleteWeightMeasurement =
-    dbConsumer $ \t -> do P.deleteWhere [WeightMeasurementTimestamp P.==. t]
+    dbConsumer $ \t -> P.deleteWhere [WeightMeasurementTimestamp P.==. t]
 
 mapBy :: (Ord b, Foldable t) => (a -> b) -> t a -> Map b a
 mapBy f = foldl' (\m x -> M.insert (f x) x m) M.empty
@@ -242,26 +247,28 @@ addGoal =
 
 deleteGoal :: Consumer UTCTime
 deleteGoal =
-    dbConsumer $ \t -> do P.deleteWhere [GoalTimestamp P.==. t]
+    dbConsumer $ \t -> P.deleteWhere [GoalTimestamp P.==. t]
 
-addFoodEntry :: Fetcher FoodEntry (Entity FoodEntry, Recipe, [WeighedIngredient])
-addFoodEntry = dbFetcher $ \e -> do
-    x <- P.insertEntity e
+entryShort ::
+       Entity FoodEntry
+    -> SqlPersistT IO (Entity FoodEntry, Recipe, [WeighedIngredient])
+entryShort x = do
     let k = foodEntryRecipe (entityVal x)
     r <- getJust k
     is <- ingredientsFor' k
     pure (x, r, is)
+
+addFoodEntry ::
+       Fetcher FoodEntry (Entity FoodEntry, Recipe, [WeighedIngredient])
+addFoodEntry =
+    dbFetcher $ P.insertEntity >=> entryShort
 
 getFoodEntries ::
        Fetcher UTCTime [(Entity FoodEntry, Recipe, [WeighedIngredient])]
 getFoodEntries =
     dbFetcher $ \t -> do
         xs <- P.selectList [FoodEntryTimestamp P.==. t] []
-        forM xs $ \x -> do
-            let k = foodEntryRecipe (entityVal x)
-            r <- getJust k
-            is <- ingredientsFor' k
-            pure (x, r, is)
+        mapM entryShort xs
 
 deleteFoodEntry :: Consumer (Key FoodEntry)
 deleteFoodEntry = dbConsumer $ \k -> P.delete k

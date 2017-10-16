@@ -141,7 +141,7 @@ ingredientMask box = do
 
     mapM_ (comboBoxTextAppendText unit . prettyUnit) allUnits
 
-    let clearAll = mapM_ (flip setEntryText "")
+    let clearAll = mapM_ (`setEntryText` "")
             [ name, comment, amount, protein, carbs, sugar, fibre
             , fat, satFat, polyFat, monoFat, transFat, sodium, chlstrl ]
 
@@ -168,7 +168,7 @@ ingredientMask box = do
     boxPackEnd box mask True True 0
 
     lift $ GarlicIngredientMask
-       <$> pure (ioConsumer $ \_ -> clearAll)
+       <$> pure (ioConsumer $ const clearAll)
        <*> pure (ioConsumer load)
        <*> attrB name #text
        <*> attrB comment #text
