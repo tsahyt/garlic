@@ -46,7 +46,8 @@ module Garlic.Model.Queries
     deleteFoodEntry,
 
     -- * Nutrition Summary
-    getNutritionSummary
+    getNutritionSummary,
+    getPastNutrition
 )
 where
 
@@ -278,7 +279,10 @@ deleteFoodEntry :: Fetcher (Key FoodEntry) ()
 deleteFoodEntry = dbFetcher $ \k -> P.delete k >> pure ()
 
 getNutritionSummary :: Fetcher UTCTime [(Double, [WeighedIngredient])]
-getNutritionSummary = dbFetcher $ \t -> do
+getNutritionSummary = dbFetcher nutritionSummary
+
+nutritionSummary :: UTCTime -> SqlPersistT IO [(Double, [WeighedIngredient])]
+nutritionSummary t = do
     rs <- select $ 
           from $ \(e `InnerJoin` r) -> do
             on (e ^. FoodEntryRecipe ==. r ^. RecipeId)
@@ -290,3 +294,8 @@ getNutritionSummary = dbFetcher $ \t -> do
             yield  = recipeYield . entityVal $ r
         is <- ingredientsFor' (entityKey r)
         pure (amount / yield, is)
+
+getPastNutrition ::
+       Fetcher [UTCTime] [(UTCTime, [(Double, [WeighedIngredient])])]
+getPastNutrition =
+    dbFetcher $ mapM (\t -> (,) <$> pure t <*> nutritionSummary t)

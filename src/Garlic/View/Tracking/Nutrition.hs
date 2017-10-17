@@ -6,6 +6,7 @@
 module Garlic.View.Tracking.Nutrition 
 (
     NutritionSummary (..),
+    PastCategory(..),
     GarlicTrackingNutrition,
     nLoadNutrition,
     nLoadPast,
@@ -81,8 +82,12 @@ nutrition b = do
                  loadValues x
                  loadLevels x
                  loadIntake x)
-            (ioConsumer $ \g -> writeIORef goals (Just g) >> loadGoal g)
-            (ioConsumer $ writeIORef history)
+            (ioConsumer $ \g -> do
+                writeIORef goals (Just g)
+                loadGoal g)
+            (ioConsumer $ \h -> do 
+                writeIORef history h 
+                widgetQueueDraw historyDA)
             past
 
 pastSelect :: Builder -> Garlic (Event PastCategory)
