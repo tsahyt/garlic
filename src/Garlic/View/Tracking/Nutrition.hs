@@ -2,6 +2,7 @@
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE OverloadedLabels #-}
+{-# LANGUAGE TypeApplications #-}
 module Garlic.View.Tracking.Nutrition 
 (
     NutritionSummary (..),
@@ -22,6 +23,7 @@ import GI.Gtk hiding (Unit)
 import Garlic.Model (Goal (..))
 import Garlic.Types
 import Garlic.View.Charts
+import Garlic.Data.Units
 import Reactive.Banana.GI.Gtk
 import Text.Printf
 
@@ -63,6 +65,8 @@ nutrition b = do
     goals <- liftIO $ newIORef Nothing
     loadValues <- values b
     loadLevels <- levels b goals
+    loadIntake <- topBarI b goals
+    loadGoal   <- topBarG b
     -- pie chart
     pieDA <- castB b "nutrientPie" DrawingArea
     summary <- pieChart pieDA
@@ -72,9 +76,12 @@ nutrition b = do
     past <- pastSelect b
     pure $
         GarlicTrackingNutrition
-            (ioConsumer $ \x ->
-                 writeIORef summary (Just x) >> loadValues x >> loadLevels x)
-            (ioConsumer $ writeIORef goals . Just)
+            (ioConsumer $ \x -> do
+                 writeIORef summary (Just x)
+                 loadValues x
+                 loadLevels x
+                 loadIntake x)
+            (ioConsumer $ \g -> writeIORef goals (Just g) >> loadGoal g)
             (ioConsumer $ writeIORef history)
             past
 
@@ -92,10 +99,32 @@ pastSelect b = do
             , PastFat <$$ lift (signalE0 fat #toggled)
             ]
 
-setGrams :: Label -> Double -> IO ()
-setGrams l g =
-    let t = pack $ printf "%.1fg" g
+setUnit :: Unit -> Label -> Double -> IO ()
+setUnit u l g =
+    let t = pack $ printf "%.1f%s" g (prettyUnit u :: String)
     in labelSetText l t
+
+topBarI ::
+       MonadIO m
+    => Builder
+    -> IORef (Maybe Goal)
+    -> m (NutritionSummary -> IO ())
+topBarI b ref = do
+    intake <- castB b "intakeValue" Label
+    remaining <- castB b "remainingValue" Label
+    pure $ \NutritionSummary {..} -> do
+        g <- readIORef ref
+        let pp x = pack (printf "%.0f" x)
+        labelSetText intake (pp nsumKcal)
+        labelSetText remaining $
+            case g of
+                Nothing -> pp $ 2000 - nsumKcal
+                Just g' -> pp $ goalKcal g' - nsumKcal
+
+topBarG :: MonadIO m => Builder -> m (Goal -> IO ())
+topBarG b = do
+    goal <- castB b "goalValue" Label
+    pure $ \g -> labelSetText goal (pack . show @Int . truncate . goalKcal $ g)
 
 values :: MonadIO m => Builder -> m (NutritionSummary -> IO ())
 values b = do
@@ -110,9 +139,9 @@ values b = do
     transFatValue <- castB b "nutritionTransFatValue" Label
     cholesterolValue <- castB b "nutritionCholesterolValue" Label
     sodiumValue <- castB b "nutritionSodiumValue" Label
-    pure $ \NutritionSummary {..} ->
+    pure $ \NutritionSummary {..} -> do
         mapM_
-            (uncurry setGrams)
+            (uncurry (setUnit Gram))
             [ (proteinValue, nsumProtein)
             , (carbsValue, nsumCarbs)
             , (sugarsValue, nsumSugars)
@@ -122,7 +151,10 @@ values b = do
             , (polyFatValue, nsumPolyFat)
             , (monoFatValue, nsumPolyFat)
             , (transFatValue, nsumTransFat)
-            , (cholesterolValue, nsumCholesterol)
+            ]
+        mapM_
+            (uncurry (setUnit Milligram))
+            [ (cholesterolValue, nsumCholesterol)
             , (sodiumValue, nsumSodium)
             ]
 
@@ -155,8 +187,7 @@ levels b goals = do
                     , (satFatLevel, nsumSatFat / goalFat)
                     , (polyFatLevel, nsumPolyFat / goalPolyFat)
                     , (monoFatLevel, nsumMonoFat / goalMonoFat)
-                    , ( cholesterolLevel
-                      , nsumCholesterol / goalCholesterol)
+                    , (cholesterolLevel, nsumCholesterol / goalCholesterol)
                     , (sodiumLevel, nsumSodium / goalSodium)
                     ]
 

@@ -277,13 +277,16 @@ getFoodEntries =
 deleteFoodEntry :: Fetcher (Key FoodEntry) ()
 deleteFoodEntry = dbFetcher $ \k -> P.delete k >> pure ()
 
-getNutritionSummary :: Fetcher UTCTime [WeighedIngredient]
+getNutritionSummary :: Fetcher UTCTime [(Double, [WeighedIngredient])]
 getNutritionSummary = dbFetcher $ \t -> do
     rs <- select $ 
           from $ \(e `InnerJoin` r) -> do
             on (e ^. FoodEntryRecipe ==. r ^. RecipeId)
             where_ (e ^. FoodEntryTimestamp ==. val t)
-            pure r
+            pure (e,r)
 
-    is <- mapM (ingredientsFor' . entityKey) rs
-    pure []
+    forM rs $ \(e,r) -> do
+        let amount = foodEntryAmount . entityVal $ e
+            yield  = recipeYield . entityVal $ r
+        is <- ingredientsFor' (entityKey r)
+        pure (amount / yield, is)

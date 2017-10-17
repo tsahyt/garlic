@@ -38,5 +38,5 @@ trackingP app = do
         (app ^. appVTracking . trackingDate)
     nutritionP
         (app ^. appVTracking . trackingNutrition)
-        r
+        (app ^. appVTracking . trackingDate <@ r)
         g

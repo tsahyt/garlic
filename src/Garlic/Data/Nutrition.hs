@@ -42,6 +42,8 @@ data NutritionLabel a = NutritionLabel
     , nlKcalFat     :: a
     , nlFat         :: NVec a
     , nlSatFat      :: NVec a
+    , nlMonoFat     :: NVec a
+    , nlPolyFat     :: NVec a
     , nlTransFat    :: NVec a
     , nlCholesterol :: NVec a
     , nlSodium      :: NVec a
@@ -53,21 +55,39 @@ data NutritionLabel a = NutritionLabel
     deriving (Show, Eq, Functor)
 
 instance Additive NutritionLabel where
-    zero = NutritionLabel "" 0 0 zero zero zero zero zero zero zero zero zero
+    zero =
+        NutritionLabel
+            ""
+            0
+            0
+            zero
+            zero
+            zero
+            zero
+            zero
+            zero
+            zero
+            zero
+            zero
+            zero
+            zero
     liftU2 = liftI2
-    liftI2 f a b = NutritionLabel
-        { nlServing     = nlServing a <> nlServing b
-        , nlKcal        = nlKcal a `f` nlKcal b
-        , nlKcalFat     = nlKcalFat a `f` nlKcalFat b
-        , nlFat         = liftI2 f (nlFat a) (nlFat b)
-        , nlSatFat      = liftI2 f (nlSatFat a) (nlSatFat b)
-        , nlTransFat    = liftI2 f (nlTransFat a) (nlTransFat b)
+    liftI2 f a b =
+        NutritionLabel
+        { nlServing = nlServing a <> nlServing b
+        , nlKcal = nlKcal a `f` nlKcal b
+        , nlKcalFat = nlKcalFat a `f` nlKcalFat b
+        , nlFat = liftI2 f (nlFat a) (nlFat b)
+        , nlSatFat = liftI2 f (nlSatFat a) (nlSatFat b)
+        , nlMonoFat = liftI2 f (nlMonoFat a) (nlMonoFat b)
+        , nlPolyFat = liftI2 f (nlPolyFat a) (nlPolyFat b)
+        , nlTransFat = liftI2 f (nlTransFat a) (nlTransFat b)
         , nlCholesterol = liftI2 f (nlCholesterol a) (nlCholesterol b)
-        , nlSodium      = liftI2 f (nlSodium a) (nlSodium b)
-        , nlCarbs       = liftI2 f (nlCarbs a) (nlCarbs b)
-        , nlFibre       = liftI2 f (nlFibre a) (nlFibre b)
-        , nlSugars      = liftI2 f (nlSugars a) (nlSugars b)
-        , nlProtein     = liftI2 f (nlProtein a) (nlProtein b)
+        , nlSodium = liftI2 f (nlSodium a) (nlSodium b)
+        , nlCarbs = liftI2 f (nlCarbs a) (nlCarbs b)
+        , nlFibre = liftI2 f (nlFibre a) (nlFibre b)
+        , nlSugars = liftI2 f (nlSugars a) (nlSugars b)
+        , nlProtein = liftI2 f (nlProtein a) (nlProtein b)
         }
 
 instance Num a => Monoid (NutritionLabel a) where
@@ -121,6 +141,10 @@ toLabel ref w = x
                     (nlFat x ^. _x / referenceFat ref)
               , nlSatFat   = NVec 
                     (factor * fromMaybe 0 (ingredientSatFat i)) 0
+              , nlMonoFat  = NVec
+                    (factor * fromMaybe 0 (ingredientMonoFat i)) 0
+              , nlPolyFat  = NVec
+                    (factor * fromMaybe 0 (ingredientPolyFat i)) 0
               , nlTransFat = NVec 
                     (factor * fromMaybe 0 (ingredientTransFat i)) 0
               , nlCholesterol = NVec
