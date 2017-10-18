@@ -15,6 +15,9 @@ module Garlic.View.HeaderBar
     changeYield,
     yieldToggle,
     headerBar,
+    viewSwitched,
+
+    MainView (..)
 )
 where
 
@@ -25,6 +28,7 @@ import Data.Text.Encoding (decodeUtf8)
 import GI.Gtk
 import Garlic.Types
 import Reactive.Banana.GI.Gtk
+import Reactive.Banana.Frameworks
 
 uiHeaderBar :: Text
 uiHeaderBar = decodeUtf8 $(embedFile "res/headerbar.ui")
@@ -40,6 +44,7 @@ data GarlicHeader = GarlicHeader
     , _addToggle       :: Consumer ()
     , _editToggle      :: Consumer ()
     , _yieldToggle     :: Consumer ()
+    , _viewSwitched    :: Event MainView
     }
 
 -- | Creates a new 'GarlicHeader' and sets the HeaderBar of the supplied
@@ -65,6 +70,9 @@ headerBar win stack = do
     -- Connect Stack
     stackSwitcherSetStack switcher (Just stack)
 
+    -- Switcher Event
+    switch <- viewSwitch switcher stack
+
     lift $ GarlicHeader
        <$> signalE0 backButton #clicked
        <*> signalE0 addButton #clicked
@@ -76,13 +84,30 @@ headerBar win stack = do
        <*> pure (toggle addButton)
        <*> pure (toggle editButton)
        <*> pure (toggle yieldSpinner)
+       <*> pure switch
 
 -- | Toggle visibility of any widget.
---
--- TODO: Refactor into better place if useful.
 toggle :: IsWidget w => w -> Consumer a
 toggle w = ioConsumer $ \_ -> do
     vis <- widgetGetVisible w
     widgetSetVisible w (not vis)
+
+data MainView
+    = MainRecipes
+    | MainTracking
+    deriving (Eq, Show, Ord, Enum)
+
+viewSwitch :: StackSwitcher -> Stack -> Garlic (Event MainView)
+viewSwitch switcher stack = do
+    (e, h) <- lift newEvent
+    _ <- on switcher #buttonReleaseEvent $ \_ -> do
+        name <- stackGetVisibleChildName stack
+        case name of
+            Just "view-recipes" -> h MainRecipes
+            Just "view-tracking" -> h MainTracking
+            _ -> pure ()
+        return True
+
+    pure e
 
 makeGetters ''GarlicHeader
