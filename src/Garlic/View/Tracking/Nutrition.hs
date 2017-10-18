@@ -117,14 +117,14 @@ topBarI ::
 topBarI b ref = do
     intake <- castB b "intakeValue" Label
     remaining <- castB b "remainingValue" Label
+    intakeL <- castB b "intakeLevel" LevelBar
     pure $ \NutritionSummary {..} -> do
         g <- readIORef ref
         let pp x = pack (printf "%.0f" x)
+            gk   = maybe 2000 goalKcal g 
         labelSetText intake (pp nsumKcal)
-        labelSetText remaining $
-            case g of
-                Nothing -> pp $ 2000 - nsumKcal
-                Just g' -> pp $ goalKcal g' - nsumKcal
+        labelSetText remaining (pp $ gk - nsumKcal)
+        levelBarSetValue intakeL (nsumKcal / gk)
 
 topBarG :: MonadIO m => Builder -> m (Goal -> IO ())
 topBarG b = do
