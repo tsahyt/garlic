@@ -28,6 +28,8 @@ trackingP app = do
         (app ^. appStartup)
     r <- foodLogP
         (app ^. appVTracking . trackingFoodLog)
+        ((\x -> x == FoodLog || x == Nutrition) <$> active)
+        (app ^. appVTracking . trackingMarks)
         (app ^. appVTracking . trackingDate)
         (app ^. appStartup)
     weightLogP

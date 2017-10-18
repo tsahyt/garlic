@@ -6,6 +6,7 @@ module Garlic.Presenter.Tracking.FoodLog
 where
 
 import Control.Lens
+import Control.Monad.IO.Class
 import Data.Time
 import Linear.Vector
 import Linear.V2
@@ -20,9 +21,15 @@ import Garlic.View.Tracking.FoodLog
 import Data.Foldable
 
 foodLogP ::
-       GarlicTrackingFoodLog -> Behavior Day -> Event () -> Garlic (Event ())
-foodLogP fl day startup = do
+       GarlicTrackingFoodLog
+    -> Behavior Bool
+    -> Consumer [Day]
+    -> Behavior Day
+    -> Event ()
+    -> Garlic (Event ())
+foodLogP fl active mark day startup = do
     let time = UTCTime <$> day <*> pure 0
+    now <- (\x -> x { utctDayTime = 0 }) <$> liftIO getCurrentTime
 
     -- recipe change
     rs <- fetch recipes ("" <$ startup)
@@ -38,7 +45,8 @@ foodLogP fl day startup = do
         (shortToEntry <$> time <*> fl ^. flAmount) <@> newEntry
 
     -- reload on day change
-    reload <- fetch getFoodEntries =<< plainChanges time
+    dayChange <- plainChanges time
+    reload <- fetch getFoodEntries $ dayChange <:> now <$ startup
     fl ^. flClean `consume` () <$ reload
 
     -- list insertion
@@ -50,7 +58,14 @@ foodLogP fl day startup = do
     deleted <- fetch deleteFoodEntry $ lrKey <$> fl ^. flDelete
 
     -- emit changed event
-    pure $ unionl [ () <$ reload, () <$ foodEntry, deleted ]
+    let changed = unionl [ () <$ reload, () <$ foodEntry, deleted ]
+    markActive <- plainChanges active
+
+    -- calendar marks
+    days <- fetch getEntryDays (changed <:> () <$ markActive)
+    mark `consume` whenE active (map utctDay <$> days)
+    
+    pure changed
 
 shortToEntry :: UTCTime -> Double -> (Meal, Entity Recipe, a) -> FoodEntry
 shortToEntry t amount (m, r, _) = FoodEntry t (entityKey r) amount m

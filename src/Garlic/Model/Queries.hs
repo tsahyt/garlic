@@ -44,6 +44,7 @@ module Garlic.Model.Queries
     addFoodEntry,
     getFoodEntries,
     deleteFoodEntry,
+    getEntryDays,
 
     -- * Nutrition Summary
     getNutritionSummary,
@@ -277,6 +278,16 @@ getFoodEntries =
 
 deleteFoodEntry :: Fetcher (Key FoodEntry) ()
 deleteFoodEntry = dbFetcher $ \k -> P.delete k >> pure ()
+
+getEntryDays :: Fetcher () [UTCTime]
+getEntryDays =
+    dbFetcher $ \_ -> do
+        xs <-
+            select $
+            from $ \e -> do
+                groupBy (e ^. FoodEntryTimestamp)
+                return (e ^. FoodEntryTimestamp)
+        pure $ map unValue xs
 
 getNutritionSummary :: Fetcher UTCTime [(Double, [WeighedIngredient])]
 getNutritionSummary = dbFetcher nutritionSummary
