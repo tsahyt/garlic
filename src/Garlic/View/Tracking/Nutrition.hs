@@ -185,15 +185,16 @@ levels b goals = do
             Just Goal {..} ->
                 mapM_
                     (uncurry levelBarSetValue)
-                    [ (proteinLevel, nsumProtein / goalProtein)
-                    , (carbsLevel, nsumCarbs / goalCarbs)
-                    , (sugarsLevel, nsumSugars / goalSugar)
-                    , (fatLevel, nsumFat / goalFat)
-                    , (satFatLevel, nsumSatFat / goalFat)
-                    , (polyFatLevel, nsumPolyFat / goalPolyFat)
-                    , (monoFatLevel, nsumMonoFat / goalMonoFat)
-                    , (cholesterolLevel, nsumCholesterol / goalCholesterol)
-                    , (sodiumLevel, nsumSodium / goalSodium)
+                    [ (proteinLevel, min 1 $ nsumProtein / goalProtein)
+                    , (carbsLevel, min 1 $ nsumCarbs / goalCarbs)
+                    , (sugarsLevel, min 1 $ nsumSugars / goalSugar)
+                    , (fatLevel, min 1 $ nsumFat / goalFat)
+                    , (satFatLevel, min 1 $ nsumSatFat / goalFat)
+                    , (polyFatLevel, min 1 $ nsumPolyFat / goalPolyFat)
+                    , (monoFatLevel, min 1 $ nsumMonoFat / goalMonoFat)
+                    , ( cholesterolLevel
+                      , min 1 $ nsumCholesterol / goalCholesterol)
+                    , (sodiumLevel, min 1 $ nsumSodium / goalSodium)
                     ]
 
 pieChart :: MonadIO m => DrawingArea -> m (IORef (Maybe NutritionSummary))
