@@ -43,11 +43,7 @@ recipeEditP app selected = do
     -- Show Editor on Edit or Add Click, hide Edit Button and yield
     let click = app ^. appHeader . editClick
             <:> app ^. appHeader . addClick
-     in do app ^. appVRecipes . vrRecipeEdit . showEditor `consume` click
-           app ^. appHeader . yieldToggle `consume` click
-           app ^. appHeader . editToggle `consume` click
-           app ^. appHeader . addToggle `consume` click
-           app ^. appHeader . backToggle `consume` click
+     in app ^. appVRecipes . vrRecipeEdit . showEditor `consume` click
 
     recipe <- currentRecipe app
     
@@ -75,14 +71,15 @@ recipeEditP app selected = do
             $ recipeEntity <@ app ^. appVRecipes . vrRecipeEdit . editStore
     updateRecipe `consume` storeE
 
-    -- Show Display on Abort Click
-    revertDisplay app $ app ^. appHeader . backClick
+    -- Go back on back click
+    app ^. appVRecipes . vrRecipeDisplay . showDisplay `consume` 
+        () <$ app ^. appHeader . backClick
 
     -- Delete Selected Recipe on Delete, revert to display view
     let deleteE = filterJust 
             (key <@ app ^. appVRecipes . vrRecipeEdit . editDelete)
     deleteRecipe `consume` deleteE
-    revertDisplay app deleteE
+    app ^. appVRecipes . vrRecipeDisplay . showDisplay `consume` () <$ deleteE
 
     let change = unions
             [ (\x -> S.filter ((/= x) . entityKey)) <$> deleteE 
@@ -93,14 +90,6 @@ recipeEditP app selected = do
             where go Nothing  _ = Nothing 
                   go (Just b) a = Just (a,b)
      in pure . filterJust $ zipR <@> change
-
-revertDisplay :: GarlicApp -> Event a -> Garlic ()
-revertDisplay app e = do
-    app ^. appVRecipes . vrRecipeDisplay . showDisplay `consume` () <$ e
-    app ^. appHeader . yieldToggle `consume` () <$ e
-    app ^. appHeader . editToggle `consume` () <$ e
-    app ^. appHeader . addToggle  `consume` () <$ e
-    app ^. appHeader . backToggle  `consume` () <$ e
 
 -- | Load recipe into mask on selection event
 loadRecipe 

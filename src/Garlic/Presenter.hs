@@ -5,6 +5,7 @@ import Control.Lens
 import Database.Persist.Sql
 import GI.Gtk (Application)
 import Garlic.Types
+import Reactive.Banana
 
 import Garlic.Model
 import Garlic.Model.CSV
@@ -42,11 +43,41 @@ presenter app' = mdo
     app ^. appAbout `consume` app ^. appAppMenu . amAbout
 
     -- Subsystems
-    recipeP app newKey search
+    rv <- recipeP app newKey search
     trackingP app
     ingredientEditorP app
+    headerButtons (app ^. appHeader) rv
 
     return ()
+
+headerButtons :: GarlicHeader -> Behavior RecipeView -> Garlic ()
+headerButtons hb rv = do
+    change <- plainChanges $ (,) <$> hb ^. mainView <*> rv
+
+    let toTracking = filterE ((== MainTracking) . fst) change
+        toDisplay  = filterE (== (MainRecipes, RecipeViewDisplay)) change
+        toEdit     = filterE (== (MainRecipes, RecipeViewEdit)) change
+
+    -- toEdit
+    hb ^. yieldToggle `consume` False <$ toEdit
+    hb ^. addToggle `consume` False <$ toEdit
+    hb ^. editToggle `consume` False <$ toEdit
+    hb ^. backToggle `consume` True <$ toEdit
+    hb ^. searchToggle `consume` False <$ toEdit
+
+    -- toDisplay
+    hb ^. yieldToggle `consume` True <$ toDisplay
+    hb ^. addToggle `consume` True <$ toDisplay
+    hb ^. editToggle `consume` True <$ toDisplay
+    hb ^. backToggle `consume` False <$ toDisplay
+    hb ^. searchToggle `consume` True <$ toDisplay
+
+    -- toTracking
+    hb ^. yieldToggle `consume` False <$ toTracking
+    hb ^. addToggle `consume` False <$ toTracking
+    hb ^. editToggle `consume` False <$ toTracking
+    hb ^. backToggle `consume` False <$ toTracking
+    hb ^. searchToggle `consume` False <$ toTracking
 
 -- | Search bar handling, returning events declaring the current search string
 searchBar :: GarlicApp -> Garlic (Event T.Text)

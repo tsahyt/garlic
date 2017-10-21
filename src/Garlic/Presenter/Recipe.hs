@@ -3,6 +3,7 @@
 {-# LANGUAGE RecursiveDo #-}
 module Garlic.Presenter.Recipe 
 (
+    RecipeView(..),
     recipeP,
 ) 
 where
@@ -21,10 +22,25 @@ import Garlic.Presenter.Recipe.Display
 import Garlic.Presenter.Recipe.Edit
 import Garlic.View
 import Garlic.View.Recipe
+import Garlic.View.Recipe.Edit
+import Garlic.View.HeaderBar
 
 import qualified Data.Sequence as S
 
-recipeP :: GarlicApp -> Event (Entity Recipe) -> Event Text -> Garlic ()
+data RecipeView
+    = RecipeViewDisplay
+    | RecipeViewEdit
+    deriving (Show, Eq, Ord, Enum)
+
+otherView :: RecipeView -> RecipeView
+otherView RecipeViewDisplay = RecipeViewEdit
+otherView RecipeViewEdit = RecipeViewDisplay
+
+recipeP ::
+       GarlicApp
+    -> Event (Entity Recipe)
+    -> Event Text
+    -> Garlic (Behavior RecipeView)
 recipeP app newKey search = mdo
     -- Recipe Search
     rcps   <- do
@@ -43,7 +59,19 @@ recipeP app newKey search = mdo
     recipeDisplayP app selected
     recipeList app rcps
 
-    return ()
+    currentView app
+
+currentView :: GarlicApp -> Garlic (Behavior RecipeView)
+currentView app = do
+    let change =
+            unions
+                [ const RecipeViewEdit <$ app ^. appHeader . editClick
+                , const RecipeViewEdit <$ app ^. appHeader . addClick
+                , otherView <$ app ^. appHeader . backClick
+                , const RecipeViewDisplay <$ app ^. appVRecipes . vrRecipeEdit .
+                  editDelete
+                ]
+    accumB RecipeViewDisplay change
 
 recipeList :: GarlicApp -> Behavior (Seq (Entity Recipe)) -> Garlic ()
 recipeList app rcps = do

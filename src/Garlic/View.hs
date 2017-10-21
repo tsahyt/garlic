@@ -119,7 +119,7 @@ application app = do
        <*> pure vTracking
        <*> pure menu
        <*> pure editor
-       <*> pure (searchToggle searchBar)    -- Search Toggle
+       <*> pure (toggleSearch searchBar)    -- Search Toggle
        <*> pure (ioConsumer $ \t -> do
                set infoBar [ #visible := True ]
                set infoLabel [ #label := t ])
@@ -186,12 +186,10 @@ appMenu app win = do
               lift $ signalEN action #activate (\h _ -> h ())
 
 -- | Toggle a 'SearchBar'
-searchToggle :: SearchBar -> Consumer ()
-searchToggle s = ioConsumer $ \_ -> do
+toggleSearch :: SearchBar -> Consumer ()
+toggleSearch s = ioConsumer $ \_ -> do
     x <- get s #searchModeEnabled
     set s [ #searchModeEnabled := not x ]
-
-
 
 importIngredients :: ApplicationWindow -> Event () -> Garlic (Event FilePath)
 importIngredients win = lift . fmap filterJust . mapEventIO (const go)

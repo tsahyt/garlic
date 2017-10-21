@@ -14,8 +14,9 @@ module Garlic.View.HeaderBar
     yieldChanged,
     changeYield,
     yieldToggle,
+    searchToggle,
     headerBar,
-    viewSwitched,
+    mainView,
 
     MainView (..)
 )
@@ -29,6 +30,7 @@ import GI.Gtk
 import Garlic.Types
 import Reactive.Banana.GI.Gtk
 import Reactive.Banana.Frameworks
+import Reactive.Banana (stepper)
 
 uiHeaderBar :: Text
 uiHeaderBar = decodeUtf8 $(embedFile "res/headerbar.ui")
@@ -40,11 +42,12 @@ data GarlicHeader = GarlicHeader
     , _searchToggled   :: Event ()
     , _yieldChanged    :: Event Double
     , _changeYield     :: Consumer Double
-    , _backToggle      :: Consumer ()
-    , _addToggle       :: Consumer ()
-    , _editToggle      :: Consumer ()
-    , _yieldToggle     :: Consumer ()
-    , _viewSwitched    :: Event MainView
+    , _backToggle      :: Consumer Bool
+    , _addToggle       :: Consumer Bool
+    , _editToggle      :: Consumer Bool
+    , _yieldToggle     :: Consumer Bool
+    , _searchToggle    :: Consumer Bool
+    , _mainView        :: Behavior MainView
     }
 
 -- | Creates a new 'GarlicHeader' and sets the HeaderBar of the supplied
@@ -84,20 +87,19 @@ headerBar win stack = do
        <*> pure (toggle addButton)
        <*> pure (toggle editButton)
        <*> pure (toggle yieldSpinner)
+       <*> pure (toggle searchButton)
        <*> pure switch
 
 -- | Toggle visibility of any widget.
-toggle :: IsWidget w => w -> Consumer a
-toggle w = ioConsumer $ \_ -> do
-    vis <- widgetGetVisible w
-    widgetSetVisible w (not vis)
+toggle :: IsWidget w => w -> Consumer Bool
+toggle w = ioConsumer $ widgetSetVisible w
 
 data MainView
     = MainRecipes
     | MainTracking
     deriving (Eq, Show, Ord, Enum)
 
-viewSwitch :: StackSwitcher -> Stack -> Garlic (Event MainView)
+viewSwitch :: StackSwitcher -> Stack -> Garlic (Behavior MainView)
 viewSwitch switcher stack = do
     (e, h) <- lift newEvent
     _ <- on switcher #buttonReleaseEvent $ \_ -> do
@@ -108,6 +110,6 @@ viewSwitch switcher stack = do
             _ -> pure ()
         return True
 
-    pure e
+    stepper MainRecipes e
 
 makeGetters ''GarlicHeader
