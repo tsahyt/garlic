@@ -1,3 +1,4 @@
+{-# LANGUAGE RecursiveDo #-}
 module Garlic.Presenter.Tracking.WeightLog
 (
     weightLogP
@@ -24,13 +25,15 @@ weightLogP ::
     -> Consumer [Day]
     -> Behavior Day
     -> Garlic ()
-weightLogP wl active startup mark day = do
+weightLogP wl active startup mark day = mdo
     activated <- filterE (== True) <$> plainChanges active
     now <- liftIO getCurrentTime
     let load = 
             timeFrameEnd now <$> 
                 unionl [ wl ^. wlShowTime, TimeAll <$ startup
-                       , TimeAll <$ activated ]
+                       , TimeAll <$ activated
+                       , TimeAll <$ added
+                       , TimeAll <$ deleted ]
     measurements <- fetch getWeightMeasurements load
 
     -- load data for graph
@@ -38,11 +41,11 @@ weightLogP wl active startup mark day = do
         map entityVal <$> measurements
 
     -- adding on OK
-    addWeightMeasurement `consume` 
+    added <- fetch addWeightMeasurement $
         currentMeasurement day (wl ^. wlInput) <@ wl ^. wlOk
 
     -- deletion
-    deleteWeightMeasurement `consume`
+    deleted <- fetch deleteWeightMeasurement $
         dayStamp day <@ wl ^. wlDelete
 
     -- calendar marks

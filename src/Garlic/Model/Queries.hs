@@ -216,9 +216,9 @@ getWeightMeasurements =
         sortBy (comparing (weightMeasurementTimestamp . entityVal)) <$>
         P.selectList [WeightMeasurementTimestamp P.>=. l] []
 
-addWeightMeasurement :: Consumer WeightMeasurement
+addWeightMeasurement :: Fetcher WeightMeasurement ()
 addWeightMeasurement =
-    dbConsumer $ \m -> do
+    dbFetcher $ \m -> do
         x <-
             P.selectFirst
                 [WeightMeasurementTimestamp P.==. weightMeasurementTimestamp m]
@@ -227,9 +227,9 @@ addWeightMeasurement =
             Just e -> P.replace (entityKey e) m
             Nothing -> P.insert_ m
 
-deleteWeightMeasurement :: Consumer UTCTime
+deleteWeightMeasurement :: Fetcher UTCTime ()
 deleteWeightMeasurement =
-    dbConsumer $ \t -> P.deleteWhere [WeightMeasurementTimestamp P.==. t]
+    dbFetcher $ \t -> P.deleteWhere [WeightMeasurementTimestamp P.==. t]
 
 mapBy :: (Ord b, Foldable t) => (a -> b) -> t a -> Map b a
 mapBy f = foldl' (\m x -> M.insert (f x) x m) M.empty
