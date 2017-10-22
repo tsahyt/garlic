@@ -20,6 +20,7 @@ import Control.Monad.IO.Class
 import Control.Monad.Trans
 import Data.IORef
 import Data.Text (pack)
+import Data.Maybe (fromMaybe)
 import GI.Gtk hiding (Unit)
 import Garlic.Model (Goal (..))
 import Garlic.Types
@@ -47,6 +48,8 @@ data NutritionSummary = NutritionSummary
     , nsumSodium :: Double
     } deriving (Show, Eq)
 
+nsumZero = NutritionSummary 0 0 0 0 0 0 0 0 0 0 0 0
+
 data PastCategory
     = PastKcal
     | PastProtein
@@ -55,7 +58,7 @@ data PastCategory
     deriving (Show, Eq, Ord, Read)
 
 data GarlicTrackingNutrition = GarlicTrackingNutrition
-    { _nLoadNutrition :: Consumer NutritionSummary
+    { _nLoadNutrition :: Consumer (Maybe NutritionSummary)
     , _nLoadGoals :: Consumer Goal
     , _nLoadPast :: Consumer [(UTCTime, Double)]
     , _nPastSelect :: Event PastCategory
@@ -67,7 +70,7 @@ nutrition b = do
     loadValues <- values b
     loadLevels <- levels b goals
     loadIntake <- topBarI b goals
-    loadGoal   <- topBarG b
+    loadGoal <- topBarG b
     -- pie chart
     pieDA <- castB b "nutrientPie" DrawingArea
     summary <- pieChart pieDA
@@ -78,16 +81,17 @@ nutrition b = do
     pure $
         GarlicTrackingNutrition
             (ioConsumer $ \x -> do
-                 writeIORef summary (Just x)
-                 loadValues x
-                 loadLevels x
-                 loadIntake x)
+                 writeIORef summary x
+                 let x' = fromMaybe nsumZero x
+                 loadValues x'
+                 loadLevels x'
+                 loadIntake x')
             (ioConsumer $ \g -> do
-                writeIORef goals (Just g)
-                loadGoal g)
-            (ioConsumer $ \h -> do 
-                writeIORef history h 
-                widgetQueueDraw historyDA)
+                 writeIORef goals (Just g)
+                 loadGoal g)
+            (ioConsumer $ \h -> do
+                 writeIORef history h
+                 widgetQueueDraw historyDA)
             past
 
 pastSelect :: Builder -> Garlic (Event PastCategory)

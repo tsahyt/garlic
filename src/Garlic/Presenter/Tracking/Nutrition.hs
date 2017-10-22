@@ -29,7 +29,7 @@ nutritionP nt reload goal
 
     -- load daily nutrition data for levels and values
     loaded <- fetch getNutritionSummary (flip UTCTime 0 <$> reload)
-    let nsum = toNSum <$> filterE (not . null) loaded
+    let nsum = toNSum <$> loaded
     nt ^. nLoadNutrition `consume` nsum
 
     -- past for bar chart
@@ -43,18 +43,20 @@ past7 :: Day -> [UTCTime]
 past7 d = map (\o -> UTCTime (addDays o d) 0) [-7..0]
 
 extractPast ::
-       [(UTCTime, NutritionSummary)] -> PastCategory -> [(UTCTime, Double)]
+       [(UTCTime, Maybe NutritionSummary)] -> PastCategory -> [(UTCTime, Double)]
 extractPast xs c = map (second go) xs
   where
-    go NutritionSummary {..} =
+    go Nothing = 0
+    go (Just NutritionSummary{..}) =
         case c of
             PastKcal -> nsumKcal
             PastProtein -> nsumProtein
             PastCarbs -> nsumCarbs
             PastFat -> nsumFat
 
-toNSum :: [(Double, [WeighedIngredient])] -> NutritionSummary
-toNSum = labelToSum . foldMap go
+toNSum :: [(Double, [WeighedIngredient])] -> Maybe NutritionSummary
+toNSum [] = Nothing
+toNSum xs = Just . labelToSum . foldMap go $ xs
   where
     go (f, is) = f *^ foldMap (toLabel defaultReferencePerson) is
 
