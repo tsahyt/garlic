@@ -61,8 +61,8 @@ goalsP gs active mark day startup = do
     goalsE <- fetch getGoals $ unionl 
                   [ startup, gs ^. tgSave, gs ^. tgDelete, () <$ activated ]
     goalsB <- stepper M.empty goalsE
-    gs ^. tgLoadGoal `consume` 
-        filterJust ((flip M.lookup <$> goalsB) <@> daySelect)
+
+    gs ^. tgLoadGoal `consume` (flip goalAt <$> goalsB) <@> daySelect
 
     -- Load calendar marks
     mark `consume` whenE active (M.keys <$> goalsE)
