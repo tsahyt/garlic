@@ -70,6 +70,7 @@ recipeEditP app selected = do
             $ filterJust 
             $ recipeEntity <@ app ^. appVRecipes . vrRecipeEdit . editStore
     updateRecipe `consume` storeE
+    storeE1 <- delay storeE
 
     -- Go back on back click
     app ^. appVRecipes . vrRecipeDisplay . showDisplay `consume` 
@@ -84,7 +85,7 @@ recipeEditP app selected = do
     let change = unions
             [ (\x -> S.filter ((/= x) . entityKey)) <$> deleteE 
             , (\x -> fmap (\e -> if entityKey e == entityKey x then x else e)) 
-            . fst <$> storeE ]
+            . fst <$> storeE1 ]
 
     let zipR = go <$> recipeEntity
             where go Nothing  _ = Nothing 

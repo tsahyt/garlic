@@ -49,10 +49,13 @@ recipeP app newKey search = mdo
         accumB mempty $ unions [ refetched , fst <$> editChange ]
     
     -- Selection Event holding current recipe entity
-    let selected = (S.index <$> rcps) <@> app ^. appVRecipes 
-                                        . vrRecipeList . recipeSelected
-               <:> newKey
-               <:> (snd <$> editChange)
+    let selected =
+            unionl
+                [ (S.index <$> rcps) <@> app ^. appVRecipes . vrRecipeList .
+                  recipeSelected
+                , newKey
+                , snd <$> editChange
+                ]
 
     -- Subsystems
     editChange <- recipeEditP app selected

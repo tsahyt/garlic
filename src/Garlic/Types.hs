@@ -175,7 +175,10 @@ spread evs = lift $ do
     pure e
 
 delay :: Event a -> Garlic (Event a)
-delay e = spread (pure <$> e)
+delay e = lift $ do
+    (e', handle) <- newEvent
+    reactimate $ handle <$> e
+    pure e'
 
 -- | Left-biased event union
 unionl :: [Event a] -> Event a
