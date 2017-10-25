@@ -1,4 +1,3 @@
-{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
 module Garlic.Presenter.Tracking.Nutrition 
 (
@@ -36,18 +35,23 @@ nutritionP nt reload goal
     past <-
         stepper [] . fmap (map (second toNSum)) =<<
         fetch getPastNutrition (past7 <$> reload)
-    nt ^. nLoadPast `consume` (extractPast <$> past) <@>
-        unionl [ nt ^. nPastSelect, PastKcal <$ reload ]
+    nselect <- stepper PastKcal $ nt ^. nPastSelect
+
+    let chartB = extractPast <$> past <*> nselect
+    chartE <- plainChanges chartB
+    nt ^. nLoadPast `consume` chartE
 
 past7 :: Day -> [UTCTime]
 past7 d = map (\o -> UTCTime (addDays o d) 0) [-7..0]
 
 extractPast ::
-       [(UTCTime, Maybe NutritionSummary)] -> PastCategory -> [(UTCTime, Double)]
+       [(UTCTime, Maybe NutritionSummary)]
+    -> PastCategory
+    -> [(UTCTime, Double)]
 extractPast xs c = map (second go) xs
   where
     go Nothing = 0
-    go (Just NutritionSummary{..}) =
+    go (Just NutritionSummary {..}) =
         case c of
             PastKcal -> nsumKcal
             PastProtein -> nsumProtein
