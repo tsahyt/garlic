@@ -38,15 +38,15 @@ import qualified Text.Blaze.Html5 as H
 import qualified Text.Blaze.Html5.Attributes as A
 import qualified Data.Text as T
 
--- TODO: Load dynamically from config location
 recipeStyle :: Text
 recipeStyle = decodeUtf8 $(embedFile "res/style.css")
 
 recipeDisplayP 
     :: GarlicApp 
+    -> Behavior Goal
     -> Event (Entity Recipe)
     -> Garlic ()
-recipeDisplayP app selected = do
+recipeDisplayP app goal selected = do
     let disp = app ^. appVRecipes . vrRecipeDisplay
 
     -- Ingredients
@@ -65,21 +65,32 @@ recipeDisplayP app selected = do
         plainChanges (scaleIngredients <$> factor <*> ingredients)
 
     -- Behavior keeping track of the displayed data
+    let fsel = fromSel <$> goal
     display <- accumB (error "no recipe") $ unions
-        [ const . fromSel <$> selected'
+        [ ((const .) <$> fsel) <@> selected'
         , set _2 <$> weighed ]
     
     -- Display on changes
     consume (disp ^. loadInstructions) .
         fmap ((uncurry . uncurry) fullInstructions 
             . over (_1 . _1) entityVal) =<< plainChanges display
-    
-    where fromSel (a,b) = 
-              let n = getNutrition defaultReferencePerson (entityVal a) b
-               in ((a,n),b)
 
+fromSel ::
+       Goal
+    -> (Entity Recipe, [WeighedIngredient])
+    -> ((Entity Recipe, NutritionLabel Double), [WeighedIngredient])
+fromSel g (e, ws) = ((e, getNutrition (refGoal g) (entityVal e) ws), ws)
+    
 scaleIngredients :: Double -> [WeighedIngredient] -> [WeighedIngredient]
 scaleIngredients factor = over (traverse . wingrAmount) (* factor)
+
+refGoal :: Goal -> ReferencePerson
+refGoal g = ReferencePerson
+    { referenceKcal = goalKcal g
+    , referenceFat = goalFat g
+    , referenceCarbs = goalCarbs g
+    , referenceProtein = goalProtein g
+    }
 
 -- | Render a recipe to HTML.
 fullInstructions 

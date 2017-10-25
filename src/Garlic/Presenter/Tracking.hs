@@ -12,11 +12,12 @@ import Garlic.Presenter.Tracking.Goals
 import Garlic.Presenter.Tracking.WeightLog
 import Garlic.Presenter.Tracking.FoodLog
 import Garlic.Presenter.Tracking.Nutrition
+import Garlic.Model (Goal)
 import Reactive.Banana
 
 import Garlic.Types
 
-trackingP :: GarlicApp -> Garlic ()
+trackingP :: GarlicApp -> Garlic (Behavior Goal)
 trackingP app = do
     active <- stepper FoodLog $ app ^. appVTracking . trackingSwitch
 
@@ -42,3 +43,5 @@ trackingP app = do
         (app ^. appVTracking . trackingNutrition)
         (app ^. appVTracking . trackingDate <@ r)
         g
+
+    pure g

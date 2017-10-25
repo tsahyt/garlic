@@ -38,10 +38,11 @@ otherView RecipeViewEdit = RecipeViewDisplay
 
 recipeP ::
        GarlicApp
+    -> Behavior Goal
     -> Event (Entity Recipe)
     -> Event Text
     -> Garlic (Behavior RecipeView)
-recipeP app newKey search = mdo
+recipeP app goal newKey search = mdo
     -- Recipe Search
     rcps   <- do
         let refetch = search <:> ("" <$ app ^. appStartup) <:> ("" <$ newKey)
@@ -59,7 +60,7 @@ recipeP app newKey search = mdo
 
     -- Subsystems
     editChange <- recipeEditP app selected
-    recipeDisplayP app selected
+    recipeDisplayP app goal selected
     recipeList app rcps
 
     currentView app
