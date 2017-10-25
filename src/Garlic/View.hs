@@ -140,6 +140,8 @@ about appWin = do
     dialog <- castB b "aboutDialog" AboutDialog
     windowSetTransientFor dialog (Just appWin)
 
+    _ <- on dialog #deleteEvent $ \_ -> widgetDestroy dialog >> pure True
+
     void $ dialogRun dialog
 
 data GarlicAppMenu = GarlicAppMenu
