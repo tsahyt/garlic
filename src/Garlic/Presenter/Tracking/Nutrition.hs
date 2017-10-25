@@ -6,16 +6,13 @@ module Garlic.Presenter.Tracking.Nutrition
 where
 
 import Control.Lens
-import Data.Text (Text, pack)
 import Data.Time
-import Data.Time.Clock.POSIX
 import Data.Bifunctor
 import Garlic.Model
 import Garlic.Model.Queries
 import Garlic.Data.Nutrition
 import Garlic.Types
 import Garlic.View.Tracking.Nutrition
-import Garlic.Data.Units
 import Reactive.Banana
 import Linear.Vector
 import Linear.V2
