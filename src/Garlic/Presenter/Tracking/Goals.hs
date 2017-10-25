@@ -57,12 +57,12 @@ goalsP gs active mark day startup = do
     deleteGoal `consume` time <@ gs ^. tgDelete
 
     -- Load existing goal on selection
-    daySelect <- plainChanges day
     goalsE <- fetch getGoals $ unionl 
                   [ startup, gs ^. tgSave, gs ^. tgDelete, () <$ activated ]
     goalsB <- stepper M.empty goalsE
+    current <- plainChanges $ goalAt <$> day <*> goalsB
 
-    gs ^. tgLoadGoal `consume` (flip goalAt <$> goalsB) <@> daySelect
+    gs ^. tgLoadGoal `consume` current
 
     -- Load calendar marks
     mark `consume` whenE active (M.keys <$> goalsE)
