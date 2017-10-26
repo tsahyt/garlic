@@ -15,6 +15,7 @@ module Garlic.View.Tracking.FoodLog
     flName,
     flAmount,
     flLoadRecipes,
+    flAmountEdit,
     foodLog
 ) 
 where
@@ -50,6 +51,7 @@ uiLogAdd = decodeUtf8 $(embedFile "res/log-add.ui")
 data LogRecipe = LogRecipe
     { lrMeal :: Meal
     , lrName :: Text
+    , lrAmount :: Double
     , lrKcal :: Double
     , lrProtein :: Double
     , lrCarbs :: Double
@@ -65,6 +67,7 @@ data GarlicTrackingFoodLog = GarlicTrackingFoodLog
     , _flName        :: Behavior Text
     , _flAmount      :: Behavior Double
     , _flLoadRecipes :: Consumer [Text]
+    , _flAmountEdit  :: Behavior (Double, FoodEntryId)
     }
 
 foodLog :: Builder -> Garlic GarlicTrackingFoodLog
@@ -73,17 +76,38 @@ foodLog b = do
     list <- castB b "foodLogList" ListBox
     (e, pref, name, amount, load) <- buildMeals list
     del <- deletion b list pref mref
-    pure $
-        GarlicTrackingFoodLog
+    amountEdit <- castB b "foodLogEditAmountAdjustment" Adjustment
+    amountEditing list amountEdit mref
+
+    GarlicTrackingFoodLog <$>
+        pure
             (ioConsumer $ \lr@LogRecipe {..} -> do
                  entry <- newEntry lrName lrKcal lrProtein lrCarbs lrFat
-                 addEntry lr lrMeal entry list pref mref)
-            (ioConsumer $ \_ -> cleanEntries list pref mref)
-            e
-            del
-            name
-            amount
-            load
+                 addEntry lr lrMeal entry list pref mref) <*>
+        pure (ioConsumer $ \_ -> cleanEntries list pref mref) <*>
+        pure e <*>
+        pure del <*>
+        pure name <*>
+        pure amount <*>
+        pure load <*>
+        lift (attrB amountEdit #value)
+
+amountEditing ::
+       MonadIO m
+    => ListBox
+    -> Adjustment
+    -> IORef [Either Meal LogRecipe]
+    -> m ()
+amountEditing list adjustment ref =
+    void $
+    on list #rowSelected $ \case
+        Nothing -> pure ()
+        Just row -> do
+            m <- readIORef ref
+            idx <- fromIntegral <$> listBoxRowGetIndex row
+            case L.atMay idx m of
+                Just (Right lr) -> adjustmentSetValue adjustment (lrAmount lr)
+                _ -> pure ()
 
 deletion ::
        Builder

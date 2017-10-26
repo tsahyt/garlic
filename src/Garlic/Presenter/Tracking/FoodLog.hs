@@ -66,6 +66,8 @@ foodLogP fl rchange active mark day startup = do
     -- calendar marks
     days <- fetch getEntryDays (changed <:> () <$ markActive)
     mark `consume` whenE active (map utctDay <$> days)
+
+    consume stdout . fmap show =<< plainChanges (fl ^. flAmountEdit)
     
     pure changed
 
@@ -77,6 +79,7 @@ entryToLog r is e =
     LogRecipe
     { lrMeal = foodEntryMeal (entityVal e)
     , lrName = recipeName r
+    , lrAmount = foodEntryAmount (entityVal e)
     , lrKcal = nlKcal label
     , lrProtein = nlProtein label ^. _x
     , lrCarbs = nlCarbs label ^. _x
