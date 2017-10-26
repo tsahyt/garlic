@@ -67,7 +67,7 @@ data GarlicTrackingFoodLog = GarlicTrackingFoodLog
     , _flName        :: Behavior Text
     , _flAmount      :: Behavior Double
     , _flLoadRecipes :: Consumer [Text]
-    , _flAmountEdit  :: Behavior (Double, FoodEntryId)
+    , _flAmountEdit  :: Behavior Double -- (Double, FoodEntryId)
     }
 
 foodLog :: Builder -> Garlic GarlicTrackingFoodLog
