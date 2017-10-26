@@ -22,17 +22,18 @@ import Data.Foldable
 
 foodLogP ::
        GarlicTrackingFoodLog
+    -> Event ()
     -> Behavior Bool
     -> Consumer [Day]
     -> Behavior Day
     -> Event ()
     -> Garlic (Event ())
-foodLogP fl active mark day startup = do
+foodLogP fl rchange active mark day startup = do
     let time = UTCTime <$> day <*> pure 0
     now <- (\x -> x { utctDayTime = 0 }) <$> liftIO getCurrentTime
 
     -- recipe change
-    rs <- fetch recipes ("" <$ startup)
+    rs <- fetch recipes $ unionl [ "" <$ startup, "" <$ rchange ]
 
     -- reload completion on new recipes
     fl ^. flLoadRecipes `consume` (map (recipeName . entityVal) . toList) <$> rs
@@ -44,9 +45,10 @@ foodLogP fl active mark day startup = do
         fetch addFoodEntry $
         (shortToEntry <$> time <*> fl ^. flAmount) <@> newEntry
 
-    -- reload on day change
+    -- reload on day change or on recipe database change
     dayChange <- plainChanges time
-    reload <- fetch getFoodEntries $ dayChange <:> now <$ startup
+    reload <- fetch getFoodEntries $ 
+        unionl [ dayChange, now <$ startup, time <@ rchange ]
     fl ^. flClean `consume` () <$ reload
 
     -- list insertion

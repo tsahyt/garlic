@@ -17,8 +17,8 @@ import Reactive.Banana
 
 import Garlic.Types
 
-trackingP :: GarlicApp -> Garlic (Behavior Goal)
-trackingP app = do
+trackingP :: GarlicApp -> Event () -> Garlic (Behavior Goal)
+trackingP app rchange = do
     active <- stepper FoodLog $ app ^. appVTracking . trackingSwitch
 
     g <- goalsP 
@@ -29,6 +29,7 @@ trackingP app = do
         (app ^. appStartup)
     r <- foodLogP
         (app ^. appVTracking . trackingFoodLog)
+        rchange
         ((\x -> x == FoodLog || x == Nutrition) <$> active)
         (app ^. appVTracking . trackingMarks)
         (app ^. appVTracking . trackingDate)

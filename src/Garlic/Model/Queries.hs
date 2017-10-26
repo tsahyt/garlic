@@ -191,6 +191,9 @@ deleteRecipe = dbConsumer $ \k -> do
     delete $
         from $ \h ->
             where_ (h ^. RecipeHasRecipe ==. val k)
+    delete $
+        from $ \e ->
+            where_ (e ^. FoodEntryRecipe ==. val k)
     P.delete k
 
 newIngredient :: Fetcher Ingredient (Maybe (Entity Ingredient))

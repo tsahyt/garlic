@@ -41,7 +41,7 @@ recipeP ::
     -> Behavior Goal
     -> Event (Entity Recipe)
     -> Event Text
-    -> Garlic (Behavior RecipeView)
+    -> Garlic (Event (), Behavior RecipeView)
 recipeP app goal newKey search = mdo
     -- Recipe Search
     rcps   <- do
@@ -63,7 +63,7 @@ recipeP app goal newKey search = mdo
     recipeDisplayP app goal selected
     recipeList app rcps
 
-    currentView app
+    (,) <$> pure (() <$ editChange) <*> currentView app
 
 currentView :: GarlicApp -> Garlic (Behavior RecipeView)
 currentView app = do

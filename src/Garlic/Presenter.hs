@@ -43,8 +43,8 @@ presenter app' = mdo
     app ^. appAbout `consume` app ^. appAppMenu . amAbout
 
     -- Subsystems
-    goal <- trackingP app
-    rv <- recipeP app goal newKey search
+    goal <- trackingP app rchange
+    (rchange, rv) <- recipeP app goal newKey search
     ingredientEditorP app
     headerButtons (app ^. appHeader) rv
 
