@@ -45,6 +45,7 @@ module Garlic.Model.Queries
     getFoodEntries,
     deleteFoodEntry,
     getEntryDays,
+    changeAmountFoodEntry,
 
     -- * Nutrition Summary
     getNutritionSummary,
@@ -281,6 +282,10 @@ getFoodEntries =
 
 deleteFoodEntry :: Fetcher (Key FoodEntry) ()
 deleteFoodEntry = dbFetcher $ \k -> P.delete k >> pure ()
+
+changeAmountFoodEntry :: Consumer (Double, Key FoodEntry)
+changeAmountFoodEntry = dbConsumer $ \(a,k) ->
+    P.update k [ FoodEntryAmount P.=. a ]
 
 getEntryDays :: Fetcher () [UTCTime]
 getEntryDays =

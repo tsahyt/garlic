@@ -67,7 +67,8 @@ foodLogP fl rchange active mark day startup = do
     days <- fetch getEntryDays (changed <:> () <$ markActive)
     mark `consume` whenE active (map utctDay <$> days)
 
-    consume stdout . fmap show =<< plainChanges (fl ^. flAmountEdit)
+    -- amount updating
+    changeAmountFoodEntry `consume` fl ^. flAmountEdit
     
     pure changed
 

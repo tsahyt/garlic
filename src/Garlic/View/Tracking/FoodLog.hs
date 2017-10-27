@@ -26,6 +26,7 @@ import Control.Monad.IO.Class
 import Control.Monad.Trans
 import Reactive.Banana.GI.Gtk
 import Reactive.Banana
+import Reactive.Banana.Frameworks (newEvent)
 import Data.Text (Text, pack)
 import Data.IORef
 import Data.Text.Encoding (decodeUtf8)
@@ -67,7 +68,7 @@ data GarlicTrackingFoodLog = GarlicTrackingFoodLog
     , _flName        :: Behavior Text
     , _flAmount      :: Behavior Double
     , _flLoadRecipes :: Consumer [Text]
-    , _flAmountEdit  :: Behavior Double -- (Double, FoodEntryId)
+    , _flAmountEdit  :: Event (Double, FoodEntryId)
     }
 
 foodLog :: Builder -> Garlic GarlicTrackingFoodLog
@@ -76,9 +77,7 @@ foodLog b = do
     list <- castB b "foodLogList" ListBox
     (e, pref, name, amount, load) <- buildMeals list
     del <- deletion b list pref mref
-    amountEdit <- castB b "foodLogEditAmountAdjustment" Adjustment
-    amountEditing list amountEdit mref
-
+    edit <- amountEditing b list mref
     GarlicTrackingFoodLog <$>
         pure
             (ioConsumer $ \lr@LogRecipe {..} -> do
@@ -90,24 +89,38 @@ foodLog b = do
         pure name <*>
         pure amount <*>
         pure load <*>
-        lift (attrB amountEdit #value)
+        pure edit
 
 amountEditing ::
-       MonadIO m
-    => ListBox
-    -> Adjustment
+       Builder
+    -> ListBox
     -> IORef [Either Meal LogRecipe]
-    -> m ()
-amountEditing list adjustment ref =
-    void $
-    on list #rowSelected $ \case
+    -> Garlic (Event (Double, FoodEntryId))
+amountEditing b list ref = do
+    (e, handle) <- lift newEvent
+    amountEdit <- castB b "foodLogEditAmountAdjustment" Adjustment
+
+    -- load previous value on selection
+    void $ on list #rowSelected $ \case
         Nothing -> pure ()
         Just row -> do
             m <- readIORef ref
             idx <- fromIntegral <$> listBoxRowGetIndex row
             case L.atMay idx m of
-                Just (Right lr) -> adjustmentSetValue adjustment (lrAmount lr)
+                Just (Right lr) -> adjustmentSetValue amountEdit (lrAmount lr)
                 _ -> pure ()
+
+    -- trigger event on change
+    void $ on amountEdit #valueChanged $ do
+        m <- readIORef ref
+        val <- adjustmentGetValue amountEdit
+        row <- listBoxGetSelectedRow list
+        idx <- fromIntegral <$> listBoxRowGetIndex row
+        case L.atMay idx m of
+            Just (Right lr) -> handle (val, lrKey lr)
+            _ -> pure ()
+
+    pure e
 
 deletion ::
        Builder
