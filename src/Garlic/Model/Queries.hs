@@ -194,7 +194,7 @@ deleteRecipe = dbConsumer $ \k -> do
             where_ (h ^. RecipeHasRecipe ==. val k)
     delete $
         from $ \e ->
-            where_ (e ^. FoodEntryRecipe ==. val k)
+            where_ (e ^. FoodEntryRecipe ==. val (Just k))
     P.delete k
 
 newIngredient :: Fetcher Ingredient (Maybe (Entity Ingredient))
@@ -262,11 +262,13 @@ deleteGoal =
 entryShort ::
        Entity FoodEntry
     -> SqlPersistT IO (Entity FoodEntry, Recipe, [WeighedIngredient])
-entryShort x = do
-    let k = foodEntryRecipe (entityVal x)
-    r <- getJust k
-    is <- ingredientsFor' k
-    pure (x, r, is)
+entryShort x =
+    case foodEntryRef (entityVal x) of
+        Left k -> do
+            r <- getJust k
+            is <- ingredientsFor' k
+            pure (x, r, is)
+        _ -> undefined
 
 addFoodEntry ::
        Fetcher FoodEntry (Entity FoodEntry, Recipe, [WeighedIngredient])
@@ -304,7 +306,7 @@ nutritionSummary :: UTCTime -> SqlPersistT IO [(Double, [WeighedIngredient])]
 nutritionSummary t = do
     rs <- select $ 
           from $ \(e `InnerJoin` r) -> do
-            on (e ^. FoodEntryRecipe ==. r ^. RecipeId)
+            on (e ^. FoodEntryRecipe ==. just (r ^. RecipeId))
             where_ (e ^. FoodEntryTimestamp ==. val t)
             pure (e,r)
 

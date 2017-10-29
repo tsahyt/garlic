@@ -11,6 +11,7 @@ import Data.Time
 import Linear.Vector
 import Linear.V2
 import Garlic.Model
+import Garlic.Model.EntryTag
 import Garlic.Data.Meal
 import Garlic.Data.Nutrition
 import Database.Persist (Entity(..))
@@ -73,7 +74,8 @@ foodLogP fl rchange active mark day startup = do
     pure changed
 
 shortToEntry :: UTCTime -> Double -> (Meal, Entity Recipe, a) -> FoodEntry
-shortToEntry t amount (m, r, _) = FoodEntry t (entityKey r) amount m
+shortToEntry t amount (m, r, _) =
+    FoodEntry t EntryRecipe (Just $ entityKey r) Nothing amount m
 
 entryToLog :: Recipe -> [WeighedIngredient] -> Entity FoodEntry -> LogRecipe
 entryToLog r is e =

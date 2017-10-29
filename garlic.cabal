@@ -23,6 +23,7 @@ library
                        Garlic.Model
                        Garlic.Model.CSV
                        Garlic.Model.Queries
+                       Garlic.Model.EntryTag
                        Garlic.Data.Units
                        Garlic.Data.Nutrition
                        Garlic.Data.Duration

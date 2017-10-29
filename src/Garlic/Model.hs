@@ -9,11 +9,13 @@
 module Garlic.Model where
 
 import Data.Text (Text)
+import Data.Maybe (fromMaybe)
 import Database.Persist.TH
 import Text.Markdown
 import Text.Markdown.Persist ()
 import Garlic.Data.Units
 import Garlic.Data.Meal
+import Garlic.Model.EntryTag
 import Data.Time.Clock
 
 share [mkPersist sqlSettings, mkMigrate "migrateAll"] [persistLowerCase|
@@ -82,7 +84,15 @@ share [mkPersist sqlSettings, mkMigrate "migrateAll"] [persistLowerCase|
 
     FoodEntry
         timestamp UTCTime
-        recipe RecipeId
+        tag EntryTag
+        recipe RecipeId Maybe
+        ingredient IngredientId Maybe
         amount Double
         meal Meal
  |]
+
+foodEntryRef :: FoodEntry -> Either RecipeId IngredientId
+foodEntryRef e = case foodEntryTag e of
+    EntryRecipe -> Left $ fromMaybe err (foodEntryRecipe e)
+    EntryIngredient -> Right $ fromMaybe err (foodEntryIngredient e)
+    where err = error "Database consistency error!"
