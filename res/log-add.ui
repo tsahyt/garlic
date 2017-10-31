@@ -2,6 +2,20 @@
 <!-- Generated with glade 3.20.0 -->
 <interface>
   <requires lib="gtk+" version="3.20"/>
+  <object class="GtkAdjustment" id="ingredientAmount">
+    <property name="upper">100</property>
+    <property name="step_increment">0.25</property>
+    <property name="page_increment">10</property>
+  </object>
+  <object class="GtkEntryCompletion" id="recipeCompletion">
+    <property name="minimum_key_length">0</property>
+    <property name="text_column">0</property>
+  </object>
+  <object class="GtkAdjustment" id="recipeServing">
+    <property name="upper">100</property>
+    <property name="step_increment">0.25</property>
+    <property name="page_increment">10</property>
+  </object>
   <object class="GtkPopover" id="popover">
     <property name="can_focus">False</property>
     <child>
@@ -21,10 +35,10 @@
             <property name="margin_top">4</property>
             <property name="layout_style">end</property>
             <child>
-              <object class="GtkStackSwitcher">
+              <object class="GtkStackSwitcher" id="switcher">
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
-                <property name="stack">stack1</property>
+                <property name="stack">stack</property>
               </object>
               <packing>
                 <property name="expand">True</property>
@@ -59,7 +73,7 @@
           </packing>
         </child>
         <child>
-          <object class="GtkStack" id="stack1">
+          <object class="GtkStack" id="stack">
             <property name="visible">True</property>
             <property name="can_focus">False</property>
             <child>
@@ -68,7 +82,7 @@
                 <property name="can_focus">False</property>
                 <property name="orientation">vertical</property>
                 <child>
-                  <object class="GtkEntry" id="name">
+                  <object class="GtkEntry" id="recipeName">
                     <property name="visible">True</property>
                     <property name="can_focus">True</property>
                     <property name="primary_icon_stock">gtk-find</property>
@@ -90,7 +104,7 @@
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
                         <property name="text" translatable="yes">0.00</property>
-                        <property name="adjustment">servingAdjustment</property>
+                        <property name="adjustment">recipeServing</property>
                         <property name="digits">2</property>
                       </object>
                       <packing>
@@ -124,18 +138,68 @@
                 </child>
               </object>
               <packing>
-                <property name="name">page0</property>
+                <property name="name">recipes</property>
                 <property name="title" translatable="yes">Recipes</property>
               </packing>
             </child>
             <child>
-              <object class="GtkLabel">
+              <object class="GtkBox">
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
-                <property name="label" translatable="yes">TODO: ingredient adding</property>
+                <property name="orientation">vertical</property>
+                <child>
+                  <object class="GtkEntry" id="ingredientName">
+                    <property name="visible">True</property>
+                    <property name="can_focus">True</property>
+                    <property name="primary_icon_stock">gtk-find</property>
+                    <property name="completion">recipeCompletion</property>
+                  </object>
+                  <packing>
+                    <property name="expand">False</property>
+                    <property name="fill">True</property>
+                    <property name="position">0</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkBox">
+                    <property name="visible">True</property>
+                    <property name="can_focus">False</property>
+                    <property name="spacing">4</property>
+                    <child>
+                      <object class="GtkSpinButton">
+                        <property name="visible">True</property>
+                        <property name="can_focus">True</property>
+                        <property name="text" translatable="yes">0.00</property>
+                        <property name="adjustment">ingredientAmount</property>
+                        <property name="digits">2</property>
+                      </object>
+                      <packing>
+                        <property name="expand">True</property>
+                        <property name="fill">True</property>
+                        <property name="position">0</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <object class="GtkComboBoxText" id="units">
+                        <property name="visible">True</property>
+                        <property name="can_focus">False</property>
+                      </object>
+                      <packing>
+                        <property name="expand">False</property>
+                        <property name="fill">True</property>
+                        <property name="position">1</property>
+                      </packing>
+                    </child>
+                  </object>
+                  <packing>
+                    <property name="expand">False</property>
+                    <property name="fill">True</property>
+                    <property name="position">1</property>
+                  </packing>
+                </child>
               </object>
               <packing>
-                <property name="name">page1</property>
+                <property name="name">ingredients</property>
                 <property name="title" translatable="yes">Ingredients</property>
                 <property name="position">1</property>
               </packing>
@@ -149,14 +213,5 @@
         </child>
       </object>
     </child>
-  </object>
-  <object class="GtkEntryCompletion" id="recipeCompletion">
-    <property name="minimum_key_length">0</property>
-    <property name="text_column">0</property>
-  </object>
-  <object class="GtkAdjustment" id="servingAdjustment">
-    <property name="upper">100</property>
-    <property name="step_increment">0.25</property>
-    <property name="page_increment">10</property>
   </object>
 </interface>

@@ -40,11 +40,14 @@ foodLogP fl rchange active mark day startup = do
     fl ^. flLoadRecipes `consume` (map (recipeName . entityVal) . toList) <$> rs
 
     -- adding
-    let zipName = (\x y -> (y, x)) <$> fl ^. flName
-    newEntry <- filterJust <$$> fetch recipeShort $ zipName <@> fl ^. flAdding
-    foodEntry <-
-        fetch addFoodEntry $
-        (shortToEntry <$> time <*> fl ^. flAmount) <@> newEntry
+    {-
+     -let zipName = (\x y -> (y, x)) <$> fl ^. flName
+     -newEntry <- filterJust <$$> fetch recipeShort $ zipName <@> fl ^. flAdding
+     -foodEntry <-
+     -    fetch addFoodEntry $
+     -    (shortToEntry <$> time <*> fl ^. flAmount) <@> newEntry
+     -}
+    let foodEntry = never
 
     -- reload on day change or on recipe database change
     dayChange <- plainChanges time

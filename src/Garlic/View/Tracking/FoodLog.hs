@@ -6,27 +6,27 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 module Garlic.View.Tracking.FoodLog 
 (
+    Adding (..),
     LogRecipe (..),
     GarlicTrackingFoodLog,
     flInsert,
     flClean,
     flAdding,
     flDelete,
-    flName,
-    flAmount,
+    flAddingB,
     flLoadRecipes,
     flAmountEdit,
     foodLog
 ) 
 where
 
-import GI.Gtk
+import GI.Gtk hiding (Unit(..))
 import Control.Monad
 import Control.Monad.IO.Class
 import Control.Monad.Trans
 import Reactive.Banana.GI.Gtk
 import Reactive.Banana
-import Reactive.Banana.Frameworks (newEvent)
+import Reactive.Banana.Frameworks (newEvent, mapEventIO)
 import Data.Text (Text, pack)
 import Data.IORef
 import Data.Text.Encoding (decodeUtf8)
@@ -38,6 +38,7 @@ import qualified Data.ListMap as L
 
 import Garlic.Types
 import Garlic.Data.Meal
+import Garlic.Data.Units
 import Garlic.Model (FoodEntryId)
 
 uiLogHeader :: Text
@@ -60,13 +61,17 @@ data LogRecipe = LogRecipe
     , lrKey :: FoodEntryId
     } deriving (Eq, Show, Ord, Read)
 
+data Adding
+    = AddingRecipe Text Double
+    | AddingIngredient Text Double Unit
+    deriving (Eq, Show, Ord, Read)
+
 data GarlicTrackingFoodLog = GarlicTrackingFoodLog
     { _flInsert      :: Consumer LogRecipe
     , _flClean       :: Consumer ()
     , _flAdding      :: Event Meal
     , _flDelete      :: Event LogRecipe
-    , _flName        :: Behavior Text
-    , _flAmount      :: Behavior Double
+    , _flAddingB     :: Behavior Adding
     , _flLoadRecipes :: Consumer [Text]
     , _flAmountEdit  :: Event (Double, FoodEntryId)
     }
@@ -75,7 +80,7 @@ foodLog :: Builder -> Garlic GarlicTrackingFoodLog
 foodLog b = do
     mref <- liftIO $ newIORef []
     list <- castB b "foodLogList" ListBox
-    (e, pref, name, amount, load) <- buildMeals list
+    (e, pref, addingB, load) <- buildMeals list
     del <- deletion b list pref mref
     edit <- amountEditing b list mref
     GarlicTrackingFoodLog <$>
@@ -86,8 +91,7 @@ foodLog b = do
         pure (ioConsumer $ \_ -> cleanEntries list pref mref) <*>
         pure e <*>
         pure del <*>
-        pure name <*>
-        pure amount <*>
+        pure addingB <*>
         pure load <*>
         pure edit
 
@@ -143,47 +147,94 @@ deletion b list pref mref = do
                     h lr
                 _ -> pure ()
 
+data PopoverActive
+    = RecipeActive
+    | IngredientActive
+    deriving (Eq, Show, Ord, Read)
+
 buildMeals ::
        ListBox
     -> Garlic ( Event Meal
               , IORef (M.Map Meal Int)
-              , Behavior Text
-              , Behavior Double
-              , Consumer [Text] )
+              , Behavior Adding
+              , Consumer [Text])
 buildMeals list = do
     b <- builderNew
     _ <- builderAddFromString b uiLogAdd (-1)
-
     popover <- castB b "popover" Popover
-    name <- castB b "name" Entry
-    nameB <- lift $ attrB name #text
-    servings <- castB b "servingAdjustment" Adjustment
-    servingsB <- lift $ attrB servings #value
+    switcher <- castB b "switcher" StackSwitcher
+    stack <- castB b "stack" Stack
+
+    -- behavior denoting the currently active popover page
+    activeB <-
+        do (e, h) <- lift newEvent
+           _ <-
+               on switcher #buttonReleaseEvent $ \_ -> do
+                   name <- stackGetVisibleChildName stack
+                   case name of
+                       Just "recipes" -> h RecipeActive
+                       Just "ingredients" -> h IngredientActive
+                       _ -> pure ()
+                   return True
+           stepper RecipeActive e
+
+    -- popover widgets
+    rname <- castB b "recipeName" Entry
+    iname <- castB b "ingredientName" Entry
+    rservings <- castB b "recipeServing" Adjustment
+    iamount <- castB b "ingredientAmount" Adjustment
+ 
+    -- fill unit box
+    unit <- castB b "units" ComboBoxText
+    mapM_ (comboBoxTextAppendText unit . prettyUnit) allUnits
+
+    -- adding behavior
+    addingB <-
+        do rnameB <- lift $ attrB rname #text
+           rservingsB <- lift $ attrB rservings #value
+           inameB <- lift $ attrB iname #text
+           iamountB <- lift $ attrB iamount #value
+
+           c  <- lift $ signalE0 unit #changed
+           c' <- lift $ mapEventIO (const $ comboBoxTextGetActiveText unit) c
+           unitB <- stepper Gram $ parseUnit <$> c'
+
+           pure $
+               dataToAdding <$> activeB <*> rnameB <*> rservingsB <*> inameB <*>
+               iamountB <*> unitB
+
     okButton <- castB b "okButton" Button
-
     _ <- on okButton #clicked $ popoverPopdown popover
-
     btns <- mapM (addHeader list . pack . show) allMeals
-
     popoverMeal <- liftIO $ newIORef Breakfast
 
+    -- popover handling per meal button
     forM_ (zip allMeals btns) $ \(meal, btn) ->
         on btn #clicked $ do
             writeIORef popoverMeal meal
-            entrySetText name ""
-            adjustmentSetValue servings 1.0
+            entrySetText rname ""
+            adjustmentSetValue rservings 1.0
             popoverSetRelativeTo popover (Just btn)
             popoverPopup popover
+    r <- liftIO . newIORef . M.fromList . map (\x -> (x, 0)) $ allMeals
+    adding <-
+        lift $ signalEN okButton #clicked $ \h -> readIORef popoverMeal >>= h
 
-    r <- liftIO . newIORef . M.fromList . map (\x -> (x,0)) $ allMeals
-
-    adding <- lift $ signalEN okButton #clicked $ \h ->
-                readIORef popoverMeal >>= h
-
+    -- recipe completion handling
     compl <- castB b "recipeCompletion" EntryCompletion
     loadCompl <- completion compl
+    pure (adding, r, addingB, loadCompl)
 
-    pure (adding,r,nameB,servingsB,loadCompl)
+dataToAdding ::
+       PopoverActive
+    -> Text -- ^ recipe name
+    -> Double -- ^ recipe amount
+    -> Text -- ^ ingredient name
+    -> Double -- ^ ingredient amount
+    -> Unit -- ^ ingredient unit
+    -> Adding
+dataToAdding RecipeActive r a _ _ _ = AddingRecipe r a
+dataToAdding IngredientActive _ _ i a u = AddingIngredient i a u
 
 completion :: EntryCompletion -> Garlic (Consumer [Text])
 completion comp = do
