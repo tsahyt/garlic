@@ -24,14 +24,14 @@ nutritionP nt reload goal
     consume (nt ^. nLoadGoals) =<< plainChanges goal
 
     -- load daily nutrition data for levels and values
-    loaded <- fetch getNutritionSummary (flip UTCTime 0 <$> reload)
+    loaded <- dbFetch $ getNutritionSummary . flip UTCTime 0 <$> reload
     let nsum = toNSum <$> loaded
     nt ^. nLoadNutrition `consume` nsum
 
     -- past for bar chart
     past <-
         stepper [] . fmap (map (second toNSum)) =<<
-        fetch getPastNutrition (past7 <$> reload)
+        dbFetch (getPastNutrition . past7 <$> reload)
     nselect <- stepper PastKcal $ nt ^. nPastSelect
 
     let chartB = extractPast <$> past <*> nselect

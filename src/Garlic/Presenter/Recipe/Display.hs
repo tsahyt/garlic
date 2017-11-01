@@ -50,7 +50,8 @@ recipeDisplayP app goal selected = do
     let disp = app ^. appVRecipes . vrRecipeDisplay
 
     -- Ingredients
-    selected' <- fetch (fetchThrough (lmap entityKey ingredientsFor)) selected
+    selected' <- dbFetch $ 
+        (\x -> (,) <$> pure x <*> ingredientsFor (entityKey x)) <$> selected
     ingredients <- stepper [] (snd <$> selected')
 
     -- Load instructions and reset spinner on new selection

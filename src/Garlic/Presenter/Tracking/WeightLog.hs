@@ -34,18 +34,18 @@ weightLogP wl active startup mark day = mdo
                        , TimeAll <$ activated
                        , TimeAll <$ added
                        , TimeAll <$ deleted ]
-    measurements <- fetch getWeightMeasurements load
+    measurements <- dbFetch $ getWeightMeasurements <$> load
 
     -- load data for graph
     wl ^. wlReloadMeasurements `consume` 
         map entityVal <$> measurements
 
     -- adding on OK
-    added <- fetch addWeightMeasurement $
+    added <- dbFetch $ addWeightMeasurement <$>
         currentMeasurement day (wl ^. wlInput) <@ wl ^. wlOk
 
     -- deletion
-    deleted <- fetch deleteWeightMeasurement $
+    deleted <- dbFetch $ deleteWeightMeasurement <$>
         dayStamp day <@ wl ^. wlDelete
 
     -- calendar marks

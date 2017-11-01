@@ -13,7 +13,6 @@ module Garlic.View.Tracking.FoodLog
     flClean,
     flAdding,
     flDelete,
-    flAddingB,
     flLoadRecipes,
     flAmountEdit,
     foodLog
@@ -62,16 +61,19 @@ data LogRecipe = LogRecipe
     } deriving (Eq, Show, Ord, Read)
 
 data Adding
-    = AddingRecipe Text Double
-    | AddingIngredient Text Double Unit
+    = AddingRecipe Meal Text Double
+    | AddingIngredient Meal Text Double Unit
     deriving (Eq, Show, Ord, Read)
+
+setMeal :: Adding -> Meal -> Adding
+setMeal (AddingRecipe _ t d) m = AddingRecipe m t d
+setMeal (AddingIngredient _ t d u) m = AddingIngredient m t d u
 
 data GarlicTrackingFoodLog = GarlicTrackingFoodLog
     { _flInsert      :: Consumer LogRecipe
     , _flClean       :: Consumer ()
-    , _flAdding      :: Event Meal
+    , _flAdding      :: Event Adding
     , _flDelete      :: Event LogRecipe
-    , _flAddingB     :: Behavior Adding
     , _flLoadRecipes :: Consumer [Text]
     , _flAmountEdit  :: Event (Double, FoodEntryId)
     }
@@ -89,9 +91,8 @@ foodLog b = do
                  entry <- newEntry lrName lrKcal lrProtein lrCarbs lrFat
                  addEntry lr lrMeal entry list pref mref) <*>
         pure (ioConsumer $ \_ -> cleanEntries list pref mref) <*>
-        pure e <*>
+        pure ((setMeal <$> addingB) <@> e) <*>
         pure del <*>
-        pure addingB <*>
         pure load <*>
         pure edit
 
@@ -233,8 +234,8 @@ dataToAdding ::
     -> Double -- ^ ingredient amount
     -> Unit -- ^ ingredient unit
     -> Adding
-dataToAdding RecipeActive r a _ _ _ = AddingRecipe r a
-dataToAdding IngredientActive _ _ i a u = AddingIngredient i a u
+dataToAdding RecipeActive r a _ _ _ = AddingRecipe Breakfast r a
+dataToAdding IngredientActive _ _ i a u = AddingIngredient Breakfast i a u
 
 completion :: EntryCompletion -> Garlic (Consumer [Text])
 completion comp = do

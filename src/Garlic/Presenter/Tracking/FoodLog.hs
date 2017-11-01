@@ -1,4 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE LambdaCase #-}
 module Garlic.Presenter.Tracking.FoodLog
 (
     foodLogP
@@ -34,7 +35,7 @@ foodLogP fl rchange active mark day startup = do
     now <- (\x -> x { utctDayTime = 0 }) <$> liftIO getCurrentTime
 
     -- recipe change
-    rs <- fetch recipes $ unionl [ "" <$ startup, "" <$ rchange ]
+    rs <- dbFetch $ recipes "" <$ unionl [ startup, rchange ]
 
     -- reload completion on new recipes
     fl ^. flLoadRecipes `consume` (map (recipeName . entityVal) . toList) <$> rs
@@ -48,10 +49,11 @@ foodLogP fl rchange active mark day startup = do
      -    (shortToEntry <$> time <*> fl ^. flAmount) <@> newEntry
      -}
     let foodEntry = never
+    stdout `consume` show <$> fl ^. flAdding
 
     -- reload on day change or on recipe database change
     dayChange <- plainChanges time
-    reload <- fetch getFoodEntries $ 
+    reload <- dbFetch $ getFoodEntries <$>
         unionl [ dayChange, now <$ startup, time <@ rchange ]
     fl ^. flClean `consume` () <$ reload
 
@@ -61,20 +63,27 @@ foodLogP fl rchange active mark day startup = do
         unionl [reloadIns, foodEntry]
 
     -- db deletion
-    deleted <- fetch deleteFoodEntry $ lrKey <$> fl ^. flDelete
+    deleted <- dbFetch $ deleteFoodEntry . lrKey <$> fl ^. flDelete
 
     -- emit changed event
     let changed = unionl [ () <$ reload, () <$ foodEntry, deleted ]
     markActive <- plainChanges active
 
     -- calendar marks
-    days <- fetch getEntryDays (changed <:> () <$ markActive)
+    days <- dbFetch $ getEntryDays <$ unionl [ changed, () <$ markActive ]
     mark `consume` whenE active (map utctDay <$> days)
 
     -- amount updating
     changeAmountFoodEntry `consume` fl ^. flAmountEdit
     
     pure changed
+
+{-
+ -adding :: Fetcher Adding FoodEntry
+ -adding = dbFetcher $ \case
+ -    AddingRecipe meal txt amount -> undefined
+ -    AddingIngredient meal txt amount unit -> undefined
+ -}
 
 shortToEntry :: UTCTime -> Double -> (Meal, Entity Recipe, a) -> FoodEntry
 shortToEntry t amount (m, r, _) =

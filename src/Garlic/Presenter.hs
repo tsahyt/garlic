@@ -25,15 +25,15 @@ presenter app' = mdo
     app <- application app'
 
     -- New Recipe
-    newKey <- fetch newRecipe $ app ^. appHeader . addClick
+    newKey <- dbFetch $ newRecipe <$ app ^. appHeader . addClick
 
     -- Search Event
     search <- searchBar app
 
     -- Ingredient Completion
-    completion <- fetch allIngredientNames $
-            app ^. appStartup 
-        <:> (() <$ app ^. appAppMenu . amIngImport)
+    completion <- dbFetch $ allIngredientNames <$ unionl
+        [ app ^. appStartup 
+        , () <$ app ^. appAppMenu . amIngImport ]
     app ^. appReplaceIngr `consume` completion
 
     -- AppMenu

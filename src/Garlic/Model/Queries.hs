@@ -19,7 +19,7 @@ module Garlic.Model.Queries
     updateRecipe,
     deleteRecipe,
 
-    -- * Recipes for FoodLog
+    -- * Recipes/Ingredients for FoodLog
     recipeShort,
 
     -- * Ingredients
@@ -102,8 +102,8 @@ makeLenses ''WeighedIngredient
 -- from the database. The query is done in two steps, once for all recipes, then
 -- as a loop over those recipes, rather than joining and then collapsing by
 -- recipe.
-recipes :: Fetcher Text (Seq (Entity Recipe))
-recipes = dbFetcher $ \str -> do
+recipes :: Text -> SqlPersistT IO (Seq (Entity Recipe))
+recipes str = do
     let str' = flip T.snoc '%' . T.cons '%' $ str
     rs <- select $ 
           from $ \r -> do
@@ -112,11 +112,8 @@ recipes = dbFetcher $ \str -> do
     pure . S.fromList $ rs
 
 -- | Select all weighted ingredients for some recipe
-ingredientsFor :: Fetcher (Key Recipe) [WeighedIngredient]
-ingredientsFor = dbFetcher ingredientsFor'
-
-ingredientsFor' :: Key Recipe -> SqlPersistT IO [WeighedIngredient]
-ingredientsFor' recipe = do
+ingredientsFor :: Key Recipe -> SqlPersistT IO [WeighedIngredient]
+ingredientsFor recipe = do
     xs <- select $
             from $ \(h,i) -> do
                 where_ (h ^. RecipeHasRecipe ==. val recipe
@@ -137,28 +134,27 @@ ingredientsFor' recipe = do
             xs
 
 recipeShort ::
-       Fetcher (Meal, Text) (Maybe (Meal, Entity Recipe, [WeighedIngredient]))
-recipeShort =
-    dbFetcher $ \(m, t) -> do
-        x <- P.selectFirst [RecipeName P.==. t] []
-        case x of
-            Nothing -> pure Nothing
-            Just x' -> do
-                ws <- ingredientsFor' (entityKey x')
-                pure $ Just (m, x', ws)
+       Meal
+    -> Text
+    -> SqlPersistT IO (Maybe (Meal, Entity Recipe, [WeighedIngredient]))
+recipeShort m t = do
+    x <- P.selectFirst [RecipeName P.==. t] []
+    case x of
+        Nothing -> pure Nothing
+        Just x' -> do
+            ws <- ingredientsFor (entityKey x')
+            pure $ Just (m, x', ws)
 
 -- | Select all ingredient names in the DB
-allIngredientNames :: Fetcher () [Text]
-allIngredientNames = dbFetcher $ \_ ->
-    map (ingredientName . entityVal) <$> P.selectList [] []
+allIngredientNames :: SqlPersistT IO [Text]
+allIngredientNames = map (ingredientName . entityVal) <$> P.selectList [] []
 
-ingredientByName :: Fetcher Text (Entity Ingredient)
-ingredientByName = filterMaybe . dbFetcher $ \name ->
-    P.selectFirst [ IngredientName P.==. name ] []
+ingredientByName :: Text -> SqlPersistT IO (Maybe (Entity Ingredient))
+ingredientByName name = P.selectFirst [IngredientName P.==. name] []
 
-ingredientsByName :: Fetcher [Text] [Entity Ingredient]
-ingredientsByName = dbFetcher $ \names -> do
-    xs <- mapM (\n -> P.selectFirst [ IngredientName P.==. n ] []) names
+ingredientsByName :: [Text] -> SqlPersistT IO [Entity Ingredient]
+ingredientsByName names = do
+    xs <- mapM (\n -> P.selectFirst [IngredientName P.==. n] []) names
     pure $ catMaybes xs
 
 updateRecipe :: Consumer (Entity Recipe, [WeighedIngredient])
@@ -182,8 +178,8 @@ updateRecipe =
             | WeighedIngredient {..} <- is
             ]
 
-newRecipe :: Fetcher () (Entity Recipe)
-newRecipe = dbFetcher $ \_ ->
+newRecipe :: SqlPersistT IO (Entity Recipe)
+newRecipe =
     P.insertEntity $ 
         Recipe "New Recipe" "Cuisine" 0 "" 0 1 "Serving" Nothing Nothing
 
@@ -197,8 +193,8 @@ deleteRecipe = dbConsumer $ \k -> do
             where_ (e ^. FoodEntryRecipe ==. val (Just k))
     P.delete k
 
-newIngredient :: Fetcher Ingredient (Maybe (Entity Ingredient))
-newIngredient = dbFetcher $ \i -> do
+newIngredient :: Ingredient -> SqlPersistT IO (Maybe (Entity Ingredient))
+newIngredient i = do
     x <- P.selectFirst [ IngredientName P.==. ingredientName i ] []
     case x of
         Just _  -> pure Nothing
@@ -214,35 +210,31 @@ deleteIngredient = dbConsumer $ \k -> do
 updateIngredient :: Consumer (Key Ingredient, Ingredient)
 updateIngredient = dbConsumer $ uncurry P.repsert
 
-getWeightMeasurements :: Fetcher UTCTime [Entity WeightMeasurement]
-getWeightMeasurements =
-    dbFetcher $ \l ->
-        sortBy (comparing (weightMeasurementTimestamp . entityVal)) <$>
-        P.selectList [WeightMeasurementTimestamp P.>=. l] []
+getWeightMeasurements :: UTCTime -> SqlPersistT IO [Entity WeightMeasurement]
+getWeightMeasurements l =
+    sortBy (comparing (weightMeasurementTimestamp . entityVal)) <$>
+    P.selectList [WeightMeasurementTimestamp P.>=. l] []
 
-addWeightMeasurement :: Fetcher WeightMeasurement ()
-addWeightMeasurement =
-    dbFetcher $ \m -> do
-        x <-
-            P.selectFirst
-                [WeightMeasurementTimestamp P.==. weightMeasurementTimestamp m]
-                []
-        case x of
-            Just e -> P.replace (entityKey e) m
-            Nothing -> P.insert_ m
+addWeightMeasurement :: WeightMeasurement -> SqlPersistT IO ()
+addWeightMeasurement m = do
+    x <-
+        P.selectFirst
+            [WeightMeasurementTimestamp P.==. weightMeasurementTimestamp m]
+            []
+    case x of
+        Just e -> P.replace (entityKey e) m
+        Nothing -> P.insert_ m
 
-deleteWeightMeasurement :: Fetcher UTCTime ()
-deleteWeightMeasurement =
-    dbFetcher $ \t -> P.deleteWhere [WeightMeasurementTimestamp P.==. t]
+deleteWeightMeasurement :: UTCTime -> SqlPersistT IO ()
+deleteWeightMeasurement t = P.deleteWhere [WeightMeasurementTimestamp P.==. t]
 
 mapBy :: (Ord b, Foldable t) => (a -> b) -> t a -> Map b a
 mapBy f = foldl' (\m x -> M.insert (f x) x m) M.empty
 
-getGoals :: Fetcher () (Map Day Goal)
-getGoals =
-    dbFetcher $ \_ -> do
-        xs <- P.selectList [] []
-        pure $ mapBy (utctDay . goalTimestamp) (map entityVal xs)
+getGoals :: SqlPersistT IO (Map Day Goal)
+getGoals = do
+    xs <- P.selectList [] []
+    pure $ mapBy (utctDay . goalTimestamp) (map entityVal xs)
 
 addGoal :: Consumer Goal
 addGoal =
@@ -266,44 +258,40 @@ entryShort x =
     case foodEntryRef (entityVal x) of
         Left k -> do
             r <- getJust k
-            is <- ingredientsFor' k
+            is <- ingredientsFor k
             pure (x, r, is)
         _ -> undefined
 
 addFoodEntry ::
-       Fetcher FoodEntry (Entity FoodEntry, Recipe, [WeighedIngredient])
-addFoodEntry =
-    dbFetcher $ P.insertEntity >=> entryShort
+       FoodEntry
+    -> SqlPersistT IO (Entity FoodEntry, Recipe, [WeighedIngredient])
+addFoodEntry = P.insertEntity >=> entryShort
 
 getFoodEntries ::
-       Fetcher UTCTime [(Entity FoodEntry, Recipe, [WeighedIngredient])]
-getFoodEntries =
-    dbFetcher $ \t -> do
-        xs <- P.selectList [FoodEntryTimestamp P.==. t] []
-        mapM entryShort xs
+       UTCTime
+    -> SqlPersistT IO [(Entity FoodEntry, Recipe, [WeighedIngredient])]
+getFoodEntries t = do
+    xs <- P.selectList [FoodEntryTimestamp P.==. t] []
+    mapM entryShort xs
 
-deleteFoodEntry :: Fetcher (Key FoodEntry) ()
-deleteFoodEntry = dbFetcher $ \k -> P.delete k >> pure ()
+deleteFoodEntry :: Key FoodEntry -> SqlPersistT IO ()
+deleteFoodEntry k = P.delete k >> pure ()
 
 changeAmountFoodEntry :: Consumer (Double, Key FoodEntry)
 changeAmountFoodEntry = dbConsumer $ \(a,k) ->
     P.update k [ FoodEntryAmount P.=. a ]
 
-getEntryDays :: Fetcher () [UTCTime]
-getEntryDays =
-    dbFetcher $ \_ -> do
-        xs <-
-            select $
-            from $ \e -> do
-                groupBy (e ^. FoodEntryTimestamp)
-                return (e ^. FoodEntryTimestamp)
-        pure $ map unValue xs
+getEntryDays :: SqlPersistT IO [UTCTime]
+getEntryDays = do
+    xs <-
+        select $
+        from $ \e -> do
+            groupBy (e ^. FoodEntryTimestamp)
+            return (e ^. FoodEntryTimestamp)
+    pure $ map unValue xs
 
-getNutritionSummary :: Fetcher UTCTime [(Double, [WeighedIngredient])]
-getNutritionSummary = dbFetcher nutritionSummary
-
-nutritionSummary :: UTCTime -> SqlPersistT IO [(Double, [WeighedIngredient])]
-nutritionSummary t = do
+getNutritionSummary :: UTCTime -> SqlPersistT IO [(Double, [WeighedIngredient])]
+getNutritionSummary t = do
     rs <- select $ 
           from $ \(e `InnerJoin` r) -> do
             on (e ^. FoodEntryRecipe ==. just (r ^. RecipeId))
@@ -313,10 +301,9 @@ nutritionSummary t = do
     forM rs $ \(e,r) -> do
         let amount = foodEntryAmount . entityVal $ e
             yield  = recipeYield . entityVal $ r
-        is <- ingredientsFor' (entityKey r)
+        is <- ingredientsFor (entityKey r)
         pure (amount / yield, is)
 
 getPastNutrition ::
-       Fetcher [UTCTime] [(UTCTime, [(Double, [WeighedIngredient])])]
-getPastNutrition =
-    dbFetcher $ mapM (\t -> (,) <$> pure t <*> nutritionSummary t)
+       [UTCTime] -> SqlPersistT IO [(UTCTime, [(Double, [WeighedIngredient])])]
+getPastNutrition = mapM (\t -> (,) <$> pure t <*> getNutritionSummary t)

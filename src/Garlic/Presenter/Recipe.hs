@@ -46,7 +46,7 @@ recipeP app goal newKey search = mdo
     -- Recipe Search
     rcps   <- do
         let refetch = search <:> ("" <$ app ^. appStartup) <:> ("" <$ newKey)
-        refetched <- fmap const <$> fetch recipes refetch
+        refetched <- fmap const <$> dbFetch (recipes <$> refetch)
         accumB mempty $ unions [ refetched , fst <$> editChange ]
     
     -- Selection Event holding current recipe entity

@@ -22,7 +22,7 @@ ingredientEditorP app = do
         ingredient = currentIngredient $ editor ^. ieMask
 
     -- Load on Enter
-    load   <- fetch ingredientByName $ editor ^. ieEnter
+    load   <- filterJust <$$> dbFetch $ ingredientByName <$> editor ^. ieEnter
     loaded <- stepper Nothing (Just . entityKey <$> load)
     editor ^. ieMask . imLoad `consume` entityVal <$> load
 

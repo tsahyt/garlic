@@ -10,17 +10,10 @@ module Garlic.Types
     consumeMaybe,
     ioConsumer,
     dbConsumer,
+    dbFetch,
 
     stdout,
 
-    Fetcher,
-    fetch,
-    fetchThrough,
-    dynamicFetcher,
-    dbFetcher,
-    ioFetcher,
-    filterMaybe,
-    
     -- * Misc
     makeGetters,
     (<:>),
@@ -89,6 +82,11 @@ consumeMaybe x = consume (choose go conquer x)
           go (Just a) = Right a
 infixr 1 `consumeMaybe`
 
+dbFetch :: Event (SqlPersistT IO a) -> Garlic (Event a)
+dbFetch e = do
+    backend <- ask
+    lift $ mapEventIO (`runReaderT` backend) e
+
 -- | Produce a consumer from an IO action. For GUI operations.
 ioConsumer :: (a -> IO ()) -> Consumer a
 ioConsumer k = Consumer $ \e -> lift (reactimate (k <$> e))
@@ -101,42 +99,6 @@ dbConsumer :: (a -> SqlPersistT IO ()) -> Consumer a
 dbConsumer k = Consumer $ \e -> do
     backend <- ask
     lift $ reactimate (flip runReaderT backend . k <$> e)
-
--- | A fetcher can produce an event stream from another event stream, performing
--- some action in the process to do the transformation.
-newtype Fetcher a b = Fetcher { fetch :: Event a -> Garlic (Event b) }
-infixr 1 `fetch`
-
-instance Profunctor Fetcher where
-    dimap f g k = Fetcher $ \a ->
-        let b = fmap f a
-         in g <$$> fetch k b
-
-instance Category Fetcher where
-    id = Fetcher pure
-    a . b = Fetcher $ fetch a <=< fetch b
-
--- | Can be used to register new handlers/events dynamically in a fetcher.
-dynamicFetcher :: (a -> MomentIO b) -> Fetcher a b
-dynamicFetcher k = Fetcher $ \e -> lift $ execute (k <$> e)
-
--- | Perform DB action on event to obtain a new event.
-dbFetcher :: (a -> SqlPersistT IO b) -> Fetcher a b
-dbFetcher k = Fetcher $ \e -> do
-    backend <- ask
-    lift $ mapEventIO (\x -> runReaderT (k x) backend) e
-
-ioFetcher :: (a -> IO b) -> Fetcher a b
-ioFetcher k = Fetcher $ \e -> lift $ mapEventIO k e
-
-filterMaybe :: Fetcher a (Maybe b) -> Fetcher a b
-filterMaybe (Fetcher x) = Fetcher (filterJust <$$> x)
-
-fetchThrough :: Fetcher a b -> Fetcher a (a,b)
-fetchThrough k = Fetcher $ \a -> do
-    aB <- stepper (error "impossible") a
-    b  <- fetch k a
-    pure $ ((,) <$> aB) <@> b
 
 -- | Read only lens generation for GUI records
 makeGetters = makeLensesWith (set generateUpdateableOptics False lensRules)

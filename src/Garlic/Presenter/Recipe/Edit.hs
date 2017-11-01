@@ -7,8 +7,8 @@ module Garlic.Presenter.Recipe.Edit
 )
 where
 
-import Control.Category
 import Control.Lens
+import Control.Monad.IO.Class
 import Data.Maybe
 import Data.Monoid
 import Data.Functor.Compose
@@ -28,68 +28,77 @@ import Garlic.View.Recipe
 import Garlic.View.Recipe.Display
 import Garlic.View.Recipe.Edit
 
-import Prelude hiding ((.), id)
-
 import qualified Data.Sequence as S
 
-recipeEditP
-    :: GarlicApp
+recipeEditP ::
+       GarlicApp
     -> Event (Entity Recipe)
-    -> Garlic (Event (Seq (Entity Recipe) -> Seq (Entity Recipe), 
-               Entity Recipe))
+    -> Garlic (Event (Seq (Entity Recipe) 
+                -> Seq (Entity Recipe), Entity Recipe))
 recipeEditP app selected = do
     key <- stepper Nothing (Just . entityKey <$> selected)
 
     -- Show Editor on Edit or Add Click, hide Edit Button and yield
-    let click = app ^. appHeader . editClick
-            <:> app ^. appHeader . addClick
+    let click = app ^. appHeader . editClick <:> app ^. appHeader . addClick
      in app ^. appVRecipes . vrRecipeEdit . showEditor `consume` click
-
     recipe <- currentRecipe app
-    
+
     -- Ingredients
     new <- newIngredientPopover app
     selectedIngredients <- loadRecipe app selected
-    completion <- fetch allIngredientNames $ () <$ new
+    completion <- dbFetch $ allIngredientNames <$ new
     app ^. appReplaceIngr `consume` completion
+    entered <-
+        filterJust <$$> dbFetch $ ingredientByName <$> app ^. appVRecipes .
+        vrRecipeEdit .
+        editEnterIngredient
 
-    entered <- fetch ingredientByName 
-        $ app ^. appVRecipes . vrRecipeEdit . editEnterIngredient
-
-    ingredients <- ingredientList 
-        (app ^. appVRecipes . vrRecipeEdit . editIngredients) 
-        selectedIngredients
-        (new <:> entered)
+    ingredients <-
+        ingredientList
+            (app ^. appVRecipes . vrRecipeEdit . editIngredients)
+            selectedIngredients
+            (new <:> entered)
 
     -- Recipe Entity, only Just when there is also a previous selection
     let recipeEntity =
             getCompose (Entity <$> Compose key <*> Compose (Just <$> recipe))
-    
+
     -- Save on Store Click, or do nothing when there was no selection
-    storeE <- fetch (fetchThrough ingredients) 
-            $ filterJust 
-            $ recipeEntity <@ app ^. appVRecipes . vrRecipeEdit . editStore
+    storeE <-
+        dbFetch $ (\x -> (,) <$> pure x <*> ingredients) <$>
+        filterJust
+            (recipeEntity <@ app ^. appVRecipes . vrRecipeEdit . editStore)
+
     updateRecipe `consume` storeE
     storeE1 <- delay storeE
 
     -- Go back on back click
-    app ^. appVRecipes . vrRecipeDisplay . showDisplay `consume` 
-        () <$ app ^. appHeader . backClick
-
+    app ^. appVRecipes . vrRecipeDisplay . showDisplay `consume` () <$ app ^.
+        appHeader .
+        backClick
+        
     -- Delete Selected Recipe on Delete, revert to display view
-    let deleteE = filterJust 
-            (key <@ app ^. appVRecipes . vrRecipeEdit . editDelete)
+    let deleteE =
+            filterJust (key <@ app ^. appVRecipes . vrRecipeEdit . editDelete)
     deleteRecipe `consume` deleteE
     app ^. appVRecipes . vrRecipeDisplay . showDisplay `consume` () <$ deleteE
-
-    let change = unions
-            [ (\x -> S.filter ((/= x) . entityKey)) <$> deleteE 
-            , (\x -> fmap (\e -> if entityKey e == entityKey x then x else e)) 
-            . fst <$> storeE1 ]
+    let change =
+            unions
+                [ (\x -> S.filter ((/= x) . entityKey)) <$> deleteE
+                , (\x ->
+                       fmap
+                           (\e ->
+                                if entityKey e == entityKey x
+                                    then x
+                                    else e)) .
+                  fst <$>
+                  storeE1
+                ]
 
     let zipR = go <$> recipeEntity
-            where go Nothing  _ = Nothing 
-                  go (Just b) a = Just (a,b)
+          where
+            go Nothing _ = Nothing
+            go (Just b) a = Just (a, b)
      in pure . filterJust $ zipR <@> change
 
 -- | Load recipe into mask on selection event
@@ -112,7 +121,7 @@ loadRecipe app selected = do
     app ^. appVRecipes . vrRecipeEdit . editSetInstructions 
         `consume` recipeInstructions <$> rcp
 
-    fetch ingredientsFor (entityKey <$> selected)
+    dbFetch $ ingredientsFor . entityKey <$> selected
 
 -- | The currently edited recipe
 currentRecipe :: GarlicApp -> Garlic (Behavior Recipe)
@@ -139,7 +148,7 @@ newIngredientPopover app = do
     ni ^. niMask ^. imClearAll `consume` ni ^. niClearClick
     ni ^. niMask ^. imClearAll `consume` ni ^. niOkClick
 
-    new <- fetch newIngredient $ 
+    new <- dbFetch $ newIngredient <$>
         currentIngredient (ni ^. niMask) <@ ni ^. niOkClick
     app ^. appDisplayError `consume`
         "Ingredient already exists!" <$ filterE isNothing new
@@ -151,7 +160,7 @@ ingredientList
     :: GarlicIngredientList 
     -> Event [WeighedIngredient] 
     -> Event (Entity Ingredient)
-    -> Garlic (Fetcher a [WeighedIngredient])
+    -> Garlic (SqlPersistT IO [WeighedIngredient])
 ingredientList ilist selected new = mdo
     let fromWI w = EditorIngredient
                        (view wingrAmount w)
@@ -175,6 +184,7 @@ ingredientList ilist selected new = mdo
     -- Insert new ingredients
     ilist ^. ilAppend `consume` (pure . fromWI . fromIngredient) <$> new
 
-    pure $ rmap (uncurry (zipWith toWI)) 
-         $ fetchThrough (lmap (map eiName) ingredientsByName)
-         . lmap (const ()) (ilist ^. ilFetch)
+    pure $ do
+        xs <- liftIO $ ilist ^. ilFetch
+        is <- mapM (ingredientByName . eiName) xs
+        pure (catMaybes (zipWith (liftA2 toWI) (map Just xs) is))

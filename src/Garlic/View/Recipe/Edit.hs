@@ -258,7 +258,7 @@ data EditorIngredient = EditorIngredient
 data GarlicIngredientList = GarlicIngredientList
     { _ilAppend  :: Consumer [EditorIngredient]
     , _ilClear   :: Consumer ()
-    , _ilFetch   :: Fetcher () [EditorIngredient]
+    , _ilFetch   :: IO [EditorIngredient]
     }
 
 ingredientList :: TreeView -> ListStore -> Button -> Garlic GarlicIngredientList
@@ -352,7 +352,7 @@ ingredientList view model delButton = do
     lift $ GarlicIngredientList 
        <$> pure (ioConsumer (mapM_ (append groups)))
        <*> pure (ioConsumer (\_ -> listStoreClear model))
-       <*> pure (ioFetcher $ const fetchAll)
+       <*> pure fetchAll
 
     where append :: MonadIO m => ListStore -> EditorIngredient -> m ()
           append groups EditorIngredient{..} = do
