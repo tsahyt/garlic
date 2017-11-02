@@ -66,7 +66,7 @@ import Data.List (sortBy)
 import Data.Foldable
 import Data.Time
 import Data.Ord
-import Data.Maybe (catMaybes)
+import Data.Maybe (catMaybes, fromJust)
 import Database.Esqueleto
 import Data.Text (Text)
 import Data.Sequence (Seq)
@@ -284,18 +284,34 @@ getEntryDays = do
     pure $ map unValue xs
 
 getNutritionSummary :: UTCTime -> SqlPersistT IO [(Double, [WeighedIngredient])]
-getNutritionSummary t = do
-    rs <- select $ 
-          from $ \(e `InnerJoin` r) -> do
+getNutritionSummary t
+ = do
+    -- recipe entries
+    rs <-
+        select $
+        from $ \(e `InnerJoin` r) -> do
             on (e ^. FoodEntryRecipe ==. just (r ^. RecipeId))
             where_ (e ^. FoodEntryTimestamp ==. val t)
-            pure (e,r)
-
-    forM rs $ \(e,r) -> do
-        let amount = foodEntryAmount . entityVal $ e
-            yield  = recipeYield . entityVal $ r
-        is <- ingredientsFor (entityKey r)
-        pure (amount / yield, is)
+            pure (e, r)
+    recipeData <-
+        forM rs $ \(e, r) -> do
+            let amount = foodEntryAmount . entityVal $ e
+                yield = recipeYield . entityVal $ r
+            is <- ingredientsFor (entityKey r)
+            pure (amount / yield, is)
+    -- ingredient entries
+    is <-
+        select $
+        from $ \(e `InnerJoin` i) -> do
+            on (e ^. FoodEntryIngredient ==. just (i ^. IngredientId))
+            where_ (e ^. FoodEntryTimestamp ==. val t)
+            pure (e, i)
+    ingredientData <-
+        forM is $ \(e, i) -> do
+            let amount = foodEntryAmount . entityVal $ e
+                unit = fromJust . foodEntryUnit . entityVal $ e
+            pure (1, [WeighedIngredient amount unit False Nothing Nothing i])
+    pure $ recipeData ++ ingredientData
 
 getPastNutrition ::
        [UTCTime] -> SqlPersistT IO [(UTCTime, [(Double, [WeighedIngredient])])]
