@@ -87,6 +87,7 @@ share [mkPersist sqlSettings, mkMigrate "migrateAll"] [persistLowerCase|
         tag EntryTag
         recipe RecipeId Maybe
         ingredient IngredientId Maybe
+        unit Unit Maybe
         amount Double
         meal Meal
  |]

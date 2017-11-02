@@ -18,6 +18,7 @@ module Garlic.Model.Queries
     newRecipe,
     updateRecipe,
     deleteRecipe,
+    getRecipe,
 
     -- * Recipes/Ingredients for FoodLog
     recipeShort,
@@ -29,6 +30,7 @@ module Garlic.Model.Queries
     newIngredient,
     deleteIngredient,
     updateIngredient,
+    getIngredient,
 
     -- * Weight Measurements
     getWeightMeasurements,
@@ -111,6 +113,9 @@ recipes str = do
               return r
     pure . S.fromList $ rs
 
+getRecipe :: Key Recipe -> SqlPersistT IO (Entity Recipe)
+getRecipe = getJustEntity
+
 -- | Select all weighted ingredients for some recipe
 ingredientsFor :: Key Recipe -> SqlPersistT IO [WeighedIngredient]
 ingredientsFor recipe = do
@@ -136,14 +141,14 @@ ingredientsFor recipe = do
 recipeShort ::
        Meal
     -> Text
-    -> SqlPersistT IO (Maybe (Meal, Entity Recipe, [WeighedIngredient]))
+    -> SqlPersistT IO (Maybe (Entity Recipe, [WeighedIngredient]))
 recipeShort m t = do
     x <- P.selectFirst [RecipeName P.==. t] []
     case x of
         Nothing -> pure Nothing
         Just x' -> do
             ws <- ingredientsFor (entityKey x')
-            pure $ Just (m, x', ws)
+            pure $ Just (x', ws)
 
 -- | Select all ingredient names in the DB
 allIngredientNames :: SqlPersistT IO [Text]
@@ -210,6 +215,9 @@ deleteIngredient = dbConsumer $ \k -> do
 updateIngredient :: Consumer (Key Ingredient, Ingredient)
 updateIngredient = dbConsumer $ uncurry P.repsert
 
+getIngredient :: Key Ingredient -> SqlPersistT IO (Entity Ingredient)
+getIngredient = getJustEntity
+
 getWeightMeasurements :: UTCTime -> SqlPersistT IO [Entity WeightMeasurement]
 getWeightMeasurements l =
     sortBy (comparing (weightMeasurementTimestamp . entityVal)) <$>
@@ -251,28 +259,13 @@ deleteGoal :: Consumer UTCTime
 deleteGoal =
     dbConsumer $ \t -> P.deleteWhere [GoalTimestamp P.==. t]
 
-entryShort ::
-       Entity FoodEntry
-    -> SqlPersistT IO (Entity FoodEntry, Recipe, [WeighedIngredient])
-entryShort x =
-    case foodEntryRef (entityVal x) of
-        Left k -> do
-            r <- getJust k
-            is <- ingredientsFor k
-            pure (x, r, is)
-        _ -> undefined
-
 addFoodEntry ::
        FoodEntry
-    -> SqlPersistT IO (Entity FoodEntry, Recipe, [WeighedIngredient])
-addFoodEntry = P.insertEntity >=> entryShort
+    -> SqlPersistT IO (Entity FoodEntry)
+addFoodEntry = P.insertEntity
 
-getFoodEntries ::
-       UTCTime
-    -> SqlPersistT IO [(Entity FoodEntry, Recipe, [WeighedIngredient])]
-getFoodEntries t = do
-    xs <- P.selectList [FoodEntryTimestamp P.==. t] []
-    mapM entryShort xs
+getFoodEntries :: UTCTime -> SqlPersistT IO [Entity FoodEntry]
+getFoodEntries t = P.selectList [FoodEntryTimestamp P.==. t] []
 
 deleteFoodEntry :: Key FoodEntry -> SqlPersistT IO ()
 deleteFoodEntry k = P.delete k >> pure ()
