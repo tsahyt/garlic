@@ -1,5 +1,4 @@
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE LambdaCase #-}
 module Garlic.Presenter.Tracking.FoodLog
 (
     foodLogP
@@ -24,7 +23,7 @@ import Garlic.Model.Queries
 import Garlic.Types
 import Garlic.View.Tracking.FoodLog
 import Linear.V2
-import Linear.Vector
+import Linear.Vector hiding (unit)
 import Reactive.Banana
 
 foodLogP ::
@@ -137,9 +136,9 @@ recipeToLog r is e =
 ingredientToLog :: Entity Ingredient -> Entity FoodEntry -> LogRecipe
 ingredientToLog i e =
     LogRecipe
-    { lrMeal = foodEntryMeal (entityVal e)
+    { lrMeal = meal
     , lrName = ingredientName (entityVal i)
-    , lrAmount = foodEntryAmount (entityVal e)
+    , lrAmount = amount
     , lrKcal = nlKcal label
     , lrProtein = nlProtein label ^. _x
     , lrCarbs = nlCarbs label ^. _x

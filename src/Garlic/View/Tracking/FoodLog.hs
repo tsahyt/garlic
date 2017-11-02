@@ -219,7 +219,9 @@ buildMeals list newCompl = do
         on btn #clicked $ do
             writeIORef popoverMeal meal
             entrySetText rname ""
+            entrySetText iname ""
             adjustmentSetValue rservings 1.0
+            adjustmentSetValue iamount 0.0
             popoverSetRelativeTo popover (Just btn)
             popoverPopup popover
     r <- liftIO . newIORef . M.fromList . map (\x -> (x, 0)) $ allMeals
