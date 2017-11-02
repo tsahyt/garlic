@@ -92,7 +92,7 @@ application app = do
 
     -- Views
     vRecipes  <- viewRecipes newCompl mainStack
-    vTracking <- viewTracking mainStack
+    vTracking <- viewTracking newCompl mainStack
 
     -- Sub elements
     hb   <- headerBar win mainStack

@@ -78,11 +78,11 @@ data GarlicTrackingFoodLog = GarlicTrackingFoodLog
     , _flAmountEdit  :: Event (Double, FoodEntryId)
     }
 
-foodLog :: Builder -> Garlic GarlicTrackingFoodLog
-foodLog b = do
+foodLog :: Builder -> Garlic EntryCompletion -> Garlic GarlicTrackingFoodLog
+foodLog b newCompl = do
     mref <- liftIO $ newIORef []
     list <- castB b "foodLogList" ListBox
-    (e, pref, addingB, load) <- buildMeals list
+    (e, pref, addingB, load) <- buildMeals list newCompl
     del <- deletion b list pref mref
     edit <- amountEditing b list mref
     GarlicTrackingFoodLog <$>
@@ -155,11 +155,12 @@ data PopoverActive
 
 buildMeals ::
        ListBox
+    -> Garlic EntryCompletion
     -> Garlic ( Event Meal
               , IORef (M.Map Meal Int)
               , Behavior Adding
               , Consumer [Text])
-buildMeals list = do
+buildMeals list newCompl = do
     b <- builderNew
     _ <- builderAddFromString b uiLogAdd (-1)
     popover <- castB b "popover" Popover
@@ -184,6 +185,10 @@ buildMeals list = do
     iname <- castB b "ingredientName" Entry
     rservings <- castB b "recipeServing" Adjustment
     iamount <- castB b "ingredientAmount" Adjustment
+
+    -- instantiate completion for iname
+    icompl <- newCompl
+    set iname [ #completion := icompl ]
  
     -- fill unit box
     unit <- castB b "units" ComboBoxText

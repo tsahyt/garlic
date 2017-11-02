@@ -56,8 +56,8 @@ data GarlicViewTracking = GarlicViewTracking
     , _trackingMarks     :: Consumer [Day]
     }
 
-viewTracking :: Stack -> Garlic GarlicViewTracking
-viewTracking stack = do
+viewTracking :: Garlic EntryCompletion -> Stack -> Garlic GarlicViewTracking
+viewTracking newCompl stack = do
     b <- builderNew
     _ <- builderAddFromString b uiViewTracking (-1)
 
@@ -68,7 +68,7 @@ viewTracking stack = do
     switched <- viewSwitch b
 
     GarlicViewTracking
-        <$> foodLog b
+        <$> foodLog b newCompl
         <*> weightLog b
         <*> nutrition b
         <*> goals b
