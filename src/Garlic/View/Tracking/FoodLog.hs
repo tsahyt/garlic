@@ -60,6 +60,8 @@ data LogRecipe = LogRecipe
     , lrKey :: FoodEntryId
     } deriving (Eq, Show, Ord, Read)
 
+type LogUpdate = Double -> Double -> Double -> Double -> IO ()
+
 data Adding
     = AddingRecipe Meal Text Double
     | AddingIngredient Meal Text Double Unit
@@ -88,8 +90,8 @@ foodLog b newCompl = do
     GarlicTrackingFoodLog <$>
         pure
             (ioConsumer $ \lr@LogRecipe {..} -> do
-                 entry <- newEntry lrName lrKcal lrProtein lrCarbs lrFat
-                 addEntry lr lrMeal entry list pref mref) <*>
+                 (entry, upd) <- newEntry lrName lrKcal lrProtein lrCarbs lrFat
+                 addEntry lr upd lrMeal entry list pref mref) <*>
         pure (ioConsumer $ \_ -> cleanEntries list pref mref) <*>
         pure ((setMeal <$> addingB) <@> e) <*>
         pure del <*>
@@ -99,39 +101,46 @@ foodLog b newCompl = do
 amountEditing ::
        Builder
     -> ListBox
-    -> IORef [Either Meal LogRecipe]
+    -> IORef [Either Meal (LogRecipe, LogUpdate)]
     -> Garlic (Event (Double, FoodEntryId))
 amountEditing b list ref = do
     (e, handle) <- lift newEvent
     amountEdit <- castB b "foodLogEditAmountAdjustment" Adjustment
-
     -- load previous value on selection
-    void $ on list #rowSelected $ \case
-        Nothing -> pure ()
-        Just row -> do
+    void $
+        on list #rowSelected $ \case
+            Nothing -> pure ()
+            Just row -> do
+                m <- readIORef ref
+                idx <- fromIntegral <$> listBoxRowGetIndex row
+                case L.atMay idx m of
+                    Just (Right (lr, _)) ->
+                        adjustmentSetValue amountEdit (lrAmount lr)
+                    _ -> pure ()
+    -- trigger event on change
+    void $
+        on amountEdit #valueChanged $ do
             m <- readIORef ref
+            val <- adjustmentGetValue amountEdit
+            row <- listBoxGetSelectedRow list
             idx <- fromIntegral <$> listBoxRowGetIndex row
             case L.atMay idx m of
-                Just (Right lr) -> adjustmentSetValue amountEdit (lrAmount lr)
+                Just (Right (lr, update)) -> do
+                    let factor = val / lrAmount lr
+                        kcal = factor * lrKcal lr
+                        protein = factor * lrProtein lr
+                        carbs = factor * lrCarbs lr
+                        fat = factor * lrFat lr
+                    update kcal protein carbs fat
+                    handle (val, lrKey lr)
                 _ -> pure ()
-
-    -- trigger event on change
-    void $ on amountEdit #valueChanged $ do
-        m <- readIORef ref
-        val <- adjustmentGetValue amountEdit
-        row <- listBoxGetSelectedRow list
-        idx <- fromIntegral <$> listBoxRowGetIndex row
-        case L.atMay idx m of
-            Just (Right lr) -> handle (val, lrKey lr)
-            _ -> pure ()
-
     pure e
 
 deletion ::
        Builder
     -> ListBox
     -> IORef (M.Map Meal Int)
-    -> IORef [Either Meal LogRecipe]
+    -> IORef [Either Meal (LogRecipe, a)]
     -> Garlic (Event LogRecipe)
 deletion b list pref mref = do
     btn <- castB b "foodLogDelete" Button
@@ -141,7 +150,7 @@ deletion b list pref mref = do
             row <- listBoxGetSelectedRow list
             idx <- fromIntegral <$> listBoxRowGetIndex row
             case L.atMay idx m of
-                Just (Right lr) -> do
+                Just (Right (lr,_)) -> do
                     containerRemove list row
                     modifyIORef pref (M.adjust pred (lrMeal lr))
                     modifyIORef mref (L.delete idx)
@@ -267,7 +276,7 @@ cleanEntries ::
        MonadIO m
     => ListBox
     -> IORef (M.Map Meal Int)
-    -> IORef [Either Meal LogRecipe]
+    -> IORef [Either Meal (LogRecipe, a)]
     -> m ()
 cleanEntries list pref mref = do
     m <- liftIO $ readIORef pref
@@ -292,19 +301,20 @@ cleanEntries list pref mref = do
 addEntry ::
        MonadIO m
     => LogRecipe
+    -> LogUpdate
     -> Meal
     -> ListBoxRow
     -> ListBox
     -> IORef (M.Map Meal Int)
-    -> IORef [Either Meal LogRecipe]
+    -> IORef [Either Meal (LogRecipe, LogUpdate)]
     -> m ()
-addEntry lr m row l pref mref = do
+addEntry lr lu m row l pref mref = do
     before <- takeWhile ((/= m) . fst) . M.toList <$> liftIO (readIORef pref)
     let p = fromIntegral (sum . map (\(_,x) -> succ x) $ before) + 1
     listBoxInsert l row p
     liftIO $ do
         modifyIORef pref (M.adjust succ m)
-        modifyIORef mref (L.insert (fromIntegral p) (Right lr))
+        modifyIORef mref (L.insert (fromIntegral p) (Right (lr, lu)))
 
 addHeader :: MonadIO m => ListBox -> Text -> m Button
 addHeader list t = do
@@ -328,7 +338,7 @@ newEntry ::
     -> Double       -- ^ Protein
     -> Double       -- ^ Carbs
     -> Double       -- ^ Fat
-    -> m ListBoxRow
+    -> m (ListBoxRow, LogUpdate)
 newEntry t kcal protein carbs fat = do
     b <- builderNew
     _ <- builderAddFromString b uiLogEntry (-1)
@@ -337,18 +347,26 @@ newEntry t kcal protein carbs fat = do
     name <- castB b "name" Label
     set name [ #label := t ]
 
-    -- set nutrition
+    -- get widgets
     kcalLbl <- castB b "kcal" Label
-    set kcalLbl [ #label := fmtDouble False kcal ]
     proteinLbl <- castB b "protein" Label
-    set proteinLbl [ #label := fmtDouble True protein ]
     carbsLbl <- castB b "carbs" Label
-    set carbsLbl [ #label := fmtDouble True carbs ]
     fatLbl <- castB b "fat" Label
-    set fatLbl [ #label := fmtDouble True fat ]
+    
+    -- create update function holding widgets in closure
+    let update kcal' protein' carbs' fat' = do
+            set kcalLbl [ #label := fmtDouble False kcal' ]
+            set proteinLbl [ #label := fmtDouble True protein' ]
+            set carbsLbl [ #label := fmtDouble True carbs' ]
+            set fatLbl [ #label := fmtDouble True fat' ]
+
+    -- set nutrition
+    update kcal protein carbs fat
     
     -- append to list
-    castB b "box" ListBoxRow
+    row <- castB b "box" ListBoxRow
+
+    pure (row, update)
 
 fmtDouble :: Bool -> Double -> Text
 fmtDouble g x = pack $ printf "%.1f%s" x (if g then "g" else [])
