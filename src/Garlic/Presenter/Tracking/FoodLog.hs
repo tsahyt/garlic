@@ -76,7 +76,7 @@ foodLogP fl rchange active mark day startup = do
 adding :: UTCTime -> Adding -> SqlPersistT IO (Maybe LogRecipe)
 adding t (AddingRecipe meal text amount) =
     runMaybeT $ do
-        (erecipe, is) <- MaybeT $ recipeShort meal text
+        (erecipe, is) <- MaybeT $ recipeShort text
         let entry =
                 FoodEntry
                     t

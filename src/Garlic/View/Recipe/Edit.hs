@@ -66,6 +66,8 @@ import Reactive.Banana.Frameworks (mapEventIO, MomentIO, reactimate)
 import Text.Printf
 import Text.Markdown (Markdown (..))
 
+import qualified Data.Text as T
+
 uiRecipeEdit :: Text
 uiRecipeEdit = decodeUtf8 $(embedFile "res/recipe-edit.ui")
 
@@ -316,15 +318,16 @@ ingredientList view model delButton = do
                                      , #hasEntry    := True
                                      , #model       := groups
                                      , #textColumn  := 0 ]
-    _ <- on groupR #edited $ \path txt -> do
-        path' <- treePathNewFromString path
-        (b, iter) <- treeModelGetIter model path'
+    _ <- on groupR #edited $ \path txt ->
+        unless (T.null txt) $ do
+            path' <- treePathNewFromString path
+            (b, iter) <- treeModelGetIter model path'
 
-        when b $ do
-            txt' <- toGValue (Just txt)
-            listStoreSetValue model iter 5 txt'
+            when b $ do
+                txt' <- toGValue (Just txt)
+                listStoreSetValue model iter 5 txt'
 
-        groupStoreAppend groups txt
+            groupStoreAppend groups txt
 
     -- Columns
     amntC <- new TreeViewColumn [ #title := "Amount", #resizable := True]
@@ -351,7 +354,8 @@ ingredientList view model delButton = do
 
     lift $ GarlicIngredientList 
        <$> pure (ioConsumer (mapM_ (append groups)))
-       <*> pure (ioConsumer (\_ -> listStoreClear model))
+       <*> pure (ioConsumer (\_ -> 
+                listStoreClear model >> listStoreClear groups))
        <*> pure fetchAll
 
     where append :: MonadIO m => ListStore -> EditorIngredient -> m ()

@@ -139,10 +139,8 @@ ingredientsFor recipe = do
             xs
 
 recipeShort ::
-       Meal
-    -> Text
-    -> SqlPersistT IO (Maybe (Entity Recipe, [WeighedIngredient]))
-recipeShort m t = do
+       Text -> SqlPersistT IO (Maybe (Entity Recipe, [WeighedIngredient]))
+recipeShort t = do
     x <- P.selectFirst [RecipeName P.==. t] []
     case x of
         Nothing -> pure Nothing
@@ -179,7 +177,9 @@ updateRecipe =
                 _wingrUnit
                 _wingrOptional
                 _wingrDisp
-                _wingrGroup
+                (if maybe False T.null _wingrGroup
+                     then Nothing
+                     else _wingrGroup)
             | WeighedIngredient {..} <- is
             ]
 
