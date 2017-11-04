@@ -95,11 +95,14 @@ recipeEditP app selected = do
                   storeE1
                 ]
 
+    -- Delay change event for output, to guarantee database changes. hack.
+    change' <- delay =<< delay change
+
     let zipR = go <$> recipeEntity
           where
             go Nothing _ = Nothing
             go (Just b) a = Just (a, b)
-     in pure . filterJust $ zipR <@> change
+     in pure . filterJust $ zipR <@> change'
 
 -- | Load recipe into mask on selection event
 loadRecipe 

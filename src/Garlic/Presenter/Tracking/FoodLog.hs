@@ -38,10 +38,8 @@ foodLogP fl rchange active mark day startup = do
     let time = UTCTime <$> day <*> pure 0
     now <- (\x -> x {utctDayTime = 0}) <$> liftIO getCurrentTime
 
-    -- recipe change
-    rs <- dbFetch $ recipes "" <$ unionl [startup, rchange]
-    
     -- reload completion on new recipes
+    rs <- dbFetch $ recipes "" <$ unionl [startup, rchange]
     fl ^. flLoadRecipes `consume` (map (recipeName . entityVal) . toList) <$> rs
 
     -- adding
@@ -51,7 +49,7 @@ foodLogP fl rchange active mark day startup = do
     dayChange <- plainChanges time
     reload <-
         dbFetch $
-        reloadEntries <$> unionl [dayChange, now <$ startup, time <@ rchange]
+        reloadEntries <$> unionl [dayChange, now <$ startup, time <@ rs]
     fl ^. flClean `consume` () <$ reload
 
     -- list insertion
