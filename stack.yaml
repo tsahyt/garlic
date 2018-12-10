@@ -3,8 +3,13 @@ extra-package-dbs: []
 packages:
 - '.'
 extra-deps:
-- reactive-banana-gi-gtk-0.2.0.0
-- gi-webkit2-4.0.14
-- gi-gtksource-3.0.15
-- gi-javascriptcore-4.0.11
-resolver: lts-9.3
+- Chart-1.9
+- Chart-cairo-1.9
+- csv-conduit-0.7.0.0
+- gi-webkit2-4.0.19
+- gi-soup-2.4.16
+- reactive-banana-1.2.0.0
+- reactive-banana-gi-gtk-0.4.0.1
+- git: https://github.com/bitemyapp/esqueleto.git
+  commit: b81e0d951e510ebffca03c5a58658ad884cc6fbd
+resolver: lts-12.21

@@ -77,7 +77,7 @@ data GarlicApp = GarlicApp
 application :: Application -> Garlic GarlicApp
 application app = do
     b <- builderNew
-    _ <- builderAddFromString b uiMainWindow (-1)
+    _ <- builderAddFromString b uiMainWindow maxBound
 
     -- Widgets
     win         <- castB b "applicationWindow" ApplicationWindow
@@ -135,7 +135,7 @@ application app = do
 about :: MonadIO m => ApplicationWindow -> m ()
 about appWin = do
     b <- builderNew
-    _ <- builderAddFromString b uiAboutDialog (-1)
+    _ <- builderAddFromString b uiAboutDialog maxBound
 
     dialog <- castB b "aboutDialog" AboutDialog
     windowSetTransientFor dialog (Just appWin)
@@ -185,7 +185,7 @@ appMenu app win = do
               action <- Gio.simpleActionNew s Nothing
               Gio.simpleActionSetEnabled action True
               Gio.actionMapAddAction app action
-              lift $ signalEN action #activate (\h _ -> h ())
+              lift $ signalEN action #activate (\h _ -> h ()) ()
 
 -- | Toggle a 'SearchBar'
 toggleSearch :: SearchBar -> Consumer ()

@@ -10,7 +10,6 @@ where
 import Control.Lens
 import Control.Monad.IO.Class
 import Data.Maybe
-import Data.Monoid
 import Data.Functor.Compose
 import Data.Sequence (Seq)
 import Database.Persist.Sql

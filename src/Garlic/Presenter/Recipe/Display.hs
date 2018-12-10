@@ -13,7 +13,6 @@ import Control.Monad
 import Data.FileEmbed
 import Data.List (sortBy)
 import Data.Maybe (fromMaybe)
-import Data.Monoid
 import Data.Ord
 import Data.Text (Text)
 import Data.Text.Encoding (decodeUtf8)

@@ -48,6 +48,7 @@ data NutritionSummary = NutritionSummary
     , nsumSodium :: Double
     } deriving (Show, Eq)
 
+nsumZero :: NutritionSummary
 nsumZero = NutritionSummary 0 0 0 0 0 0 0 0 0 0 0 0
 
 data PastCategory

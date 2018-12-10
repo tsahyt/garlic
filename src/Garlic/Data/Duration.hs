@@ -8,7 +8,6 @@ module Garlic.Data.Duration
 )
 where
 
-import Data.Monoid
 import Data.Text (Text, pack)
 import Data.Attoparsec.Text
 

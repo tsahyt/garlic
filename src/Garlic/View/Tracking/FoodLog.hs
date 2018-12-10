@@ -145,7 +145,8 @@ deletion ::
 deletion b list pref mref = do
     btn <- castB b "foodLogDelete" Button
     lift $
-        signalEN btn #clicked $ \h -> do
+        signalEN btn #clicked go ()
+    where go h = do
             m <- readIORef mref
             row <- listBoxGetSelectedRow list
             idx <- fromIntegral <$> listBoxRowGetIndex row
@@ -171,7 +172,7 @@ buildMeals ::
               , Consumer [Text])
 buildMeals list newCompl = do
     b <- builderNew
-    _ <- builderAddFromString b uiLogAdd (-1)
+    _ <- builderAddFromString b uiLogAdd maxBound
     popover <- castB b "popover" Popover
     switcher <- castB b "switcher" StackSwitcher
     stack <- castB b "stack" Stack
@@ -235,7 +236,7 @@ buildMeals list newCompl = do
             popoverPopup popover
     r <- liftIO . newIORef . M.fromList . map (\x -> (x, 0)) $ allMeals
     adding <-
-        lift $ signalEN okButton #clicked $ \h -> readIORef popoverMeal >>= h
+        lift $ signalEN okButton #clicked (\h -> readIORef popoverMeal >>= h) ()
 
     -- recipe completion handling
     compl <- castB b "recipeCompletion" EntryCompletion
@@ -319,7 +320,7 @@ addEntry lr lu m row l pref mref = do
 addHeader :: MonadIO m => ListBox -> Text -> m Button
 addHeader list t = do
     b <- builderNew
-    _ <- builderAddFromString b uiLogHeader (-1)
+    _ <- builderAddFromString b uiLogHeader maxBound
 
     -- set header
     lbl <- castB b "headerTitle" Label
@@ -341,7 +342,7 @@ newEntry ::
     -> m (ListBoxRow, LogUpdate)
 newEntry t kcal protein carbs fat = do
     b <- builderNew
-    _ <- builderAddFromString b uiLogEntry (-1)
+    _ <- builderAddFromString b uiLogEntry maxBound
 
     -- set header
     name <- castB b "name" Label

@@ -54,7 +54,7 @@ data GarlicViewRecipes = GarlicViewRecipes
 viewRecipes :: Garlic EntryCompletion -> Stack -> Garlic GarlicViewRecipes
 viewRecipes newCompl stack = do
     b <- builderNew
-    _ <- builderAddFromString b uiViewRecipes (-1)
+    _ <- builderAddFromString b uiViewRecipes maxBound
 
     container <- castB b "paned" Paned
     rlist <- castB b "recipeList" ListBox
@@ -104,7 +104,7 @@ recipeEntry
     -> m ListBoxRow
 recipeEntry rate time name cuisine = do
     b <- builderNew
-    _ <- builderAddFromString b uiRecipeEntry (-1)
+    _ <- builderAddFromString b uiRecipeEntry maxBound
     
     nameL <- castB b "recipeName" Label
     infoL <- castB b "recipeInfo" Label

@@ -15,7 +15,6 @@ import Garlic.Model
 import Garlic.Model.Queries
 import Database.Persist (entityVal)
 import Data.Text (Text)
-import Data.Monoid
 import Control.Lens
 import Data.Maybe (fromMaybe)
 import Garlic.Data.Units
@@ -89,6 +88,9 @@ instance Additive NutritionLabel where
         , nlSugars = liftI2 f (nlSugars a) (nlSugars b)
         , nlProtein = liftI2 f (nlProtein a) (nlProtein b)
         }
+
+instance Num a => Semigroup (NutritionLabel a) where
+    (<>) = (^+^)
 
 instance Num a => Monoid (NutritionLabel a) where
     mempty = zero

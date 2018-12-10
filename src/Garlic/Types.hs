@@ -72,9 +72,12 @@ instance Decidable Consumer where
 
     lose _ = mempty
 
+instance Semigroup (Consumer a) where
+    (<>) = divide (\x -> (x,x))
+
 instance Monoid (Consumer a) where
     mempty = conquer
-    mappend = divide (\x -> (x,x))
+    mappend = (<>)
 
 consumeMaybe :: Consumer a -> Event (Maybe a) -> Garlic ()
 consumeMaybe x = consume (choose go conquer x)

@@ -59,7 +59,7 @@ data GarlicViewTracking = GarlicViewTracking
 viewTracking :: Garlic EntryCompletion -> Stack -> Garlic GarlicViewTracking
 viewTracking newCompl stack = do
     b <- builderNew
-    _ <- builderAddFromString b uiViewTracking (-1)
+    _ <- builderAddFromString b uiViewTracking maxBound
 
     box <- castB b "mainBox" Box
 
@@ -99,9 +99,10 @@ calendar b = do
     cal <- castB b "calendar" Calendar
 
     now <- liftIO (utctDay <$> getCurrentTime)
-    sel <- lift $ signalEN cal #daySelected $ \h -> do
+    sel <- lift $ signalEN cal #daySelected (\h -> do
                     (y,m,d) <- calendarGetDate cal
-                    h (fromIntegral y, fromIntegral m + 1, fromIntegral d)
+                    h (fromIntegral y, fromIntegral m + 1, fromIntegral d))
+                    ()
 
     stepper now $ (\(y,m,d) -> fromGregorian y m d) <$> sel
 

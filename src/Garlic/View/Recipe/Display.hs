@@ -35,7 +35,7 @@ data GarlicRecipeDisplay = GarlicRecipeDisplay
 recipeDisplay :: Stack -> Garlic GarlicRecipeDisplay
 recipeDisplay stack = do
     b <- builderNew
-    _ <- builderAddFromString b uiRecipeDisplay (-1)
+    _ <- builderAddFromString b uiRecipeDisplay maxBound
 
     -- Widgets
     rdis        <- castB b "recipeDisplayBox" Box

@@ -88,7 +88,7 @@ measurement b = do
     weightB <- lift $ attrB weight #value
     unitE <-
         lift $
-        signalEN unit #changed $ \h -> comboBoxTextGetActiveText unit >>= h
+        signalEN unit #changed (\h -> comboBoxTextGetActiveText unit >>= h) ()
     unitB <- stepper Kilogram $ parseUnit <$> unitE
     let bv = (,) <$> weightB <*> unitB
         cs =

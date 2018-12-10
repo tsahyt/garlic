@@ -114,7 +114,7 @@ goals b = do
 
 unitB :: ComboBoxText -> Garlic (Behavior Unit)
 unitB c = do
-    e <- lift (signalEN c #changed $ \h -> comboBoxTextGetActiveText c >>= h)
+    e <- lift (signalEN c #changed (\h -> comboBoxTextGetActiveText c >>= h) ())
     stepper Kilogram $ parseUnit <$> e
 
 data Legality = Illegal | Legal

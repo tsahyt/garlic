@@ -55,12 +55,10 @@ module Garlic.Model.Queries
 )
 where
 
-import Control.Lens (over)
 import Control.Lens.TH
 import Control.Monad
 import Garlic.Data.Units
 import Garlic.Model
-import Garlic.Data.Meal
 import Garlic.Types
 import Data.List (sortBy)
 import Data.Foldable

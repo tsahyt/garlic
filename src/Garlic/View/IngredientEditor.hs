@@ -69,7 +69,7 @@ ingredientEditor
     -> Garlic GarlicIngredientEditor
 ingredientEditor win newCompl = do
     b <- builderNew
-    _ <- builderAddFromString b uiIngredientEditor (-1)
+    _ <- builderAddFromString b uiIngredientEditor maxBound
 
     editor       <- castB b "ingredientEditor" Dialog
     search       <- castB b "ingredientSearch" SearchEntry
@@ -90,9 +90,9 @@ ingredientEditor win newCompl = do
         <$> pure (ioConsumer $ \_ -> void $ dialogRun editor)
         <*> lift (signalE0 deleteButton #clicked)
         <*> lift (signalE0 storeButton #clicked)
-        <*> lift (signalEN search #activate $ \h -> do
+        <*> lift (signalEN search #activate (\h -> do
                 t <- entryGetText search
-                h t
+                h t) ()
             )
         <*> pure mask
         <*> pure (ioConsumer $ \_ -> entrySetText search "")
@@ -120,7 +120,7 @@ data GarlicIngredientMask = GarlicIngredientMask
 ingredientMask :: Box -> Garlic GarlicIngredientMask
 ingredientMask box = do
     b <- builderNew
-    _ <- builderAddFromString b uiIngredientMask (-1)
+    _ <- builderAddFromString b uiIngredientMask maxBound
 
     mask     <- castB b "ingredientMask" Box
     name     <- castB b "name" Entry

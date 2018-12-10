@@ -28,7 +28,7 @@ noLog _ _ _ _ = return ()
 runGtk :: SqlBackend -> IO ()
 runGtk backend = void $ do
     void $ init Nothing
-    app <- applicationNew Nothing []
+    Just app <- applicationNew Nothing []
     compile (runReaderT (presenter app) backend) >>= actuate
     applicationRun app Nothing
 

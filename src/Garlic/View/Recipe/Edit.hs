@@ -89,7 +89,7 @@ data GarlicRecipeEdit = GarlicRecipeEdit
 recipeEdit :: Stack -> Garlic EntryCompletion -> Garlic GarlicRecipeEdit
 recipeEdit stack newCompl = do
     b <- builderNew
-    _ <- builderAddFromString b uiRecipeEdit (-1)
+    _ <- builderAddFromString b uiRecipeEdit maxBound
 
     redt <- castB b "recipeEditBox" Box
     stackAddNamed stack redt "recipeEdit"
@@ -232,7 +232,7 @@ data GarlicNewIngredient = GarlicNewIngredient
 newIngredient :: MenuButton -> Garlic GarlicNewIngredient
 newIngredient button = do
     b <- builderNew
-    _ <- builderAddFromString b uiIngredientNew (-1)
+    _ <- builderAddFromString b uiIngredientNew maxBound
 
     clearButton <- castB b "clearButton" Button
     okButton    <- castB b "okButton" Button

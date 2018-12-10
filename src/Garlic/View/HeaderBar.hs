@@ -55,7 +55,7 @@ data GarlicHeader = GarlicHeader
 headerBar :: ApplicationWindow -> Stack -> Garlic GarlicHeader
 headerBar win stack = do
     b <- builderNew
-    _ <- builderAddFromString b uiHeaderBar (-1)
+    _ <- builderAddFromString b uiHeaderBar maxBound
 
     -- Widgets
     hb              <- castB b "headerBar" HeaderBar
