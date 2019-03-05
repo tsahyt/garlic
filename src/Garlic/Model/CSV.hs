@@ -18,7 +18,7 @@ import Garlic.Types (mtext, parseNum, Consumer, dbConsumer)
 
 import qualified Data.Conduit.List as C
 
-toIngredient :: Monad m => Conduit (Row Text) m Ingredient
+toIngredient :: Monad m => ConduitT (Row Text) Ingredient m ()
 toIngredient = C.mapMaybe $ \x -> do
     [ name, comment, unit, amount, protein, carbs, sugar, fibre
           , fat, satFat, polyFat, monoFat, transFat, sodium, cholesterol ] 
@@ -45,9 +45,9 @@ toIngredient = C.mapMaybe $ \x -> do
 importCSV' :: FilePath -> SqlPersistT IO ()
 importCSV' fp = runConduitRes $ 
         sourceFile fp 
-     $= intoCSV defCSVSettings 
-     $= toIngredient 
-     $= C.mapM_ (lift . insert_)
+     .| intoCSV defCSVSettings 
+     .| toIngredient 
+     .| C.mapM_ (lift . insert_)
 
 importCSV :: Consumer FilePath
 importCSV = dbConsumer importCSV'
